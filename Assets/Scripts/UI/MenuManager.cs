@@ -4,13 +4,16 @@ namespace TicTacToe3D
 {
     public class MenuManager
     {
-        private IMenuPresenter _currentMenu;
+        private IMenuPresenter CurrentMenu { get; set; }
         
         public void OpenMenu(IMenuPresenter menu)
         {
-            _currentMenu.Close();
+            if (CurrentMenu != null)
+            {
+                CurrentMenu.Close();
+            }
             menu.Open();
-            _currentMenu = menu;
+            CurrentMenu = menu;
         }
     }
 }
