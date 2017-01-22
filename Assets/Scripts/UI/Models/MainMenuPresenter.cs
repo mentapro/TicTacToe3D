@@ -15,6 +15,14 @@ namespace TicTacToe3D
     public class MainMenuPresenter : IMenuPresenter, IInitializable, IDisposable
     {
         private MainMenuView _view;
+        private MenuManager _menuManager;
+        private NewGameMenuPresenter _newGameMenu;
+
+        public MainMenuPresenter(MenuManager menuManager, NewGameMenuPresenter newGameMenu)
+        {
+            _menuManager = menuManager;
+            _newGameMenu = newGameMenu;
+        }
 
         public void SetView(MainMenuView view)
         {
@@ -23,7 +31,13 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
+            _view.NewGameButton.onClick.AddListener(OnNewGameButtonClicked);
             _view.ExitButton.onClick.AddListener(OnExitButtonClicked);
+        }
+
+        private void OnNewGameButtonClicked()
+        {
+            _menuManager.OpenMenu(_newGameMenu);
         }
 
         private void OnExitButtonClicked()
@@ -37,6 +51,7 @@ namespace TicTacToe3D
 
         public void Dispose()
         {
+            _view.NewGameButton.onClick.RemoveAllListeners();
             _view.ExitButton.onClick.RemoveAllListeners();
         }
 

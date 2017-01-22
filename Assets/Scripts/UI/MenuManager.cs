@@ -2,19 +2,9 @@
 
 namespace TicTacToe3D
 {
-    public class MenuManager : IInitializable
+    public class MenuManager
     {
         private IMenuPresenter _currentMenu;
-
-        public MenuManager(IMenuPresenter menu)
-        {
-            _currentMenu = menu;
-        }
-
-        public void Initialize()
-        {
-            OpenMenu(_currentMenu);
-        }
         
         public void OpenMenu(IMenuPresenter menu)
         {
