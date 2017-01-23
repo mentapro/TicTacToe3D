@@ -7,7 +7,6 @@ namespace TicTacToe3D
     {
         private AdvancedSettingsView View { get; set; }
         private NewGameMenuPresenter NewGameMenu { get; set; }
-        private GameInformationPresenter GameInformationPanel { get; set; }
         private GameInfo Info { get; set; }
         private GameSettings GameSettings { get; set; }
 
@@ -16,12 +15,6 @@ namespace TicTacToe3D
             NewGameMenu = newGameMenu;
             Info = info;
             GameSettings = gameSettings;
-        }
-
-        [Inject]
-        private void InjectPanels(GameInformationPresenter gameInformationPanel)
-        {
-            GameInformationPanel = gameInformationPanel;
         }
 
         public void SetView(AdvancedSettingsView view)
@@ -91,7 +84,7 @@ namespace TicTacToe3D
 
         private void OnGameInformationButtonClicked()
         {
-            NewGameMenu.OpenPanel(GameInformationPanel);
+            NewGameMenu.SwitchPanel();
         }
     }
 }

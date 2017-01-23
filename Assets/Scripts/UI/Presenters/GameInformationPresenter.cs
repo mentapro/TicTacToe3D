@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using Zenject;
 
 namespace TicTacToe3D
@@ -7,17 +8,12 @@ namespace TicTacToe3D
     {
         private GameInformationView View { get; set; }
         private NewGameMenuPresenter NewGameMenu { get; set; }
-        private AdvancedSettingsPresenter AdvancedSettingsPanel { get; set; }
+        private GameInfo Info { get; set; }
 
-        public GameInformationPresenter(NewGameMenuPresenter newGameMenu)
+        public GameInformationPresenter(NewGameMenuPresenter newGameMenu, GameInfo info)
         {
             NewGameMenu = newGameMenu;
-        }
-
-        [Inject]
-        private void InjectPanels(AdvancedSettingsPresenter advancedSettingsPanel)
-        {
-            AdvancedSettingsPanel = advancedSettingsPanel;
+            Info = info;
         }
 
         public void SetView(GameInformationView view)
@@ -29,12 +25,32 @@ namespace TicTacToe3D
         {
             View.AdvancedSettingsButton.onClick.AddListener(OnAdvancedSettingsButtonClicked);
 
-            NewGameMenu.OpenPanel(this);
+            Info.PropertyChanged += GameInfoOnPropertyChanged;
+        }
+
+        private void GameInfoOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
+        {
+            switch (propertyChangedEventArgs.PropertyName)
+            {
+                case "Dimension":
+                    OnDimensionChanged();
+                    break;
+                case "BadgesToWin":
+                    OnBadgesToWinChanged();
+                    break;
+                case "StepSize":
+                    OnStepSizeChanged();
+                    break;
+                default:
+                    break;
+            }
         }
 
         public void Dispose()
         {
             View.AdvancedSettingsButton.onClick.RemoveAllListeners();
+
+            Info.PropertyChanged -= GameInfoOnPropertyChanged;
         }
 
         public void Open()
@@ -47,9 +63,29 @@ namespace TicTacToe3D
             View.IsOpen = false;
         }
 
+        public bool IsOpen()
+        {
+            return View.IsOpen;
+        }
+
+        private void OnDimensionChanged()
+        {
+            View.DimensionAmountText.text = Info.Dimension.ToString();
+        }
+
+        private void OnBadgesToWinChanged()
+        {
+            View.BadgesToWinAmountText.text = Info.BadgesToWin.ToString();
+        }
+
+        private void OnStepSizeChanged()
+        {
+            View.StepSizeAmountText.text = Info.StepSize.ToString();
+        }
+
         private void OnAdvancedSettingsButtonClicked()
         {
-            NewGameMenu.OpenPanel(AdvancedSettingsPanel);
+            NewGameMenu.SwitchPanel();
         }
     }
 }

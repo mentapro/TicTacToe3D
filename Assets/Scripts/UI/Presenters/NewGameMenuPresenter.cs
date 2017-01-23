@@ -8,7 +8,8 @@ namespace TicTacToe3D
         private NewGameMenuView View { get; set; }
         private MenuManager MenuManager { get; set; }
         private MainMenuPresenter MainMenu { get; set; }
-        private IMenuPresenter CurrentPanel { get; set; }
+        private GameInformationPresenter GameInfoPanel { get; set; }
+        private AdvancedSettingsPresenter AdvancedSettingsPanel { get; set; }
 
         public NewGameMenuPresenter(MenuManager menuManager)
         {
@@ -16,9 +17,13 @@ namespace TicTacToe3D
         }
 
         [Inject]
-        private void InjectMenus(MainMenuPresenter mainMenu)
+        private void InjectMenus(MainMenuPresenter mainMenu,
+            GameInformationPresenter gameInformationPanel,
+            AdvancedSettingsPresenter advancedSettingsPanel)
         {
             MainMenu = mainMenu;
+            GameInfoPanel = gameInformationPanel;
+            AdvancedSettingsPanel = advancedSettingsPanel;
         }
 
         public void SetView(NewGameMenuView view)
@@ -29,6 +34,7 @@ namespace TicTacToe3D
         public void Initialize()
         {
             View.CancelButton.onClick.AddListener(OnCancelButtonClicked);
+            GameInfoPanel.Open();
         }
 
         public void Dispose()
@@ -36,14 +42,18 @@ namespace TicTacToe3D
             View.CancelButton.onClick.RemoveAllListeners();
         }
 
-        public void OpenPanel(IMenuPresenter panel)
+        public void SwitchPanel()
         {
-            if (CurrentPanel != null)
+            if (GameInfoPanel.IsOpen())
             {
-                CurrentPanel.Close();
+                GameInfoPanel.Close();
+                AdvancedSettingsPanel.Open();
             }
-            panel.Open();
-            CurrentPanel = panel;
+            else
+            {
+                AdvancedSettingsPanel.Close();
+                GameInfoPanel.Open();
+            }
         }
 
         public void Open()

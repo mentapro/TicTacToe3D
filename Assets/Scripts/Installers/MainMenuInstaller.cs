@@ -8,7 +8,9 @@ namespace TicTacToe3D
         public override void InstallBindings()
         {
             Container.BindAllInterfacesAndSelf<MenuManager>().To<MenuManager>().AsSingle();
-            Container.BindAllInterfacesAndSelf<GameInfo>().To<GameInfo>().AsSingle();
+
+            Container.Bind<IInitializable>().To<GameInfo>().AsSingle();
+            Container.Bind<GameInfo>().AsSingle();
 
             InstallPresenters();
         }
