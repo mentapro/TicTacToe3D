@@ -7,13 +7,17 @@ namespace TicTacToe3D
     {
         private NewGameMenuView View { get; set; }
         private MenuManager MenuManager { get; set; }
+        private Settings _Settings { get; set; }
+        private PlayerRowFacade.Factory PlayerRowFactory { get; set; }
         private MainMenuPresenter MainMenu { get; set; }
         private GameInformationPresenter GameInfoPanel { get; set; }
         private AdvancedSettingsPresenter AdvancedSettingsPanel { get; set; }
 
-        public NewGameMenuPresenter(MenuManager menuManager)
+        public NewGameMenuPresenter(MenuManager menuManager, Settings settings, PlayerRowFacade.Factory playerRowFactory)
         {
             MenuManager = menuManager;
+            _Settings = settings;
+            PlayerRowFactory = playerRowFactory;
         }
 
         [Inject]
@@ -33,6 +37,12 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
+            for (var i = 0; i < _Settings.PlayersMax; i++)
+            {
+                var playerRow = PlayerRowFactory.Create();
+                playerRow.transform.SetParent(View.PlayerRows, false);
+            }
+
             View.CancelButton.onClick.AddListener(OnCancelButtonClicked);
             GameInfoPanel.Open();
         }
@@ -69,6 +79,12 @@ namespace TicTacToe3D
         private void OnCancelButtonClicked()
         {
             MenuManager.OpenMenu(MainMenu);
+        }
+
+        [Serializable]
+        public class Settings
+        {
+            public int PlayersMax;
         }
     }
 }

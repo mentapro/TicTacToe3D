@@ -7,6 +7,5 @@ namespace TicTacToe3D
     {
         public int DimensionMax;
         public int StepSizeMax;
-        public int PlayersMax;
     }
 }

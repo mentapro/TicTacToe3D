@@ -1,14 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
-using Zenject;
 
 namespace TicTacToe3D
 {
-    public class GameInfo : IInitializable, INotifyPropertyChanged
+    public class GameInfo : INotifyPropertyChanged
     {
         private int _dimension;
         private int _badgesToWin;
         private int _stepSize;
+
+        public GameInfo()
+        {
+            Players = new List<Player>();
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -55,11 +59,6 @@ namespace TicTacToe3D
         }
         
         public IList<Player> Players { get; private set; }
-
-        public void Initialize()
-        {
-            Players = new List<Player>();
-        }
         
         private void NotifyPropertyChanged(string propertyName = "")
         {

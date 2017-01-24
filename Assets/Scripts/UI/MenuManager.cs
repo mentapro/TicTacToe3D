@@ -1,6 +1,4 @@
-﻿using Zenject;
-
-namespace TicTacToe3D
+﻿namespace TicTacToe3D
 {
     public class MenuManager
     {
