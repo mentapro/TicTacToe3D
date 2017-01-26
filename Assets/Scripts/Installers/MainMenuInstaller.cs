@@ -11,7 +11,7 @@ namespace TicTacToe3D
 
         public override void InstallBindings()
         {
-            Container.BindAllInterfacesAndSelf<MenuManager>().To<MenuManager>().AsSingle();
+            Container.Bind<MenuManager>().AsSingle();
 
             Container.Bind<GameInfo>().AsSingle();
             Container.Bind<PlayerRowRegistry>().AsSingle();

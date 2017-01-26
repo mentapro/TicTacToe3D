@@ -31,6 +31,7 @@ namespace TicTacToe3D
         {
             Facade.PlayerNameInputField.onEndEdit.RemoveAllListeners();
             Facade.PlayerColorDropdown.onValueChanged.RemoveAllListeners();
+            Facade.PlayerTypeDropdown.onValueChanged.RemoveAllListeners();
         }
 
         private void Initialize()
@@ -111,6 +112,7 @@ namespace TicTacToe3D
                     .IndexOf(Facade.PlayerColorDropdown.options.First(x => x.image.texture.GetPixel(0, 0) == neededColor));
             }
             _currentColorItem = Facade.PlayerColorDropdown.value;
+
             Facade.PlayerNameInputField.gameObject.SetActive(true);
             Facade.PlayerColorDropdown.gameObject.SetActive(true);
         }

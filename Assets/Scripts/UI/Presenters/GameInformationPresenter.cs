@@ -7,13 +7,15 @@ namespace TicTacToe3D
     public class GameInformationPresenter : IMenuPresenter, IInitializable, IDisposable
     {
         private GameInformationView View { get; set; }
-        private NewGameMenuPresenter NewGameMenu { get; set; }
+        private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
 
-        public GameInformationPresenter(NewGameMenuPresenter newGameMenu, GameInfo info)
+        public GameInformationPresenter(MenuManager menuManager, GameInfo info)
         {
-            NewGameMenu = newGameMenu;
+            MenuManager = menuManager;
             Info = info;
+
+            MenuManager.SetMenu(this);
         }
 
         public void SetView(GameInformationView view)
@@ -41,8 +43,6 @@ namespace TicTacToe3D
                 case "StepSize":
                     OnStepSizeChanged();
                     break;
-                default:
-                    break;
             }
         }
 
@@ -63,11 +63,6 @@ namespace TicTacToe3D
             View.IsOpen = false;
         }
 
-        public bool IsOpen()
-        {
-            return View.IsOpen;
-        }
-
         private void OnDimensionChanged()
         {
             View.DimensionAmountText.text = Info.Dimension.ToString();
@@ -85,7 +80,8 @@ namespace TicTacToe3D
 
         private void OnAdvancedSettingsButtonClicked()
         {
-            NewGameMenu.SwitchPanel();
+            MenuManager.CloseMenu(Menus.GameInfoMenu);
+            MenuManager.OpenMenu(Menus.AdvancedSettingsMenu);
         }
     }
 }

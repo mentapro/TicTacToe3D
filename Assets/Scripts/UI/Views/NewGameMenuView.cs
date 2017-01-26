@@ -13,10 +13,17 @@ namespace TicTacToe3D
         }
 
         [SerializeField]
+        private Button _startButton = null;
+        [SerializeField]
         private Button _cancelButton = null;
 
         [SerializeField]
         private Transform _playerRows = null;
+
+        public Button StartButton
+        {
+            get { return _startButton; }
+        }
 
         public Button CancelButton
         {

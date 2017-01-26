@@ -16,17 +16,11 @@ namespace TicTacToe3D
     {
         private MainMenuView View { get; set; }
         private MenuManager MenuManager { get; set; }
-        private NewGameMenuPresenter NewGameMenu { get; set; }
-        
+
         public MainMenuPresenter(MenuManager menuManager)
         {
             MenuManager = menuManager;
-        }
-
-        [Inject]
-        private void InjectMenus(NewGameMenuPresenter newGameMenu)
-        {
-            NewGameMenu = newGameMenu;
+            MenuManager.SetMenu(this);
         }
 
         public void SetView(MainMenuView view)
@@ -39,7 +33,7 @@ namespace TicTacToe3D
             View.NewGameButton.onClick.AddListener(OnNewGameButtonClicked);
             View.ExitButton.onClick.AddListener(OnExitButtonClicked);
 
-            MenuManager.OpenMenu(this);
+            MenuManager.OpenMenu(Menus.MainMenu);
         }
 
         public void Open()
@@ -60,7 +54,7 @@ namespace TicTacToe3D
 
         private void OnNewGameButtonClicked()
         {
-            MenuManager.OpenMenu(NewGameMenu);
+            MenuManager.OpenMenu(Menus.NewGameMenu);
         }
 
         private void OnExitButtonClicked()

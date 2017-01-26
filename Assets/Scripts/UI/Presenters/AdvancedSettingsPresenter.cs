@@ -6,15 +6,17 @@ namespace TicTacToe3D
     public class AdvancedSettingsPresenter : IMenuPresenter, IInitializable, IDisposable
     {
         private AdvancedSettingsView View { get; set; }
-        private NewGameMenuPresenter NewGameMenu { get; set; }
+        private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
         private GameSettings GameSettings { get; set; }
 
-        public AdvancedSettingsPresenter(NewGameMenuPresenter newGameMenu, GameInfo info, GameSettings gameSettings)
+        public AdvancedSettingsPresenter(MenuManager menuManager, GameInfo info, GameSettings gameSettings)
         {
-            NewGameMenu = newGameMenu;
+            MenuManager = menuManager;
             Info = info;
             GameSettings = gameSettings;
+
+            MenuManager.SetMenu(this);
         }
 
         public void SetView(AdvancedSettingsView view)
@@ -84,7 +86,8 @@ namespace TicTacToe3D
 
         private void OnGameInformationButtonClicked()
         {
-            NewGameMenu.SwitchPanel();
+            MenuManager.CloseMenu(Menus.AdvancedSettingsMenu);
+            MenuManager.OpenMenu(Menus.GameInfoMenu);
         }
     }
 }
