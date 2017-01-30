@@ -8,13 +8,13 @@ namespace TicTacToe3D
         private AdvancedSettingsView View { get; set; }
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
-        private GameSettings GameSettings { get; set; }
+        private Settings _Settings { get; set; }
 
-        public AdvancedSettingsPresenter(MenuManager menuManager, GameInfo info, GameSettings gameSettings)
+        public AdvancedSettingsPresenter(MenuManager menuManager, GameInfo info, Settings settings)
         {
             MenuManager = menuManager;
             Info = info;
-            GameSettings = gameSettings;
+            _Settings = settings;
 
             MenuManager.SetMenu(this);
         }
@@ -26,9 +26,9 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
-            View.DimensionSlider.maxValue = GameSettings.DimensionMax;
+            View.DimensionSlider.maxValue = _Settings.DimensionMax;
             View.BadgesToWinSlider.maxValue = View.DimensionSlider.value;
-            View.StepSizeSlider.maxValue = GameSettings.StepSizeMax;
+            View.StepSizeSlider.maxValue = _Settings.StepSizeMax;
 
             View.GameInformationButton.onClick.AddListener(OnGameInformationButtonClicked);
 
@@ -88,6 +88,13 @@ namespace TicTacToe3D
         {
             MenuManager.CloseMenu(Menus.AdvancedSettingsMenu);
             MenuManager.OpenMenu(Menus.GameInfoMenu);
+        }
+
+        [Serializable]
+        public class Settings
+        {
+            public int DimensionMax;
+            public int StepSizeMax;
         }
     }
 }

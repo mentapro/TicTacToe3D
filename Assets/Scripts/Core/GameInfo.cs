@@ -9,12 +9,9 @@ namespace TicTacToe3D
         private int _badgesToWin;
         private int _stepSize;
 
-        public GameInfo()
-        {
-            Players = new List<Player>();
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public List<Player> Players { get; set; }
 
         public int Dimension
         {
@@ -57,8 +54,6 @@ namespace TicTacToe3D
                 NotifyPropertyChanged("StepSize");
             }
         }
-        
-        public IList<Player> Players { get; private set; }
         
         private void NotifyPropertyChanged(string propertyName = "")
         {

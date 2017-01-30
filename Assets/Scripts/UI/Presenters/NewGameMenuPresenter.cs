@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace TicTacToe3D
@@ -9,12 +10,22 @@ namespace TicTacToe3D
         private MenuManager MenuManager { get; set; }
         private Settings _Settings { get; set; }
         private PlayerRowFacade.Factory PlayerRowFactory { get; set; }
+        private PlayerRowModel.Registry RowRegistry { get; set; }
+        private GameInfo Info { get; set; }
+        private ZenjectSceneLoader SceneLoader { get; set; }
 
-        public NewGameMenuPresenter(MenuManager menuManager, Settings settings, PlayerRowFacade.Factory playerRowFactory)
+        public NewGameMenuPresenter(MenuManager menuManager,
+            Settings settings,
+            PlayerRowFacade.Factory playerRowFactory,
+            PlayerRowModel.Registry rowRegistry,
+            GameInfo info, ZenjectSceneLoader sceneLoader)
         {
             MenuManager = menuManager;
             _Settings = settings;
             PlayerRowFactory = playerRowFactory;
+            RowRegistry = rowRegistry;
+            Info = info;
+            SceneLoader = sceneLoader;
 
             MenuManager.SetMenu(this);
         }
@@ -55,7 +66,17 @@ namespace TicTacToe3D
 
         private void OnStartButtonClicked()
         {
-            
+            var players = RowRegistry.GetValidatedPlayers();
+            if (players.Count < 2)
+            {
+                ModalDialog.Show("<color=red>Error!</color>\nNot all values are filled.");
+                return;
+            }
+            Info.Players = players;
+            SceneLoader.LoadScene("GameBoard", LoadSceneMode.Single, container =>
+            {
+                container.BindInstance(Info).WhenInjectedInto<GameBoardInstaller>();
+            });
         }
 
         private void OnCancelButtonClicked()

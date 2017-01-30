@@ -194,7 +194,7 @@ namespace Zenject
             {
                 EditorUtility.DisplayDialog("Error",
                     "Could not find directory to place the '{0}.prefab' asset.  Please try again by right clicking in the desired folder within the projects pane."
-                    .Fmt(ProjectContext.ProjectContextResourcePath), "Ok");
+                    .Fmt(ProjectContext.ProjectContextResourcePath), "OK");
                 return;
             }
 
@@ -204,7 +204,7 @@ namespace Zenject
             {
                 EditorUtility.DisplayDialog("Error",
                     "'{0}.prefab' must be placed inside a directory named 'Resources'.  Please try again by right clicking within the Project pane in a valid Resources folder."
-                    .Fmt(ProjectContext.ProjectContextResourcePath), "Ok");
+                    .Fmt(ProjectContext.ProjectContextResourcePath), "OK");
                 return;
             }
 
@@ -244,7 +244,7 @@ namespace Zenject
             if (editorOnly && !currentDir.Contains("/Editor"))
             {
                 EditorUtility.DisplayDialog("Error",
-                    "Editor window classes must have a parent folder above them named 'Editor'.  Please create or find an Editor folder and try again", "Ok");
+                    "Editor window classes must have a parent folder above them named 'Editor'.  Please create or find an Editor folder and try again", "OK");
                 return;
             }
 

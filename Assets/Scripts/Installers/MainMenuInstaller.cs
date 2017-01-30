@@ -7,14 +7,14 @@ namespace TicTacToe3D
     public class MainMenuInstaller : MonoInstaller<MainMenuInstaller>
     {
         [Inject]
-        Settings _settings = null;
+        private Settings _settings = null;
 
         public override void InstallBindings()
         {
             Container.Bind<MenuManager>().AsSingle();
 
             Container.Bind<GameInfo>().AsSingle();
-            Container.Bind<PlayerRowRegistry>().AsSingle();
+            Container.Bind<PlayerRowModel.Registry>().AsSingle();
 
             Container.Bind<PlayerRowModel>().AsTransient();
             Container.BindFactory<PlayerRowFacade, PlayerRowFacade.Factory>()
@@ -40,6 +40,9 @@ namespace TicTacToe3D
             Container.Bind<IInitializable>().To<AdvancedSettingsPresenter>().AsSingle();
             Container.Bind<IDisposable>().To<AdvancedSettingsPresenter>().AsSingle();
             Container.Bind<AdvancedSettingsPresenter>().AsSingle();
+
+            Container.Bind<IDisposable>().To<ModalDialog>().AsSingle();
+            Container.Bind<ModalDialog>().AsSingle();
         }
 
         [Serializable]

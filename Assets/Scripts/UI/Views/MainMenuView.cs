@@ -14,8 +14,8 @@ namespace TicTacToe3D
 
         [SerializeField]
         private Button _newGameButton = null;
-        //[SerializeField]
-        //private Button _loadGameButton = null;
+        [SerializeField]
+        private Button _loadGameButton = null;
         //[SerializeField]
         //private Button _multiplayerButton = null;
         //[SerializeField]
@@ -28,6 +28,11 @@ namespace TicTacToe3D
         public Button NewGameButton
         {
             get { return _newGameButton; }
+        }
+        
+        public Button LoadGameButton
+        {
+            get { return _loadGameButton; }
         }
 
         public Button ExitButton

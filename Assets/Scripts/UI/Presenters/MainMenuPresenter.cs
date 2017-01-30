@@ -20,6 +20,7 @@ namespace TicTacToe3D
         public MainMenuPresenter(MenuManager menuManager)
         {
             MenuManager = menuManager;
+
             MenuManager.SetMenu(this);
         }
 
@@ -31,6 +32,7 @@ namespace TicTacToe3D
         public void Initialize()
         {
             View.NewGameButton.onClick.AddListener(OnNewGameButtonClicked);
+            View.LoadGameButton.onClick.AddListener(OnLoadGameButtonClicked);
             View.ExitButton.onClick.AddListener(OnExitButtonClicked);
 
             MenuManager.OpenMenu(Menus.MainMenu);
@@ -49,12 +51,18 @@ namespace TicTacToe3D
         public void Dispose()
         {
             View.NewGameButton.onClick.RemoveAllListeners();
+            View.LoadGameButton.onClick.RemoveAllListeners();
             View.ExitButton.onClick.RemoveAllListeners();
         }
 
         private void OnNewGameButtonClicked()
         {
             MenuManager.OpenMenu(Menus.NewGameMenu);
+        }
+        
+        private void OnLoadGameButtonClicked()
+        {
+
         }
 
         private void OnExitButtonClicked()

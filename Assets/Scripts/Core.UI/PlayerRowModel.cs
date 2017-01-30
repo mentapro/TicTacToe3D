@@ -6,16 +6,16 @@ using UnityEngine.UI;
 
 namespace TicTacToe3D
 {
-    public class PlayerRowModel
+    public partial class PlayerRowModel
     {
-        private int _currentColorItem = -1;
+        private int _currentColorIndex = -1;
         private PlayerRowFacade Facade { get; set; }
-        private PlayerRowRegistry Registry { get; set; }
+        private Registry _Registry { get; set; }
         private Settings _Settings { get; set; }
 
-        public PlayerRowModel(PlayerRowRegistry registry, Settings settings)
+        public PlayerRowModel(Registry registry, Settings settings)
         {
-            Registry = registry;
+            _Registry = registry;
             _Settings = settings;
 
             registry.AddRow(this);
@@ -69,7 +69,7 @@ namespace TicTacToe3D
                 var item = new Dropdown.OptionData(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0, 0)));
                 Facade.PlayerColorDropdown.options.Add(item);
             }
-            Facade.PlayerColorDropdown.value = Registry.RowsCount - 1;
+            Facade.PlayerColorDropdown.value = _Registry.RowsCount - 1;
             Facade.PlayerColorDropdown.captionImage.sprite = Facade.PlayerColorDropdown.options[Facade.PlayerColorDropdown.value].image;
             Facade.PlayerColorDropdown.captionImage.enabled = true;
         }
@@ -90,7 +90,7 @@ namespace TicTacToe3D
         private void OnNonePlayerSelected()
         {
             Facade.PlayerNameInputField.text = string.Empty;
-            _currentColorItem = -1;
+            _currentColorIndex = -1;
 
             Facade.PlayerNameInputField.gameObject.SetActive(false);
             Facade.PlayerColorDropdown.gameObject.SetActive(false);
@@ -98,20 +98,20 @@ namespace TicTacToe3D
         
         private void OnHumanPlayerSelected()
         {
-            var activeCount = Registry.Rows.Count(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf);
+            var activeCount = _Registry.Rows.Count(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf);
             if (activeCount == 0)
             {
                 Facade.PlayerColorDropdown.value = 0;
             }
             else
             {
-                var activeColors = Registry.Rows.Where(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf)
+                var activeColors = _Registry.Rows.Where(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf)
                     .Select(activeRow => activeRow.Facade.PlayerColorDropdown.captionImage.sprite.texture.GetPixel(0, 0)).ToArray();
                 var neededColor = _Settings.PlayerColors.Except(activeColors).First();
                 Facade.PlayerColorDropdown.value = Facade.PlayerColorDropdown.options
                     .IndexOf(Facade.PlayerColorDropdown.options.First(x => x.image.texture.GetPixel(0, 0) == neededColor));
             }
-            _currentColorItem = Facade.PlayerColorDropdown.value;
+            _currentColorIndex = Facade.PlayerColorDropdown.value;
 
             Facade.PlayerNameInputField.gameObject.SetActive(true);
             Facade.PlayerColorDropdown.gameObject.SetActive(true);
@@ -119,13 +119,13 @@ namespace TicTacToe3D
 
         private void OnPlayerColorDropdownChanged(int index)
         {
-            if (Registry.Rows.Any(row => row._currentColorItem == index))
+            if (_Registry.Rows.Any(row => row._currentColorIndex == index))
             {
-                Facade.PlayerColorDropdown.value = _currentColorItem;
+                Facade.PlayerColorDropdown.value = _currentColorIndex;
             }
             else
             {
-                _currentColorItem = Facade.PlayerColorDropdown.value;
+                _currentColorIndex = Facade.PlayerColorDropdown.value;
             }
         }
 
