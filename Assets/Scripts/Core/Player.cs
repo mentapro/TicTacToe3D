@@ -3,23 +3,35 @@ using UnityEngine;
 
 namespace TicTacToe3D
 {
-    public enum PlayerType
+    public enum PlayerTypes
     {
         Human,
         AI
     }
+    
+    public enum PlayerStates
+    {
+        Plays,
+        Winner,
+        Loser,
+        Disconnected
+    }
 
     public class Player : IEquatable<Player>
     {
-        public PlayerType Type { get; private set; }
+        public PlayerTypes Type { get; private set; }
         public string Name { get; private set; }
         public Color Color { get; private set; }
+        public PlayerStates State { get; set; }
+        public bool IsActive { get; set; }
 
-        public Player(PlayerType type, string name, Color color)
+        public Player(PlayerTypes type, string name, Color color)
         {
             Type = type;
             Name = name;
             Color = color;
+            State = PlayerStates.Plays;
+            IsActive = false;
         }
 
         public override bool Equals(object obj)

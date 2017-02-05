@@ -27,12 +27,12 @@ namespace TicTacToe3D
         {
             View.AdvancedSettingsButton.onClick.AddListener(OnAdvancedSettingsButtonClicked);
 
-            Info.PropertyChanged += GameInfoOnPropertyChanged;
+            Info.PropertyChanged += OnGameInfoPropertyChanged;
         }
-
-        private void GameInfoOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
+        
+        private void OnGameInfoPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            switch (propertyChangedEventArgs.PropertyName)
+            switch (e.PropertyName)
             {
                 case "Dimension":
                     OnDimensionChanged();
@@ -50,7 +50,7 @@ namespace TicTacToe3D
         {
             View.AdvancedSettingsButton.onClick.RemoveAllListeners();
 
-            Info.PropertyChanged -= GameInfoOnPropertyChanged;
+            Info.PropertyChanged -= OnGameInfoPropertyChanged;
         }
 
         public void Open()

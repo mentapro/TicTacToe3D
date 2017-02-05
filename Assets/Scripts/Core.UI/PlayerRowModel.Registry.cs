@@ -29,11 +29,11 @@ namespace TicTacToe3D
                 foreach (var playerRow in _playerRows)
                 {
                     var playerTypeIndex = playerRow.Facade.PlayerTypeDropdown.value;
-                    var playerName = playerRow.Facade.PlayerNameInputField.text;
+                    var playerName = playerRow.Facade.PlayerNameInputField.text.ToLower();
 
-                    if (playerTypeIndex != 0 && playerName != string.Empty && playerRow._currentColorIndex != -1 && list.TrueForAll(x => x.Name != playerName))
+                    if (playerTypeIndex != 0 && playerName != string.Empty && playerRow._currentColorIndex != -1 && list.TrueForAll(x => x.Name.ToLower() != playerName))
                     {
-                        var playerType = playerTypeIndex == 1 ? PlayerType.Human : PlayerType.AI;
+                        var playerType = playerTypeIndex == 1 ? PlayerTypes.Human : PlayerTypes.AI;
                         var playerColor = playerRow.Facade.PlayerColorDropdown.captionImage.sprite.texture.GetPixel(0, 0);
                         list.Add(new Player(playerType, playerName, playerColor));
                     }

@@ -20,29 +20,17 @@ namespace TicTacToe3D
             Container.BindFactory<PlayerRowFacade, PlayerRowFacade.Factory>()
                 .FromPrefab(_settings.PlayerRowFacadePrefab);
 
+            Container.BindAllInterfacesAndSelf<ModalDialog>().To<ModalDialog>().AsSingle();
+
             InstallPresenters();
         }
 
         private void InstallPresenters()
         {
-            Container.Bind<IInitializable>().To<MainMenuPresenter>().AsSingle();
-            Container.Bind<IDisposable>().To<MainMenuPresenter>().AsSingle();
-            Container.Bind<MainMenuPresenter>().AsSingle();
-
-            Container.Bind<IInitializable>().To<NewGameMenuPresenter>().AsSingle();
-            Container.Bind<IDisposable>().To<NewGameMenuPresenter>().AsSingle();
-            Container.Bind<NewGameMenuPresenter>().AsSingle();
-
-            Container.Bind<IInitializable>().To<GameInformationPresenter>().AsSingle();
-            Container.Bind<IDisposable>().To<GameInformationPresenter>().AsSingle();
-            Container.Bind<GameInformationPresenter>().AsSingle();
-
-            Container.Bind<IInitializable>().To<AdvancedSettingsPresenter>().AsSingle();
-            Container.Bind<IDisposable>().To<AdvancedSettingsPresenter>().AsSingle();
-            Container.Bind<AdvancedSettingsPresenter>().AsSingle();
-
-            Container.Bind<IDisposable>().To<ModalDialog>().AsSingle();
-            Container.Bind<ModalDialog>().AsSingle();
+            Container.BindAllInterfacesAndSelf<MainMenuPresenter>().To<MainMenuPresenter>().AsSingle();
+            Container.BindAllInterfacesAndSelf<NewGameMenuPresenter>().To<NewGameMenuPresenter>().AsSingle();
+            Container.BindAllInterfacesAndSelf<GameInformationPresenter>().To<GameInformationPresenter>().AsSingle();
+            Container.BindAllInterfacesAndSelf<AdvancedSettingsPresenter>().To<AdvancedSettingsPresenter>().AsSingle();
         }
 
         [Serializable]

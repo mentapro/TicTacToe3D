@@ -6,8 +6,6 @@ namespace TicTacToe3D
 {
     public class PlayerRowFacade : MonoBehaviour
     {
-        private PlayerRowModel Model { get; set; }
-
         [Inject]
         public void Construct(PlayerRowModel model)
         {
@@ -15,10 +13,7 @@ namespace TicTacToe3D
             model.SetFacade(this);
         }
 
-        private void OnDestroy()
-        {
-            Model.Dispose();
-        }
+        private PlayerRowModel Model { get; set; }
 
         [SerializeField]
         private Dropdown _playerTypeDropdown = null;
@@ -41,7 +36,12 @@ namespace TicTacToe3D
         {
             get { return _playerNameInputField; }
         }
-        
+
+        private void OnDestroy()
+        {
+            Model.Dispose();
+        }
+
         public class Factory : Factory<PlayerRowFacade>
         { }
     }
