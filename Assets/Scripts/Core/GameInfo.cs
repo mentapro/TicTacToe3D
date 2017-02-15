@@ -1,9 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Zenject;
 
 namespace TicTacToe3D
 {
+    [Serializable]
+    public class GameSettings
+    {
+        public bool GameOverAfterFirstWinner;
+        public bool ConfirmStep;
+    }
+
     public enum GameStates
     {
         Preload,
@@ -11,30 +20,67 @@ namespace TicTacToe3D
         Paused,
         GameEnded,
     }
-
+    
     public class GameInfo : INotifyPropertyChanged
     {
         private int _dimension;
         private int _badgesToWin;
         private int _stepSize;
-        private GameStates _currentState;
+        private int _activePlayerMadeSteps;
+        private Player _activePlayer;
+        private GameStates _gameState;
+        
+        public GameInfo(GameSettings gameSettings)
+        {
+            GameSettings = gameSettings;
+
+            Dimension = 4;
+            BadgesToWin = 4;
+            StepSize = 2;
+            Players = new List<Player>
+            {
+                new Player(PlayerTypes.Human, "Player 1", UnityEngine.Color.red),
+                new Player(PlayerTypes.Human, "Player 2", UnityEngine.Color.blue),
+                new Player(PlayerTypes.Human, "Player 3", UnityEngine.Color.green)
+            };
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public List<Point> Points { get; private set; }
-        public List<List<Point>> Lines { get; private set; }
-
+        public GameSettings GameSettings { get; private set; }
         public List<Player> Players { get; set; }
         public int GlobalStep { get; set; }
 
-        public GameStates CurrentState
+        public int ActivePlayerMadeSteps
         {
-            get { return _currentState; }
+            get { return _activePlayerMadeSteps; }
             set
             {
-                if (value == _currentState) return;
-                _currentState = value;
-                NotifyPropertyChanged("CurrentState");
+                if (value == _activePlayerMadeSteps) return;
+                _activePlayerMadeSteps = value;
+                NotifyPropertyChanged("ActivePlayerMadeSteps");
+            }
+        }
+
+        public GameStates GameState
+        {
+            get { return _gameState; }
+            set
+            {
+                if (value == _gameState) return;
+                _gameState = value;
+                NotifyPropertyChanged("GameState");
+            }
+        }
+
+        public Player ActivePlayer
+        {
+            get { return _activePlayer; }
+            set
+            {
+                if (value == _activePlayer) return;
+                _activePlayer = value;
+                NotifyPropertyChanged("ActivePlayer");
             }
         }
 
@@ -81,6 +127,9 @@ namespace TicTacToe3D
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
+
+        public List<Point> Points { get; private set; }
+        public List<List<Point>> Lines { get; private set; }
 
         private List<List<Point>> GetAllLines(int dimension, int badgesToWin)
         {

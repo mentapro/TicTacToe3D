@@ -6,57 +6,56 @@ namespace Zenject
         : FactorySubContainerBinderBase<TContract>
     {
         public FactorySubContainerBinder(
-            BindInfo bindInfo, Type factoryType,
-            BindFinalizerWrapper finalizerWrapper, object subIdentifier)
-            : base(bindInfo, factoryType, finalizerWrapper, subIdentifier)
+            BindInfo bindInfo, FactoryBindInfo factoryBindInfo, object subIdentifier)
+            : base(bindInfo, factoryBindInfo, subIdentifier)
         {
         }
 
-        public ConditionBinder ByMethod(Action<DiContainer> installerMethod)
+        public ConditionCopyNonLazyBinder ByMethod(Action<DiContainer> installerMethod)
         {
-            SubFinalizer = CreateFinalizer(
+            ProviderFunc = 
                 (container) => new SubContainerDependencyProvider(
                     ContractType, SubIdentifier,
                     new SubContainerCreatorByMethod(
-                        container, installerMethod)));
+                        container, installerMethod));
 
-            return new ConditionBinder(BindInfo);
+            return new ConditionCopyNonLazyBinder(BindInfo);
         }
 
 #if !NOT_UNITY3D
 
-        public GameObjectNameGroupNameBinder ByPrefab(UnityEngine.Object prefab)
+        public NameTransformConditionCopyNonLazyBinder ByNewPrefab(UnityEngine.Object prefab)
         {
             BindingUtil.AssertIsValidPrefab(prefab);
 
             var gameObjectInfo = new GameObjectCreationParameters();
 
-            SubFinalizer = CreateFinalizer(
+            ProviderFunc = 
                 (container) => new SubContainerDependencyProvider(
                     ContractType, SubIdentifier,
-                    new SubContainerCreatorByPrefab(
+                    new SubContainerCreatorByNewPrefab(
                         container,
                         new PrefabProvider(prefab),
-                        gameObjectInfo)));
+                        gameObjectInfo));
 
-            return new GameObjectNameGroupNameBinder(BindInfo, gameObjectInfo);
+            return new NameTransformConditionCopyNonLazyBinder(BindInfo, gameObjectInfo);
         }
 
-        public GameObjectNameGroupNameBinder ByPrefabResource(string resourcePath)
+        public NameTransformConditionCopyNonLazyBinder ByNewPrefabResource(string resourcePath)
         {
             BindingUtil.AssertIsValidResourcePath(resourcePath);
 
             var gameObjectInfo = new GameObjectCreationParameters();
 
-            SubFinalizer = CreateFinalizer(
+            ProviderFunc = 
                 (container) => new SubContainerDependencyProvider(
                     ContractType, SubIdentifier,
-                    new SubContainerCreatorByPrefab(
+                    new SubContainerCreatorByNewPrefab(
                         container,
                         new PrefabProviderResource(resourcePath),
-                        gameObjectInfo)));
+                        gameObjectInfo));
 
-            return new GameObjectNameGroupNameBinder(BindInfo, gameObjectInfo);
+            return new NameTransformConditionCopyNonLazyBinder(BindInfo, gameObjectInfo);
         }
 #endif
     }

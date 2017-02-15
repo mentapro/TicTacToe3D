@@ -30,10 +30,7 @@ namespace Zenject
 
         public IEnumerable<MonoInstaller> Installers
         {
-            get
-            {
-                return _installers;
-            }
+            get { return _installers; }
             set
             {
                 _installers.Clear();
@@ -43,10 +40,7 @@ namespace Zenject
 
         public IEnumerable<MonoInstaller> InstallerPrefabs
         {
-            get
-            {
-                return _installerPrefabs;
-            }
+            get { return _installerPrefabs; }
             set
             {
                 _installerPrefabs.Clear();
@@ -56,10 +50,7 @@ namespace Zenject
 
         public IEnumerable<ScriptableObjectInstaller> ScriptableObjectInstallers
         {
-            get
-            {
-                return _scriptableObjectInstallers;
-            }
+            get { return _scriptableObjectInstallers; }
             set
             {
                 _scriptableObjectInstallers.Clear();
@@ -70,10 +61,7 @@ namespace Zenject
         // Unlike other installer types this has to be set through code
         public IEnumerable<InstallerBase> NormalInstallers
         {
-            get
-            {
-                return _normalInstallers;
-            }
+            get { return _normalInstallers; }
             set
             {
                 _normalInstallers.Clear();
@@ -90,6 +78,8 @@ namespace Zenject
         {
             _normalInstallers.Add(installer);
         }
+
+        public abstract IEnumerable<GameObject> GetRootGameObjects();
 
         void CheckInstallerPrefabTypes()
         {
@@ -144,7 +134,7 @@ namespace Zenject
 
             foreach (var installerPrefab in _installerPrefabs)
             {
-                Assert.IsNotNull(installerPrefab, "Found null installer prefab in '{0}'", this.GetType().Name());
+                Assert.IsNotNull(installerPrefab, "Found null installer prefab in '{0}'", this.GetType());
 
                 var installerGameObject = GameObject.Instantiate(installerPrefab.gameObject);
                 installerGameObject.transform.SetParent(this.transform, false);
@@ -158,7 +148,7 @@ namespace Zenject
             foreach (var installer in allInstallers)
             {
                 Assert.IsNotNull(installer,
-                    "Found null installer in '{0}'", this.GetType().Name());
+                    "Found null installer in '{0}'", this.GetType());
 
                 Container.Inject(installer);
                 installer.InstallBindings();
@@ -167,7 +157,7 @@ namespace Zenject
 
         protected void InstallSceneBindings()
         {
-            foreach (var binding in GetInjectableComponents().OfType<ZenjectBinding>())
+            foreach (var binding in GetInjectableMonoBehaviours().OfType<ZenjectBinding>())
             {
                 if (binding == null)
                 {
@@ -242,12 +232,12 @@ namespace Zenject
                     }
                     case ZenjectBinding.BindTypes.AllInterfaces:
                     {
-                        Container.BindAllInterfaces(componentType).WithId(identifier).FromInstance(component, true);
+                        Container.Bind(componentType.Interfaces().ToArray()).WithId(identifier).FromInstance(component, true);
                         break;
                     }
                     case ZenjectBinding.BindTypes.AllInterfacesAndSelf:
                     {
-                        Container.BindAllInterfacesAndSelf(componentType).WithId(identifier).FromInstance(component, true);
+                        Container.Bind(componentType.Interfaces().Append(componentType).ToArray()).WithId(identifier).FromInstance(component, true);
                         break;
                     }
                     default:
@@ -258,7 +248,7 @@ namespace Zenject
             }
         }
 
-        protected abstract IEnumerable<Component> GetInjectableComponents();
+        protected abstract IEnumerable<MonoBehaviour> GetInjectableMonoBehaviours();
     }
 }
 

@@ -6,16 +6,18 @@ namespace TicTacToe3D
 {
     public class BadgeFacade : MonoBehaviour
     {
+        public Renderer Renderer;
+        public ParticleSystem Glowing;
+
         [Inject]
         public void Construct(BadgeModel model)
         {
             Model = model;
 
             model.SetFacade(this);
-            Renderer = GetComponent<Renderer>();
+            Renderer.material.renderQueue++;
         }
 
-        public Renderer Renderer { get; private set; }
         public BadgeModel Model { get; private set; }
 
         public Player Owner
@@ -31,11 +33,6 @@ namespace TicTacToe3D
         public void SetColor(Color color)
         {
             Model.SetBadgeColor(color);
-        }
-
-        private void OnDestroy()
-        {
-            Model.Dispose();
         }
 
         [Serializable]

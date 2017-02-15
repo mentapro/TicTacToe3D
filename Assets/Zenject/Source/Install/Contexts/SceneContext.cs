@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ModestTree;
+using ModestTree.Util;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.SceneManagement;
+using Zenject.Internal;
 
 namespace Zenject
 {
@@ -45,10 +47,7 @@ namespace Zenject
 
         public override DiContainer Container
         {
-            get
-            {
-                return _container;
-            }
+            get { return _container; }
         }
 
         public bool IsValidating
@@ -65,10 +64,7 @@ namespace Zenject
 
         public IEnumerable<string> ContractNames
         {
-            get
-            {
-                return _contractNames;
-            }
+            get { return _contractNames; }
             set
             {
                 _contractNames.Clear();
@@ -78,10 +74,7 @@ namespace Zenject
 
         public string ParentContractName
         {
-            get
-            {
-                return _parentContractName;
-            }
+            get { return _parentContractName; }
             set
             {
                 _parentContractName = value;
@@ -90,14 +83,8 @@ namespace Zenject
 
         public bool ParentNewObjectsUnderRoot
         {
-            get
-            {
-                return _parentNewObjectsUnderRoot;
-            }
-            set
-            {
-                _parentNewObjectsUnderRoot = value;
-            }
+            get { return _parentNewObjectsUnderRoot; }
+            set { _parentNewObjectsUnderRoot = value; }
         }
 
         public void Awake()
@@ -124,9 +111,7 @@ namespace Zenject
             Install();
             Resolve();
 
-            Assert.That(_container.IsValidating);
-
-            _container.ValidateIValidatables();
+            _container.ValidateValidatables();
         }
 #endif
 
@@ -137,15 +122,9 @@ namespace Zenject
             Resolve();
         }
 
-        IEnumerable<Scene> LoadedScenes
+        public override IEnumerable<GameObject> GetRootGameObjects()
         {
-            get
-            {
-                for (int i = 0; i < SceneManager.sceneCount; i++)
-                {
-                    yield return SceneManager.GetSceneAt(i);
-                }
-            }
+            return ZenUtilInternal.GetRootGameObjects(gameObject.scene);
         }
 
         DiContainer GetParentContainer()
@@ -169,8 +148,7 @@ namespace Zenject
             Assert.IsNull(ParentContainer,
                 "Scene cannot have both a parent scene context name set and also an explicit parent container given");
 
-            var sceneContexts = LoadedScenes
-                .Where(scene => scene.isLoaded)
+            var sceneContexts = UnityUtil.AllLoadedScenes
                 .Except(gameObject.scene)
                 .SelectMany(scene => scene.GetRootGameObjects())
                 .SelectMany(root => root.GetComponentsInChildren<SceneContext>())
@@ -199,8 +177,7 @@ namespace Zenject
                 return new List<SceneDecoratorContext>();
             }
 
-            return LoadedScenes
-                .Where(scene => scene.isLoaded)
+            return UnityUtil.AllLoadedScenes
                 .Except(gameObject.scene)
                 .SelectMany(scene => scene.GetRootGameObjects())
                 .SelectMany(root => root.GetComponentsInChildren<SceneDecoratorContext>())
@@ -240,8 +217,10 @@ namespace Zenject
             // so that it doesn't inject on the game object twice
             // InitialComponentsInjecter will also guarantee that any component that is injected into
             // another component has itself been injected
-            _container.LazyInstanceInjector
-                .AddInstances(GetInjectableComponents().Cast<object>());
+            foreach (var instance in GetInjectableMonoBehaviours().Cast<object>())
+            {
+                _container.QueueForInject(instance);
+            }
 
             foreach (var decoratorContext in _decoratorContexts)
             {
@@ -268,7 +247,7 @@ namespace Zenject
             Assert.That(!_hasResolved);
             _hasResolved = true;
 
-            _container.LazyInstanceInjector.LazyInjectAll();
+            _container.FlushInjectQueue();
 
             Log.Debug("SceneContext: Resolving dependency roots...");
 
@@ -280,8 +259,7 @@ namespace Zenject
 
         void InstallBindings()
         {
-            _container.Bind<Context>().FromInstance(this);
-            _container.Bind<SceneContext>().FromInstance(this);
+            _container.Bind(typeof(Context), typeof(SceneContext)).To<SceneContext>().FromInstance(this);
 
             foreach (var decoratorContext in _decoratorContexts)
             {
@@ -290,7 +268,7 @@ namespace Zenject
 
             InstallSceneBindings();
 
-            _container.Bind<SceneKernel>().FromComponent(this.gameObject).AsSingle().NonLazy();
+            _container.Bind<SceneKernel>().FromNewComponentOn(this.gameObject).AsSingle().NonLazy();
 
             _container.Bind<ZenjectSceneLoader>().AsSingle();
 
@@ -311,9 +289,9 @@ namespace Zenject
             InstallInstallers();
         }
 
-        protected override IEnumerable<Component> GetInjectableComponents()
+        protected override IEnumerable<MonoBehaviour> GetInjectableMonoBehaviours()
         {
-            return ContextUtil.GetInjectableComponents(this.gameObject.scene);
+            return ZenUtilInternal.GetInjectableMonoBehaviours(this.gameObject.scene);
         }
 
         // These methods can be used for cases where you need to create the SceneContext entirely in code
@@ -337,4 +315,3 @@ namespace Zenject
 }
 
 #endif
-

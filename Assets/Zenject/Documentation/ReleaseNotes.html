@@ -52,7 +52,82 @@
                 <h2>
 <a id="user-content-release-notes" class="anchor" href="#release-notes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-release-notes"></a>Release Notes</h2>
 
-<p>4.7 (November 6, 2016)</p>
+<h3>
+<a id="user-content-50-february-11-2017" class="anchor" href="#50-february-11-2017" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>5.0 (February 11, 2017)</h3>
+
+<p>New Features</p>
+
+<ul>
+<li>Added Lazy&lt;&gt; construct so that you can have the resolve occur upon first usage</li>
+<li>Added menu option "Validate All Active Scenes"</li>
+<li>Added support for memory pools.  This includes a fluent interface similar to how factories work</li>
+<li>Added DiContainer.QueueForInject method to support adding pre-made instances to the initial inject list</li>
+<li>Added new construction methods
+
+<ul>
+<li>FromMethodMultiple</li>
+<li>FromComponentInHierarchy</li>
+<li>FromComponentSibling</li>
+<li>FromComponentInParents</li>
+<li>FromComponentInChildren </li>
+<li>FromScriptableObjectResource</li>
+</ul>
+</li>
+</ul>
+
+<p>Changes</p>
+
+<ul>
+<li>Updated sample projects to be easier to understand</li>
+<li>Improved error messages to include full type names</li>
+<li>Changed list bindings to default to optional so that you don't have to do this explicitly constantly</li>
+</ul>
+
+<p>Optimizations</p>
+
+<ul>
+<li>Fixed major performance issue for scenes that have a lot of transforms Re issue #188.</li>
+<li>Fixed to avoid the extra performance costs of calling SetParent by directly passing the parent to the GameObject.Instantiate method issue #188</li>
+</ul>
+
+<p>Breaking changes</p>
+
+<ul>
+<li>Changed to require that the scope be explicitly set for some of the bind methods to avoid extremely common errors of accidentally leaving it as transient.  Bind methods that are more like "look ups" (eg. FromMethod, FromComponentInParents, etc.) have it as optional, however bind methods that create new instances require that it be set explicitly</li>
+<li>Moved commands and signals packages into a seperate repo</li>
+<li>Renamed BindAllInterfaces to BindInterfacesTo and BindAllInterfacesAndSelf to BindInterfacesAndSelfTo to avoid the extremely common mistake of forgetting the To</li>
+<li>Removed support for passing arguments to InjectGameObject and InstantiatePrefab methods (issue #125)</li>
+<li>Removed UnityEventManager since it isn't core to keep things lightweight</li>
+<li>Renamed the Resolve overload that included an ID to ResolveId to avoid the ambiguity with the non generic version of Resolve</li>
+<li>Renamed the following construction methods.  This was motivated by the fact that with the new construction methods it's unclear which ones are "look ups" versus creating new instances
+
+<ul>
+<li>FromComponent =&gt; FromNewComponentOn</li>
+<li>FromSiblingComponent =&gt; FromNewComponentSibling </li>
+<li>FromGameObject =&gt; FromNewComponentOnNewGameObject </li>
+<li>FromPrefab =&gt; FromComponentInNewPrefab</li>
+<li>FromPrefabResource =&gt; FromComponentInNewPrefabResource</li>
+<li>FromSubContainerResolve.ByPrefab =&gt; FromSubContainerResolve.ByNewPrefab</li>
+</ul>
+</li>
+</ul>
+
+<p>Bug fixes</p>
+
+<ul>
+<li>Fixed extremely rare bug that would cause an infinite loop when using complex subcontainer setups</li>
+<li>Fixed to work with nunit test case attributes</li>
+<li>Fixed to instantiate prefabs without always changing them to be active</li>
+<li>Fixed WithArguments bind method to support passing null values</li>
+<li>Fixed context menu to work properly when creating installers etc. issue #200</li>
+<li>Fixed issue with ZenUtilInternal.InjectGameObjectForComponent method to support looking up non-monobehaviours.</li>
+<li>Fixed NonLazy() bind method to work properly wtihin sub containers</li>
+</ul>
+
+<hr>
+
+<h3>
+<a id="user-content-47-november-6-2016" class="anchor" href="#47-november-6-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.7 (November 6, 2016)</h3>
 
 <ul>
 <li>Removed the concept of triggers in favour of just directly acting on the Signal to both subscribe and fire, since using Trigger was too much overhead for not enough gain</li>
@@ -63,7 +138,10 @@
 <li>Improved validation of multi-scene setups using Contract Names to output better error messages</li>
 </ul>
 
-<p>4.6 (October 23, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-46-october-23-2016" class="anchor" href="#46-october-23-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.6 (October 23, 2016)</h3>
 
 <ul>
 <li>Changed Validation to run at edit time rather than requiring that we enter play mode.  This is significantly faster.  Also added a hotkey to "validate then run" since it's fast enough to use as a pre-run check</li>
@@ -83,7 +161,10 @@
 <li>Misc. bug fixes</li>
 </ul>
 
-<p>4.5 (September 1, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-45-september-1-2016" class="anchor" href="#45-september-1-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.5 (September 1, 2016)</h3>
 
 <ul>
 <li>Fixed DiContainer.ResolveTypeAll() method to properly search in parent containers</li>
@@ -92,7 +173,10 @@
 <li>Fixed exception that was occuring with FromMethod when using derived parameter types</li>
 </ul>
 
-<p>4.4 (July 23, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-44-july-23-2016" class="anchor" href="#44-july-23-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.4 (July 23, 2016)</h3>
 
 <ul>
 <li>Changed the way installers are called from other installers, to allow strongly typed parameter passing</li>
@@ -103,7 +187,10 @@
 <li>Bug fix - NonLazy method was not working properly when used with ByInstaller or ByMethod</li>
 </ul>
 
-<p>4.3 (June 4, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-43-june-4-2016" class="anchor" href="#43-june-4-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.3 (June 4, 2016)</h3>
 
 <ul>
 <li>Changed to disallow using null with BindInstance by default, to catch these errors earlier</li>
@@ -113,7 +200,10 @@
 <li>(bug fix) Custom factories were not validating in some cases</li>
 </ul>
 
-<p>4.2 (May 30, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-42-may-30-2016" class="anchor" href="#42-may-30-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.2 (May 30, 2016)</h3>
 
 <ul>
 <li>Finally updated the documentation</li>
@@ -126,7 +216,10 @@
 <li>(but) Fixed minor bug with validation</li>
 </ul>
 
-<p>4.1 (May 15, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-41-may-15-2016" class="anchor" href="#41-may-15-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.1 (May 15, 2016)</h3>
 
 <ul>
 <li>Changed ResolveAll method to be optional by default, so it can return the empty list</li>
@@ -148,7 +241,10 @@
 <li>Fix to non-unity build</li>
 </ul>
 
-<p>4.0 (April 30, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-40-april-30-2016" class="anchor" href="#40-april-30-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.0 (April 30, 2016)</h3>
 
 <ul>
 <li>Added another property to CompositionRoot to specify installers as prefabs re #96</li>
@@ -180,7 +276,10 @@
 <li>Removed support for binary version of Zenject. This was necessary since Zenject now needs to use some unity defines (eg. UNITY_EDITOR) which doesn't work in DLLs</li>
 </ul>
 
-<p>3.11 (May 15, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-311-may-15-2016" class="anchor" href="#311-may-15-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.11 (May 15, 2016)</h3>
 
 <ul>
 <li>Bug fix - Calling Resolve&lt;&gt; or Instantiate&lt;&gt; inside an installer was causing the object to be injected twice</li>
@@ -189,7 +288,10 @@
 <li>Fixed compiler errors with Unity 5.4</li>
 </ul>
 
-<p>3.10 (March 26, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-310-march-26-2016" class="anchor" href="#310-march-26-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.10 (March 26, 2016)</h3>
 
 <ul>
 <li>Fixed to actually support Windows Store platform</li>
@@ -197,7 +299,10 @@
 <li>Bug fix - OnlyInjectWhenActive flag did not work on root inactive game objects </li>
 </ul>
 
-<p>3.9 (Feb 7, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-39-feb-7-2016" class="anchor" href="#39-feb-7-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.9 (Feb 7, 2016)</h3>
 
 <ul>
 <li>Added a lot more error checking when using the ToSingle bindings. It will no longer allow mixing different ToSingle types</li>
@@ -209,13 +314,19 @@
 <li>Reorganized folder structure</li>
 </ul>
 
-<p>3.8 (Feb 4, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-38-feb-4-2016" class="anchor" href="#38-feb-4-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.8 (Feb 4, 2016)</h3>
 
 <ul>
 <li>Changed back to only initializing the ProjectCompositionRoot when starting a scene with a SceneCompositionRoot rather than always starting it in every scene</li>
 </ul>
 
-<p>3.7 (Jan 31, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-37-jan-31-2016" class="anchor" href="#37-jan-31-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.7 (Jan 31, 2016)</h3>
 
 <ul>
 <li>Changed to not bother parenting transforms to the CompositionRoot object by default (This is still optional with a checkbox however)</li>
@@ -228,19 +339,28 @@
 <li>Fixed some unity-specific bind commands to play more nicely with interfaces</li>
 </ul>
 
-<p>3.6 (Jan 24, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-36-jan-24-2016" class="anchor" href="#36-jan-24-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.6 (Jan 24, 2016)</h3>
 
 <ul>
 <li>Another change to signals to not require parameter types to the bind methods</li>
 </ul>
 
-<p>3.5 (Jan 17, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-35-jan-17-2016" class="anchor" href="#35-jan-17-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.5 (Jan 17, 2016)</h3>
 
 <ul>
 <li>Made breaking change to require separate bind commands for signals and triggers, to allow adding different conditionals on each.</li>
 </ul>
 
-<p>3.4 (Jan 7, 2016)</p>
+<hr>
+
+<h3>
+<a id="user-content-34-jan-7-2016" class="anchor" href="#34-jan-7-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.4 (Jan 7, 2016)</h3>
 
 <ul>
 <li>Cleaned up directory structure</li>
@@ -248,7 +368,10 @@
 <li>Fixes to the releases automation scripts</li>
 </ul>
 
-<p>3.2 (December 20, 2015)</p>
+<hr>
+
+<h3>
+<a id="user-content-32-december-20-2015" class="anchor" href="#32-december-20-2015" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.2 (December 20, 2015)</h3>
 
 <ul>
 <li>Added the concept of "Commands" and "Signals".  See documentation for details.</li>
@@ -269,14 +392,20 @@
 <li>Fixed scene decorators to play more nicely with Unity's own way of handling LoadLevelAdditive.  Decorated scenes are now organized in the scene heirarchy under scene headings just like when calling LoadLevelAdditive normally</li>
 </ul>
 
-<p>3.1</p>
+<hr>
+
+<h3>
+<a id="user-content-31" class="anchor" href="#31" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.1</h3>
 
 <ul>
 <li>Changes related to upgrading to Unity 5.3</li>
 <li>Fixed again to make zero heap allocations per frame</li>
 </ul>
 
-<p>3.0</p>
+<hr>
+
+<h3>
+<a id="user-content-30" class="anchor" href="#30" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.0</h3>
 
 <ul>
 <li>Added much better support for nested containers.  It now works more closely to what you might expect:  Any parent dependencies are always inherited in sub-containers, even for optional injectables.  Also removed BindScope and FallbackContainer since these were really just workarounds for this feature missing.  Also added [InjectLocal] attribute for cases where you want to inject dependencies only from the local container.</li>
@@ -287,20 +416,29 @@
 <li>Added automatic support for WebGL by marking constructors as [Inject]</li>
 </ul>
 
-<p>2.8</p>
+<hr>
+
+<h3>
+<a id="user-content-28" class="anchor" href="#28" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.8</h3>
 
 <ul>
 <li>Fixed to properly use explicit default parameter values in Constructor/PostInject methods.  For eg: public Foo(int bar = 5) should consider bar to be optional and use 5 if not resolved.</li>
 </ul>
 
-<p>2.7</p>
+<hr>
+
+<h3>
+<a id="user-content-27" class="anchor" href="#27" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.7</h3>
 
 <ul>
 <li>Bug fix to ensure global composition root always gets initialized before the scene composition root</li>
 <li>Changed scene decorators to use LoadLevelAdditive instead of LoadLevel to allow more complex setups involving potentially several decorators within decorators</li>
 </ul>
 
-<p>2.6</p>
+<hr>
+
+<h3>
+<a id="user-content-26" class="anchor" href="#26" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.6</h3>
 
 <ul>
 <li>Added new bind methods: ToResource, ToTransientPrefabResource, ToSinglePrefabResource</li>
@@ -315,7 +453,10 @@
 <li>Fixed bug with asteroids project which was causing exceptions to be thrown on the second run due to the use of tags</li>
 </ul>
 
-<p>2.5</p>
+<hr>
+
+<h3>
+<a id="user-content-25" class="anchor" href="#25" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.5</h3>
 
 <ul>
 <li>Added support for circular dependencies in the PostInject method or as fields (just not constructor parameters)</li>
@@ -325,13 +466,19 @@
 <li>Extracted IResolver and IBinder interfaces from DiContainer</li>
 </ul>
 
-<p>2.4</p>
+<hr>
+
+<h3>
+<a id="user-content-24" class="anchor" href="#24" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.4</h3>
 
 <ul>
 <li>Refactored the way IFactory is used to be a lot cleaner. It now uses a kind of fluent syntax through its own bind method BindIFactory&lt;&gt;</li>
 </ul>
 
-<p>2.3</p>
+<hr>
+
+<h3>
+<a id="user-content-23" class="anchor" href="#23" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.3</h3>
 
 <ul>
 <li>Added "ParentContexts" property to InjectContext, to allow very complex conditional bindings that involve potentially several identifiers, etc.</li>
@@ -339,13 +486,19 @@
 <li>Added ability to build dlls for use in outside unity from the assembly build solution</li>
 </ul>
 
-<p>2.2</p>
+<hr>
+
+<h3>
+<a id="user-content-22" class="anchor" href="#22" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.2</h3>
 
 <ul>
 <li>Changed the way installers invoke other installers.  Previously you would Bind them to IInstaller and now you call Container.Install instead.  This is better because it allows you to immediately call Rebind&lt;&gt; afterwards</li>
 </ul>
 
-<p>2.1</p>
+<hr>
+
+<h3>
+<a id="user-content-21" class="anchor" href="#21" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.1</h3>
 
 <ul>
 <li>Simplified interface a bit more by moving more methods into DiContainer such as Inject and Instantiate.  Moved all helper methods into extension methods for readability. Deleted FieldsInjector and Instantiator classes as part of this</li>
@@ -357,7 +510,10 @@
 <li>Added 'InjectFullScene' flag to CompositionRoot to allow injecting across the entire unity scene instead of just objects underneath the CompositionRoot</li>
 </ul>
 
-<p>2.0</p>
+<hr>
+
+<h3>
+<a id="user-content-20" class="anchor" href="#20" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.0</h3>
 
 <ul>
 <li>Added ability to inject dependencies via parameters to the [PostInject] method just like it does with constructors.  Especially useful for MonoBehaviours.</li>
@@ -370,7 +526,10 @@
 <li>Changed to allow using conditions to override a default binding. When multiple providers are found it will now try and use the one with conditions.  So for example you can define a default with <code>Container.Bind&lt;IFoo&gt;().ToSingle&lt;Foo1&gt;()</code> and then override for specific classes with <code>Container.Bind&lt;IFoo&gt;().ToSingle&lt;Foo2&gt;().WhenInjectedInto&lt;Bar&gt;()</code>, etc.</li>
 </ul>
 
-<p>1.19</p>
+<hr>
+
+<h3>
+<a id="user-content-119" class="anchor" href="#119" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.19</h3>
 
 <ul>
 <li>Upgraded to Unity 5</li>
@@ -379,7 +538,10 @@
 <li>Added some helper methods to ZenEditorUtil for use by CI servers to validate all scenes</li>
 </ul>
 
-<p>1.18</p>
+<hr>
+
+<h3>
+<a id="user-content-118" class="anchor" href="#118" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.18</h3>
 
 <ul>
 <li>Added minor optimizations to reduce per-frame allocation to zero</li>
@@ -387,25 +549,37 @@
 <li>Minor bug fix with scene decorators, GameObjectInstantiator.</li>
 </ul>
 
-<p>1.17</p>
+<hr>
+
+<h3>
+<a id="user-content-117" class="anchor" href="#117" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.17</h3>
 
 <ul>
 <li>Bug fix.  Was not forwarding parameters correctly when instantiating objects from prefabs</li>
 </ul>
 
-<p>1.16</p>
+<hr>
+
+<h3>
+<a id="user-content-116" class="anchor" href="#116" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.16</h3>
 
 <ul>
 <li>Removed the word 'ModestTree' from namespaces since Zenject is open source and not proprietary to the company ModestTree.</li>
 </ul>
 
-<p>1.15</p>
+<hr>
+
+<h3>
+<a id="user-content-115" class="anchor" href="#115" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.15</h3>
 
 <ul>
 <li>Fixed bug with ToSinglePrefab which was causing it to create multiple instances when used in different bindings.</li>
 </ul>
 
-<p>1.14</p>
+<hr>
+
+<h3>
+<a id="user-content-114" class="anchor" href="#114" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.14</h3>
 
 <ul>
 <li>Added flag to CompositionRoot for whether to inject into inactive game objects or ignore them completely</li>
@@ -415,13 +589,19 @@
 <li>Added support for 'decorators', which can be used to add dependencies to another scene</li>
 </ul>
 
-<p>1.13</p>
+<hr>
+
+<h3>
+<a id="user-content-113" class="anchor" href="#113" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.13</h3>
 
 <ul>
 <li>Minor bug fix to global composition root.  Also fixed a few compiler warnings.</li>
 </ul>
 
-<p>1.12</p>
+<hr>
+
+<h3>
+<a id="user-content-112" class="anchor" href="#112" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.12</h3>
 
 <ul>
 <li>Added Rebind&lt;&gt; method</li>
@@ -434,20 +614,29 @@
 <li>Added IFixedTickable class to support unity FixedUpdate method</li>
 </ul>
 
-<p>1.11</p>
+<hr>
+
+<h3>
+<a id="user-content-111" class="anchor" href="#111" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.11</h3>
 
 <ul>
 <li>Removed Fasterflect library to keep Zenject nice and lightweight (it was also causing issues on WP8)</li>
 <li>Fixed bug related to singletons + object graph validation. Changed the way IDisposables are handled to be closer to the way IInitializable and ITickable are handled. Added method to BinderUntyped.</li>
 </ul>
 
-<p>1.10</p>
+<hr>
+
+<h3>
+<a id="user-content-110" class="anchor" href="#110" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.10</h3>
 
 <ul>
 <li>Added custom editor for the Installers property of CompositionRoot to make re-ordering easier</li>
 </ul>
 
-<p>1.09</p>
+<hr>
+
+<h3>
+<a id="user-content-109" class="anchor" href="#109" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.09</h3>
 
 <ul>
 <li>Added support for nested containers</li>
@@ -456,7 +645,10 @@
 <li>Bug fixes</li>
 </ul>
 
-<p>1.08</p>
+<hr>
+
+<h3>
+<a id="user-content-108" class="anchor" href="#108" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.08</h3>
 
 <ul>
 <li>Order of magnitude speed improvement by using more caching</li>
@@ -464,14 +656,20 @@
 <li>Bug fixes</li>
 </ul>
 
-<p>1.07</p>
+<hr>
+
+<h3>
+<a id="user-content-107" class="anchor" href="#107" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.07</h3>
 
 <ul>
 <li>Simplified API by removing the concept of modules in favour of just having installers instead (and add support for installers installing other installers)</li>
 <li>Bug fixes</li>
 </ul>
 
-<p>1.06</p>
+<hr>
+
+<h3>
+<a id="user-content-106" class="anchor" href="#106" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.06</h3>
 
 <ul>
 <li>Introduced concept of scene installer, renamed installers 'modules'</li>

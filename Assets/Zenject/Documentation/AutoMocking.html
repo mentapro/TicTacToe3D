@@ -56,9 +56,9 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    IWebServer _webServer;
+    <span class="pl-en">IWebServer</span> <span class="pl-en">_webServer</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">IWebServer</span> <span class="pl-smi">webServer</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(IWebServer webServer)
     {
         _webServer = webServer;
     }
@@ -66,7 +66,7 @@
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
     {
         ...
-        <span class="pl-k">var</span> x = _webServer.GetSomething();
+        <span class="pl-k">var</span> <span class="pl-en">x </span>= _webServer.GetSomething();
         ...
     }
 }</pre></div>
@@ -82,14 +82,14 @@
 
 <p>However, if we create a mock class for IWebServer then we can address all these problems:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MockWebServer</span> : <span class="pl-k">IWebServer</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MockWebServer</span> : <span class="pl-en">IWebServer</span>
 {
     ...
 }</pre></div>
 
 <p>Then hook it up in our installer:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IWebServer&gt;().To&lt;MockWebServer&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IWebServer</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">MockWebServer</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>Then you can implement the fields of the IWebServer interface and configure them based on what you want to test on Foo. Hopefully You can see how this can make life when writing tests much easier.</p>
 
@@ -99,7 +99,7 @@
 
 <p>After extracting the auto mocking package it is just a matter of using the following syntax to mock out various parts of your project:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().ToMock();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">ToMock</span>();</pre></div>
 
 <p>However, this approach will not allow you to take advantage of the advanced features of Moq.  For more advanced usages, see the documentation for Moq</p>
 

@@ -6,6 +6,7 @@ using ModestTree;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
+using Zenject.Internal;
 
 namespace Zenject
 {
@@ -19,10 +20,7 @@ namespace Zenject
 
         public string DecoratedContractName
         {
-            get
-            {
-                return _decoratedContractName;
-            }
+            get { return _decoratedContractName; }
         }
 
         public override DiContainer Container
@@ -34,13 +32,22 @@ namespace Zenject
             }
         }
 
+        public override IEnumerable<GameObject> GetRootGameObjects()
+        {
+            // This method should never be called because SceneDecoratorContext's are not bound
+            // to the container
+            throw Assert.CreateException();
+        }
+
         public void Initialize(DiContainer container)
         {
             Assert.IsNull(_container);
             _container = container;
 
-            container.LazyInstanceInjector
-                .AddInstances(GetInjectableComponents().Cast<object>());
+            foreach (var instance in GetInjectableMonoBehaviours().Cast<object>())
+            {
+                container.QueueForInject(instance);
+            }
         }
 
         public void InstallDecoratorSceneBindings()
@@ -54,9 +61,9 @@ namespace Zenject
             InstallInstallers();
         }
 
-        protected override IEnumerable<Component> GetInjectableComponents()
+        protected override IEnumerable<MonoBehaviour> GetInjectableMonoBehaviours()
         {
-            return ContextUtil.GetInjectableComponents(this.gameObject.scene);
+            return ZenUtilInternal.GetInjectableMonoBehaviours(this.gameObject.scene);
         }
     }
 }

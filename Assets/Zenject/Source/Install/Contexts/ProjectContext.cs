@@ -4,6 +4,7 @@ using ModestTree;
 
 using System.Collections.Generic;
 using System.Linq;
+using Zenject.Internal;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -26,18 +27,12 @@ namespace Zenject
 
         public override DiContainer Container
         {
-            get
-            {
-                return _container;
-            }
+            get { return _container; }
         }
 
         public static bool HasInstance
         {
-            get
-            {
-                return _instance != null;
-            }
+            get { return _instance != null; }
         }
 
         public static ProjectContext Instance
@@ -64,6 +59,11 @@ namespace Zenject
             set;
         }
 #endif
+
+        public override IEnumerable<GameObject> GetRootGameObjects()
+        {
+            return new[] { this.gameObject };
+        }
 
         public static GameObject TryGetPrefab()
         {
@@ -134,8 +134,10 @@ namespace Zenject
             _container = new DiContainer(
                 StaticContext.Container, isValidating);
 
-            _container.LazyInstanceInjector.AddInstances(
-                GetInjectableComponents().Cast<object>());
+            foreach (var instance in GetInjectableMonoBehaviours().Cast<object>())
+            {
+                _container.QueueForInject(instance);
+            }
 
             _container.IsInstalling = true;
 
@@ -148,28 +150,36 @@ namespace Zenject
                 _container.IsInstalling = false;
             }
 
-            _container.LazyInstanceInjector.LazyInjectAll();
+            _container.FlushInjectQueue();
 
             Assert.That(_dependencyRoots.IsEmpty());
 
             _dependencyRoots.AddRange(_container.ResolveDependencyRoots());
         }
 
-        protected override IEnumerable<Component> GetInjectableComponents()
+        protected override IEnumerable<MonoBehaviour> GetInjectableMonoBehaviours()
         {
-            return ContextUtil.GetInjectableComponents(this.gameObject);
+            return ZenUtilInternal.GetInjectableMonoBehaviours(this.gameObject);
         }
 
         void InstallBindings()
         {
             _container.DefaultParent = this.transform;
 
-            _container.Bind(typeof(TickableManager), typeof(InitializableManager), typeof(DisposableManager))
+            // Note that adding GuiRenderableManager here doesn't instantiate it by default
+            // You still have to add GuiRenderer manually
+            // We could add the contents of GuiRenderer into MonoKernel, but this adds
+            // undesirable per-frame allocations.  See comment in IGuiRenderable.cs for usage
+            //
+            // Short answer is if you want to use IGuiRenderable then
+            // you need to include the following in project context installer:
+            // `Container.Bind<GuiRenderer>().FromNewComponentOnNewGameObject().AsSingle().CopyIntoAllSubContainers().NonLazy();`
+            _container.Bind(typeof(TickableManager), typeof(InitializableManager), typeof(DisposableManager), typeof(GuiRenderableManager))
                 .ToSelf().AsSingle().CopyIntoAllSubContainers();
 
             _container.Bind<Context>().FromInstance(this);
 
-            _container.Bind<ProjectKernel>().FromComponent(this.gameObject).AsSingle().NonLazy();
+            _container.Bind<ProjectKernel>().FromNewComponentOn(this.gameObject).AsSingle().NonLazy();
 
             InstallSceneBindings();
 

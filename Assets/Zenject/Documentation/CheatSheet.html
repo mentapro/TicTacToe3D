@@ -58,95 +58,91 @@
 
 <div class="highlight highlight-source-cs"><pre>
 <span class="pl-c">// Create a new instance of Foo for every class that asks for it</span>
-Container.Bind&lt;Foo&gt;().AsTransient();
-
-<span class="pl-c">// This is equivalent since AsTransient is the default</span>
-Container.Bind&lt;Foo&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsTransient</span>();
 
 <span class="pl-c">// Create a new instance of Foo for every class that asks for an IFoo</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsTransient();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsTransient</span>();
 
-<span class="pl-c">// This is equivalent since Transient is the default</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;();
+<span class="pl-c">// Non generic version</span>
+<span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(IFoo)).<span class="pl-en">To</span>(typeof(Foo)).<span class="pl-en">AsTransient</span>();
 
-<span class="pl-c">// Non generic versions</span>
-Container.Bind(<span class="pl-k">typeof</span>(IFoo)).AsTransient();
-Container.Bind(<span class="pl-k">typeof</span>(IFoo)).To(<span class="pl-k">typeof</span>(Foo)).AsTransient();
-
-<span class="pl-c">///////////// AsSingle</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// AsSingle<span class="pl-c"></span></span>
 
 <span class="pl-c">// Create one definitive instance of Foo and re-use that for every class that asks for it</span>
-Container.Bind&lt;Foo&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// Create one definitive instance of Foo and re-use that for every class that asks for IFoo</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// In this example, the same instance of Foo will be used for all three cases</span>
-Container.Bind&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IFoo2&gt;().To&lt;Foo&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo2</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// Non generic versions</span>
-Container.Bind(<span class="pl-k">typeof</span>(Foo)).AsSingle();
-Container.Bind(<span class="pl-k">typeof</span>(IFoo)).AsSingle(<span class="pl-k">typeof</span>(Foo));
+<span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(Foo)).<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(IFoo)).<span class="pl-en">To</span>(typeof(Foo)).<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// BindAllInterfaces</span>
+<span class="pl-c">// Or, as one bind statement</span>
+<span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(Foo), <span class="pl-en">typeof</span>(IFoo)).<span class="pl-en">To</span>(typeof(Foo)).<span class="pl-en">AsSingle</span>();
+
+<span class="pl-c"><span class="pl-c">///</span>////////// BindInterfaces<span class="pl-c"></span></span>
 
 <span class="pl-c">// Bind all interfaces that Foo implements to a new singleton of type Foo</span>
-Container.BindAllInterfaces&lt;Foo&gt;().To&lt;Foo&gt;().AsSingle();
+<span class="pl-en">Container.BindInterfacesTo</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// So for example if Foo implements ITickable and IInitializable then the above</span>
 <span class="pl-c">// line is equivalent to this:</span>
-Container.Bind&lt;ITickable&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IInitializable&gt;().To&lt;Foo&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">ITickable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IInitializable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// FromInstance</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromInstance<span class="pl-c"></span></span>
 
 <span class="pl-c">// Use the given instance everywhere that Foo is used</span>
-Container.Bind&lt;Foo&gt;().FromInstance(<span class="pl-k">new</span> Foo());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromInstance</span>(<span class="pl-en">new</span> <span class="pl-smi">Foo</span>());
 
 <span class="pl-c">// This is simply a shortcut for the above binding</span>
 <span class="pl-c">// This can be a bit nicer since the type argument can be deduced from the parameter</span>
-Container.BindInstance(<span class="pl-k">new</span> Foo());
+<span class="pl-en">Container.BindInstance</span>(new <span class="pl-en">Foo</span>());
 
 <span class="pl-c">// Note that FromInstance is different from AsSingle because it does allow multiple bindings</span>
 <span class="pl-c">// and you can't re-use the same instance in multiple bindings like you can with AsSingle</span>
 <span class="pl-c">// For example, the following is allowed and will match any constructor parameters of type List&lt;Foo&gt;</span>
 <span class="pl-c">// (and throw an exception for parameters that ask for a single Foo)</span>
-Container.Bind&lt;Foo&gt;().FromInstance(<span class="pl-k">new</span> Foo());
-Container.Bind&lt;Foo&gt;().FromInstance(<span class="pl-k">new</span> Foo());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromInstance</span>(<span class="pl-en">new</span> <span class="pl-smi">Foo</span>());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromInstance</span>(<span class="pl-en">new</span> <span class="pl-smi">Foo</span>());
 
-<span class="pl-c">///////////// Binding primitive types</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Binding primitive types<span class="pl-c"></span></span>
 
 <span class="pl-c">// Use the number 10 every time an int is requested</span>
 <span class="pl-c">// You'd never really want to do this, you should almost always use a When condition for primitive values (see conditions section below)</span>
-Container.Bind&lt;<span class="pl-k">int</span>&gt;().FromInstance(<span class="pl-c1">10</span>);
-Container.Bind&lt;<span class="pl-k">bool</span>&gt;().FromInstance(<span class="pl-c1">false</span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">int</span>&gt;().<span class="pl-en">FromInstance</span>(<span class="pl-c1">10</span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">bool</span>&gt;().<span class="pl-en">FromInstance</span>(<span class="pl-c1">false</span>);
 
 <span class="pl-c">// These are the same as above</span>
 <span class="pl-c">// This can be a bit nicer though since the type argument can be deduced from the parameter</span>
 <span class="pl-c">// Again though, be careful to use conditions to limit the scope of usage for values</span>
 <span class="pl-c">// or consider using a Settings object as described above</span>
-Container.BindInstance(<span class="pl-c1">10</span>);
-Container.BindInstance(<span class="pl-c1">false</span>);
+<span class="pl-en">Container.BindInstance</span>(10);
+<span class="pl-en">Container.BindInstance</span>(false);
 
-<span class="pl-c">///////////// FromMethod</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromMethod<span class="pl-c"></span></span>
 
 <span class="pl-c">// Create instance of Foo when requested, using the given method</span>
 <span class="pl-c">// Note that for more complex construction scenarios, you might consider using a factory</span>
 <span class="pl-c">// instead</span>
-Container.Bind&lt;Foo&gt;().FromMethod(GetFoo);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromMethod</span>(GetFoo);
 
-Foo GetFoo(InjectContext ctx)
+<span class="pl-en">Foo</span> <span class="pl-en">GetFoo</span>(<span class="pl-en">InjectContext</span> <span class="pl-smi">ctx</span>)
 {
-    <span class="pl-k">return</span> <span class="pl-k">new</span> Foo();
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
 }
 
 <span class="pl-c">// Randomly return one of several different implementations of IFoo</span>
 <span class="pl-c">// We use Instantiate here instead of just new so that Foo1 gets its members injected</span>
-Container.Bind&lt;IFoo&gt;().FromMethod(GetFoo);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">FromMethod</span>(GetFoo);
 
-IFoo GetFoo(InjectContext ctx)
+<span class="pl-en">IFoo</span> <span class="pl-en">GetFoo</span>(<span class="pl-en">InjectContext</span> <span class="pl-smi">ctx</span>)
 {
     <span class="pl-k">switch</span> (UnityEngine.Random.Range(<span class="pl-c1">0</span>, <span class="pl-c1">3</span>))
     {
@@ -161,45 +157,45 @@ IFoo GetFoo(InjectContext ctx)
 }
 
 <span class="pl-c">// Using lambda syntax</span>
-Container.Bind&lt;Foo&gt;().FromMethod((ctx) =&gt; <span class="pl-k">new</span> Foo());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromMethod</span>((ctx) =&gt; <span class="pl-k">new</span> <span class="pl-en">Foo</span>());
 
 <span class="pl-c">// This is equivalent to AsTransient</span>
-Container.Bind&lt;Foo&gt;().FromMethod((ctx) =&gt; ctx.Container.Instantiate&lt;Foo&gt;());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromMethod</span>((ctx) =&gt; ctx.Container.Instantiate&lt;Foo&gt;());
 
-<span class="pl-c">///////////// FromResolveGetter</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromResolveGetter<span class="pl-c"></span></span>
 
 <span class="pl-c">// Bind to a property on another dependency</span>
 <span class="pl-c">// This can be helpful to reduce coupling between classes</span>
-Container.Bind&lt;Foo&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
 
-Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(foo =&gt; foo.GetBar());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">FromResolveGetter</span>&lt;<span class="pl-en">Foo</span>&gt;(foo =&gt; foo.GetBar());
 
 <span class="pl-c">// Another example using values</span>
-Container.Bind&lt;<span class="pl-k">string</span>&gt;().FromResolveGetter&lt;Foo&gt;(foo =&gt; foo.GetTitle());
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">string</span>&gt;().<span class="pl-en">FromResolveGetter</span>&lt;<span class="pl-en">Foo</span>&gt;(foo =&gt; foo.GetTitle());
 
-<span class="pl-c">///////////// FromGameObject (singleton)</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromNewComponentOnNewGameObject (singleton)<span class="pl-c"></span></span>
 
 <span class="pl-c">// Create a new game object at the root of the scene, add the Foo MonoBehaviour to it, and name it "Foo"</span>
-Container.Bind&lt;Foo&gt;().FromGameObject().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromNewComponentOnNewGameObject</span>().<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// You can also specify the game object name to use using WithGameObjectName</span>
-Container.Bind&lt;Foo&gt;().FromGameObject().WithGameObjectName(<span class="pl-s"><span class="pl-pds">"</span>Foo1<span class="pl-pds">"</span></span>).AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromNewComponentOnNewGameObject</span>().<span class="pl-en">WithGameObjectName</span>(<span class="pl-s"><span class="pl-pds">"</span>Foo1<span class="pl-pds">"</span></span>).<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// Bind to an interface instead</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().FromGameObject().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromNewComponentOnNewGameObject</span>().<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// FromPrefab (singleton)</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromComponentInNewPrefab (singleton)<span class="pl-c"></span></span>
 
 <span class="pl-c">// Create a new game object at the root of the scene using the given prefab</span>
 <span class="pl-c">// It is assumed that the Foo is a MonoBehaviour here and that Foo has been</span>
 <span class="pl-c">// previously added to the prefab</span>
 <span class="pl-c">// After zenject creates a new GameObject from the given prefab, it will</span>
 <span class="pl-c">// search the prefab for a component of type 'Foo' and return that</span>
-GameObject fooPrefab;
-Container.Bind&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
+<span class="pl-en">GameObject</span> <span class="pl-en">fooPrefab</span>;
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// Bind to interface instead</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// In this example we use AsSingle but with different components</span>
 <span class="pl-c">// Note here that only one instance of the given prefab will be</span>
@@ -207,54 +203,54 @@ Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
 <span class="pl-c">// the type that is being returned from the prefab.</span>
 <span class="pl-c">// For this to work, there must be both a Foo MonoBehaviour and</span>
 <span class="pl-c">// a Bar MonoBehaviour somewhere on the prefab</span>
-GameObject prefab;
-Container.Bind&lt;Foo&gt;().FromPrefab(prefab).AsSingle();
-Container.Bind&lt;Bar&gt;().FromPrefab(prefab).AsSingle();
+<span class="pl-en">GameObject</span> <span class="pl-en">prefab</span>;
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(prefab).<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(prefab).<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// FromPrefab (Transient)</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromComponentInNewPrefab (Transient)<span class="pl-c"></span></span>
 
 <span class="pl-c">// Instantiate a new copy of 'fooPrefab' every time an instance of Foo is</span>
 <span class="pl-c">// requested by a constructor parameter, injected field, etc.</span>
-GameObject fooPrefab = <span class="pl-c1">null</span>;
-Container.Bind&lt;Foo&gt;().FromPrefab(fooPrefab);
+<span class="pl-en">GameObject</span> <span class="pl-en">fooPrefab</span> = <span class="pl-c1">null</span>;
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab);
 
 <span class="pl-c">// Again, this is equivalent since AsTransient is the default</span>
-Container.Bind&lt;Foo&gt;().FromPrefab(fooPrefab).AsTransient();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsTransient</span>();
 
 <span class="pl-c">// Bind to interface instead</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().FromPrefab(fooPrefab);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab);
 
-<span class="pl-c">///////////// Identifiers</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Identifiers<span class="pl-c"></span></span>
 
 <span class="pl-c">// Bind a globally accessible string with the name 'PlayerName'</span>
 <span class="pl-c">// Note however that a better option might be to create a Settings object and bind</span>
 <span class="pl-c">// that instead</span>
-Container.Bind&lt;<span class="pl-k">string</span>&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>PlayerName<span class="pl-pds">"</span></span>).FromInstance(<span class="pl-s"><span class="pl-pds">"</span>name of the player<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">string</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>PlayerName<span class="pl-pds">"</span></span>).<span class="pl-en">FromInstance</span>(<span class="pl-s"><span class="pl-pds">"</span>name of the player<span class="pl-pds">"</span></span>);
 
 <span class="pl-c">// This is the equivalent of the line above, and is a bit more readable</span>
-Container.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>name of the player<span class="pl-pds">"</span></span>).WithId(<span class="pl-s"><span class="pl-pds">"</span>PlayerName<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.BindInstance</span>("name of the player").<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>PlayerName<span class="pl-pds">"</span></span>);
 
 <span class="pl-c">// We can also use IDs to bind multiple instances of the same type:</span>
-Container.Bind&lt;<span class="pl-k">string</span>&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>).FromInstance(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
-Container.Bind&lt;<span class="pl-k">string</span>&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>FooB<span class="pl-pds">"</span></span>).FromInstance(<span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">string</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>).<span class="pl-en">FromInstance</span>(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">string</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>FooB<span class="pl-pds">"</span></span>).<span class="pl-en">FromInstance</span>(<span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>);
 
 <span class="pl-c">// Then when we inject these dependencies we have to use the same ID:</span>
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Norf</span>
 {
     [Inject(Id = <span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>)]
-    <span class="pl-k">string</span> _foo;
+    <span class="pl-k">string</span> <span class="pl-en">_foo</span>;
 }
 
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Qux</span>
 {
     [Inject(Id = <span class="pl-s"><span class="pl-pds">"</span>FooB<span class="pl-pds">"</span></span>)]
-    <span class="pl-k">string</span> _foo;
+    <span class="pl-k">string</span> <span class="pl-en">_foo</span>;
 }
 
 <span class="pl-c">// In this example, we bind three instances of Foo, including one without an ID</span>
-Container.Bind&lt;Foo&gt;().AsCached();
-Container.Bind&lt;Foo&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>).AsCached();
-Container.Bind&lt;Foo&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>).AsCached();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsCached</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>).<span class="pl-en">AsCached</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>).<span class="pl-en">AsCached</span>();
 
 <span class="pl-c">// When an ID is unspecified in an [Inject] field, it will use the first</span>
 <span class="pl-c">// instance</span>
@@ -263,7 +259,7 @@ Container.Bind&lt;Foo&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</sp
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Norf</span>
 {
     [Inject]
-    Foo _foo;
+    <span class="pl-en">Foo</span> <span class="pl-en">_foo</span>;
 }
 
 <span class="pl-c">// Qux._foo will be the same instance as Norf._foo</span>
@@ -273,84 +269,84 @@ Container.Bind&lt;Foo&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</sp
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Qux</span>
 {
     [Inject]
-    Foo _foo;
+    <span class="pl-en">Foo</span> <span class="pl-en">_foo</span>;
 
     [Inject(Id = <span class="pl-s"><span class="pl-pds">"</span>FooA<span class="pl-pds">"</span></span>)]
-    Foo _foo2;
+    <span class="pl-en">Foo</span> <span class="pl-en">_foo2</span>;
 }
 
-<span class="pl-c">///////////// Conditions</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Conditions<span class="pl-c"></span></span>
 
 <span class="pl-c">// This will only allow Bar to depend on Foo</span>
 <span class="pl-c">// If we add Foo to the constructor of any other class it won't find it</span>
-Container.Bind&lt;Foo&gt;().AsSingle().WhenInjectedInto&lt;Bar&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Bar</span>&gt;();
 
 <span class="pl-c">// Use different implementations of IFoo dependending on which</span>
 <span class="pl-c">// class is being injected</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo1&gt;().AsSingle().WhenInjectedInto&lt;Bar&gt;();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle().WhenInjectedInto&lt;Qux&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo1</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Bar</span>&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo2</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Qux</span>&gt;();
 
 <span class="pl-c">// Use "Foo1" as the default implementation except when injecting into</span>
 <span class="pl-c">// class Qux, in which case use Foo2</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo1&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle().WhenInjectedInto&lt;Qux&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo1</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo2</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Qux</span>&gt;();
 
 <span class="pl-c">// Allow depending on Foo in only a few select classes</span>
-Container.Bind&lt;Foo&gt;().AsSingle().WhenInjectedInto(<span class="pl-k">typeof</span>(Bar), <span class="pl-k">typeof</span>(Qux), <span class="pl-k">typeof</span>(Baz));
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>(typeof(Bar), <span class="pl-en">typeof</span>(Qux), <span class="pl-en">typeof</span>(Baz));
 
 <span class="pl-c">// Supply "my game" for any strings that are injected into the Gui class with the identifier "Title"</span>
-Container.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>my game<span class="pl-pds">"</span></span>).WithId(<span class="pl-s"><span class="pl-pds">"</span>Title<span class="pl-pds">"</span></span>).WhenInjectedInto&lt;Gui&gt;();
+<span class="pl-en">Container.BindInstance</span>("my game").<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>Title<span class="pl-pds">"</span></span>).<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Gui</span>&gt;();
 
 <span class="pl-c">// Supply 5 for all ints that are injected into the Gui class</span>
-Container.BindInstance(<span class="pl-c1">5</span>).WhenInjectedInto&lt;Gui&gt;();
+<span class="pl-en">Container.BindInstance</span>(5).<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Gui</span>&gt;();
 
 <span class="pl-c">// Supply 5 for all ints that are injected into a parameter or field</span>
 <span class="pl-c">// inside type Gui that is named 'width'</span>
 <span class="pl-c">// This is usually not a good idea since the name of a field can change</span>
 <span class="pl-c">// easily and break the binding but shown here as an example  :)</span>
-Container.BindInstance(<span class="pl-c1">5.0f</span>).When(ctx =&gt;
-    ctx.ObjectType == <span class="pl-k">typeof</span>(Gui) &amp;&amp; ctx.MemberName == <span class="pl-s"><span class="pl-pds">"</span>width<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.BindInstance</span>(5.0f).<span class="pl-en">When</span>(ctx =&gt;
+    ctx.ObjectType == typeof(Gui) &amp;&amp; ctx.MemberName == "width");
 
 <span class="pl-c">// Create a new 'Foo' for every class that is created as part of the</span>
 <span class="pl-c">// construction of the 'Bar' class</span>
 <span class="pl-c">// So if Bar has a constructor parameter of type Qux, and Qux has</span>
 <span class="pl-c">// a constructor parameter of type IFoo, a new Foo will be created</span>
 <span class="pl-c">// for that case</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsTransient().When(
-    ctx =&gt; ctx.AllObjectTypes.Contains(<span class="pl-k">typeof</span>(Bar)));
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsTransient</span>().<span class="pl-en">When</span>(
+    ctx =&gt; ctx.AllObjectTypes.Contains(typeof(Bar)));
 
-<span class="pl-c">///////////// Complex conditions example</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Complex conditions example<span class="pl-c"></span></span>
 
-<span class="pl-k">var</span> foo1 = <span class="pl-k">new</span> Foo();
-<span class="pl-k">var</span> foo2 = <span class="pl-k">new</span> Foo();
+<span class="pl-k">var</span> <span class="pl-en">foo1 </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
+<span class="pl-k">var</span> <span class="pl-en">foo2 </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
 
-Container.Bind&lt;Bar&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>Bar1<span class="pl-pds">"</span></span>).AsTransient();
-Container.Bind&lt;Bar&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>Bar2<span class="pl-pds">"</span></span>).AsTransient();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>Bar1<span class="pl-pds">"</span></span>).<span class="pl-en">AsTransient</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>Bar2<span class="pl-pds">"</span></span>).<span class="pl-en">AsTransient</span>();
 
 <span class="pl-c">// Here we use the 'ParentContexts' property of inject context to sync multiple corresponding identifiers</span>
-Container.BindInstance(foo1).When(c =&gt; c.ParentContexts.Where(x =&gt; x.MemberType == <span class="pl-k">typeof</span>(Bar) &amp;&amp; x.Identifier == <span class="pl-s"><span class="pl-pds">"</span>Bar1<span class="pl-pds">"</span></span>).Any());
-Container.BindInstance(foo2).When(c =&gt; c.ParentContexts.Where(x =&gt; x.MemberType == <span class="pl-k">typeof</span>(Bar) &amp;&amp; x.Identifier == <span class="pl-s"><span class="pl-pds">"</span>Bar2<span class="pl-pds">"</span></span>).Any());
+<span class="pl-en">Container.BindInstance</span>(foo1).<span class="pl-en">When</span>(c =&gt; c.ParentContexts.Where(x =&gt; x.MemberType == typeof(Bar) &amp;&amp; x.Identifier == "Bar1").<span class="pl-en">Any</span>());
+<span class="pl-en">Container.BindInstance</span>(foo2).<span class="pl-en">When</span>(c =&gt; c.ParentContexts.Where(x =&gt; x.MemberType == typeof(Bar) &amp;&amp; x.Identifier == "Bar2").<span class="pl-en">Any</span>());
 
 <span class="pl-c">// This results in:</span>
 <span class="pl-c">// Container.Resolve&lt;Bar&gt;("Bar1").Foo == foo1</span>
 <span class="pl-c">// Container.Resolve&lt;Bar&gt;("Bar2").Foo == foo2</span>
 
-<span class="pl-c">///////////// FromResolve</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// FromResolve<span class="pl-c"></span></span>
 
 <span class="pl-c">// This will result in IBar, IFoo, and Foo, all being bound to the same instance of</span>
 <span class="pl-c">// Foo which is assume to exist somewhere on the given prefab</span>
-GameObject fooPrefab;
-Container.Bind&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Foo&gt;().FromResolve();
-Container.Bind&lt;IFoo&gt;().To&lt;IBar&gt;().FromResolve();
+<span class="pl-en">GameObject</span> <span class="pl-en">fooPrefab</span>;
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromResolve</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">FromResolve</span>();
 
 <span class="pl-c">// This will result in the same behaviour as the above</span>
-GameObject fooPrefab = <span class="pl-c1">null</span>;
-Container.Bind&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
+<span class="pl-en">GameObject</span> <span class="pl-en">fooPrefab</span> = <span class="pl-c1">null</span>;
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(fooPrefab).<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// Rebind</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Rebind<span class="pl-c"></span></span>
 
 <span class="pl-c">// Rebind can be used to override previous bindings</span>
 <span class="pl-c">// This will result in IFoo being bound to only Bar</span>
@@ -358,59 +354,59 @@ Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().FromPrefab(fooPrefab).AsSingle();
 <span class="pl-c">// Normally the order that the bindings occur in doesn't</span>
 <span class="pl-c">// matter at all, but Rebind does create an order-dependency</span>
 <span class="pl-c">// so use with caution</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Rebind&lt;IFoo&gt;().To&lt;Bar&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Rebind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// Installing Other Installers</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Installing Other Installers<span class="pl-c"></span></span>
 
 <span class="pl-c">// Immediately call InstallBindings() on FooInstaller</span>
-FooInstaller.Install(Container);
+<span class="pl-en">FooInstaller.Install</span>(Container);
 
 <span class="pl-c">// Before calling FooInstaller, configure a property of it</span>
-Container.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>).WhenInjectedInto&lt;FooInstaller&gt;();
-FooInstaller.Install(Container);
+<span class="pl-en">Container.BindInstance</span>("foo").<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">FooInstaller</span>&gt;();
+<span class="pl-en">FooInstaller.Install</span>(Container);
 
 <span class="pl-c">// We can also pass arguments directly</span>
 <span class="pl-c">// This line is equivalent to the above two lines</span>
-FooInstaller.Install(Container, <span class="pl-k">new</span> <span class="pl-k">object</span>[] { <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span> });
+<span class="pl-en">FooInstaller.Install</span>(Container, new object[] { <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span> });
 
 <span class="pl-c">// After calling FooInstaller, override one of its bindings</span>
 <span class="pl-c">// We assume here that FooInstaller binds IFoo to something</span>
-FooInstaller.Install(Container);
-Container.Rebind&lt;IFoo&gt;().To&lt;Bar&gt;().AsSingle();
+<span class="pl-en">FooInstaller.Install</span>(Container);
+<span class="pl-en">Container.Rebind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();
 
-<span class="pl-c">///////////// Manual Use of Container</span>
+<span class="pl-c"><span class="pl-c">///</span>////////// Manual Use of Container<span class="pl-c"></span></span>
 
 <span class="pl-c">// This will fill in any parameters marked as [Inject] and also call any [Inject] methods</span>
-<span class="pl-k">var</span> foo = <span class="pl-k">new</span> Foo();
-Container.Inject(foo);
+<span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
+<span class="pl-en">Container.Inject</span>(foo);
 
 <span class="pl-c">// Return an instance for IFoo, using the bindings that have been added previously</span>
 <span class="pl-c">// Internally it is what is triggered when you fill in a constructor parameter of type IFoo</span>
 <span class="pl-c">// Note: It will throw an exception if it cannot find a match</span>
-Container.Resolve&lt;IFoo&gt;();
+<span class="pl-en">Container.Resolve</span>&lt;<span class="pl-en">IFoo</span>&gt;();
 
 <span class="pl-c">// Same as the above except returns null when it can't find the given type</span>
-Container.TryResolve&lt;IFoo&gt;();
+<span class="pl-en">Container.TryResolve</span>&lt;<span class="pl-en">IFoo</span>&gt;();
 
 <span class="pl-c">// Return a list of 2 instances of type Foo</span>
-Container.BindInstance(<span class="pl-k">new</span> Foo());
-Container.BindInstance(<span class="pl-k">new</span> Foo());
-<span class="pl-k">var</span> foos = Container.ResolveAll&lt;IFoo&gt;();
+<span class="pl-en">Container.BindInstance</span>(new <span class="pl-en">Foo</span>());
+<span class="pl-en">Container.BindInstance</span>(new <span class="pl-en">Foo</span>());
+<span class="pl-k">var</span> <span class="pl-en">foos </span>= <span class="pl-en">Container.ResolveAll</span>&lt;<span class="pl-en">IFoo</span>&gt;();
 
 <span class="pl-c">// Create a new instance of Foo and inject on any of its members</span>
 <span class="pl-c">// And fill in any constructor parameters Foo might have</span>
-Container.Instantiate&lt;Foo&gt;();
+<span class="pl-en">Container.Instantiate</span>&lt;<span class="pl-en">Foo</span>&gt;();
 
-GameObject prefab = <span class="pl-c1">null</span>;
+<span class="pl-en">GameObject</span> <span class="pl-en">prefab</span> = <span class="pl-c1">null</span>;
 <span class="pl-c">// Instantiate a new prefab and have any injectables filled in on the prefab</span>
-GameObject go = Container.InstantiatePrefab(prefab);
+<span class="pl-en">GameObject</span> <span class="pl-en">go</span> = <span class="pl-en">Container.InstantiatePrefab</span>(prefab);
 
 <span class="pl-c">// Instantiate a new prefab and return a specific monobehaviour</span>
-Foo foo2 = Container.InstantiatePrefabForComponent&lt;Foo&gt;(prefab);
+<span class="pl-en">Foo</span> <span class="pl-en">foo2</span> = <span class="pl-en">Container.InstantiatePrefabForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(prefab);
 
 <span class="pl-c">// Add a new component to an existing game object</span>
-Foo foo3 = Container.InstantiateComponent&lt;Foo&gt;(gameObject);
+<span class="pl-en">Foo</span> <span class="pl-en">foo3</span> = <span class="pl-en">Container.InstantiateComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(gameObject);
 </pre></div>
 
               </article>

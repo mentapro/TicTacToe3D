@@ -13,7 +13,7 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
-            Info.CurrentState = GameStates.Started;
+            Info.GameState = GameStates.Started;
         }
     }
 }

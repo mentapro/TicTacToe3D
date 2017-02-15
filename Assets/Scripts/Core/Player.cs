@@ -23,7 +23,6 @@ namespace TicTacToe3D
         public string Name { get; private set; }
         public Color Color { get; private set; }
         public PlayerStates State { get; set; }
-        public bool IsActive { get; set; }
 
         public Player(PlayerTypes type, string name, Color color)
         {
@@ -31,7 +30,6 @@ namespace TicTacToe3D
             Name = name;
             Color = color;
             State = PlayerStates.Plays;
-            IsActive = false;
         }
 
         public override bool Equals(object obj)

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Zenject
 {
     // Zero parameters
-    public class Factory<TValue> : DynamicFactory<TValue>, IFactory<TValue>
+    public class Factory<TValue> : PlaceholderFactory<TValue>, IFactory<TValue>
     {
         // If you were hoping to override this method, use BindFactory<>.ToFactory instead
         public TValue Create()
@@ -14,16 +14,13 @@ namespace Zenject
 
         protected sealed override IEnumerable<Type> ParamTypes
         {
-            get
-            {
-                yield break;
-            }
+            get { yield break; }
         }
     }
 
     // One parameter
     public class Factory<TParam1, TValue>
-        : DynamicFactory<TValue>, IFactory<TParam1, TValue>
+        : PlaceholderFactory<TValue>, IFactory<TParam1, TValue>
     {
         // If you were hoping to override this method, use BindFactory<>.ToFactory instead
         public TValue Create(TParam1 param)
@@ -37,16 +34,13 @@ namespace Zenject
 
         protected sealed override IEnumerable<Type> ParamTypes
         {
-            get
-            {
-                yield return typeof(TParam1);
-            }
+            get { yield return typeof(TParam1); }
         }
     }
 
     // Two parameters
     public class Factory<TParam1, TParam2, TValue>
-        : DynamicFactory<TValue>, IFactory<TParam1, TParam2, TValue>
+        : PlaceholderFactory<TValue>, IFactory<TParam1, TParam2, TValue>
     {
         // If you were hoping to override this method, use BindFactory<>.ToFactory instead
         public TValue Create(TParam1 param1, TParam2 param2)
@@ -71,7 +65,7 @@ namespace Zenject
 
     // Three parameters
     public class Factory<TParam1, TParam2, TParam3, TValue>
-        : DynamicFactory<TValue>, IFactory<TParam1, TParam2, TParam3, TValue>
+        : PlaceholderFactory<TValue>, IFactory<TParam1, TParam2, TParam3, TValue>
     {
         // If you were hoping to override this method, use BindFactory<>.ToFactory instead
         public TValue Create(TParam1 param1, TParam2 param2, TParam3 param3)
@@ -98,7 +92,7 @@ namespace Zenject
 
     // Four parameters
     public class Factory<TParam1, TParam2, TParam3, TParam4, TValue>
-        : DynamicFactory<TValue>, IFactory<TParam1, TParam2, TParam3, TParam4, TValue>
+        : PlaceholderFactory<TValue>, IFactory<TParam1, TParam2, TParam3, TParam4, TValue>
     {
         // If you were hoping to override this method, use BindFactory<>.ToFactory instead
         public TValue Create(TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)
@@ -127,7 +121,7 @@ namespace Zenject
 
     // Five parameters
     public class Factory<TParam1, TParam2, TParam3, TParam4, TParam5, TValue>
-        : DynamicFactory<TValue>, IFactory<TParam1, TParam2, TParam3, TParam4, TParam5, TValue>
+        : PlaceholderFactory<TValue>, IFactory<TParam1, TParam2, TParam3, TParam4, TParam5, TValue>
     {
         // If you were hoping to override this method, use BindFactory<>.ToFactory instead
         public TValue Create(TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5)

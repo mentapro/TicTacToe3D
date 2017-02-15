@@ -6,52 +6,50 @@ namespace Zenject
     public class FactoryFromBinder<TContract> : FactoryFromBinderBase<TContract>
     {
         public FactoryFromBinder(
-            BindInfo bindInfo,
-            Type factoryType,
-            BindFinalizerWrapper finalizerWrapper)
-            : base(bindInfo, factoryType, finalizerWrapper)
+            BindInfo bindInfo, FactoryBindInfo factoryBindInfo)
+            : base(bindInfo, factoryBindInfo)
         {
         }
 
-        public ConditionBinder FromResolveGetter<TObj>(Func<TObj, TContract> method)
+        public ConditionCopyNonLazyBinder FromResolveGetter<TObj>(Func<TObj, TContract> method)
         {
             return FromResolveGetter<TObj>(null, method);
         }
 
-        public ConditionBinder FromResolveGetter<TObj>(
+        public ConditionCopyNonLazyBinder FromResolveGetter<TObj>(
             object subIdentifier, Func<TObj, TContract> method)
         {
-            SubFinalizer = CreateFinalizer(
-                (container) => new GetterProvider<TObj, TContract>(subIdentifier, method, container));
+            FactoryBindInfo.ProviderFunc =
+                (container) => new GetterProvider<TObj, TContract>(subIdentifier, method, container);
 
             return this;
         }
 
-        public ConditionBinder FromMethod(Func<DiContainer, TContract> method)
+        public ConditionCopyNonLazyBinder FromMethod(Func<DiContainer, TContract> method)
         {
-            SubFinalizer = CreateFinalizer(
-                (container) => new MethodProviderWithContainer<TContract>(method));
+            ProviderFunc =
+                (container) => new MethodProviderWithContainer<TContract>(method);
 
             return this;
         }
 
-        public ConditionBinder FromInstance(object instance)
+        public ConditionCopyNonLazyBinder FromInstance(object instance)
         {
             BindingUtil.AssertInstanceDerivesFromOrEqual(instance, AllParentTypes);
 
-            SubFinalizer = CreateFinalizer(
-                (container) => new InstanceProvider(container, ContractType, instance));
+            ProviderFunc =
+                (container) => new InstanceProvider(ContractType, instance, container);
 
             return this;
         }
 
-        public ConditionBinder FromFactory<TSubFactory>()
+        public ArgConditionCopyNonLazyBinder FromFactory<TSubFactory>()
             where TSubFactory : IFactory<TContract>
         {
-            SubFinalizer = CreateFinalizer(
-                (container) => new FactoryProvider<TContract, TSubFactory>(container, new List<TypeValuePair>()));
+            ProviderFunc =
+                (container) => new FactoryProvider<TContract, TSubFactory>(container, BindInfo.Arguments);
 
-            return this;
+            return new ArgConditionCopyNonLazyBinder(BindInfo);
         }
 
         public FactorySubContainerBinder<TContract> FromSubContainerResolve()
@@ -62,17 +60,17 @@ namespace Zenject
         public FactorySubContainerBinder<TContract> FromSubContainerResolve(object subIdentifier)
         {
             return new FactorySubContainerBinder<TContract>(
-                BindInfo, FactoryType, FinalizerWrapper, subIdentifier);
+                BindInfo, FactoryBindInfo, subIdentifier);
         }
 
 #if !NOT_UNITY3D
 
-        public ConditionBinder FromResource(string resourcePath)
+        public ConditionCopyNonLazyBinder FromResource(string resourcePath)
         {
             BindingUtil.AssertDerivesFromUnityObject(ContractType);
 
-            SubFinalizer = CreateFinalizer(
-                (container) => new ResourceProvider(resourcePath, ContractType));
+            ProviderFunc =
+                (container) => new ResourceProvider(resourcePath, ContractType);
 
             return this;
         }

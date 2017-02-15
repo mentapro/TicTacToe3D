@@ -72,17 +72,17 @@
         Log = <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>;
     }
 
-    <span class="pl-k">public</span> <span class="pl-k">string</span> Log
+    <span class="pl-k">public </span><span class="pl-k">string</span> <span class="pl-en">Log</span>
     {
         <span class="pl-k">get</span>;
-        <span class="pl-k">private</span> <span class="pl-k">set</span>;
+        <span class="pl-en">private</span> <span class="pl-en">set</span>;
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Write</span>(<span class="pl-k">string</span> <span class="pl-smi">value</span>)
     {
         <span class="pl-k">if</span> (<span class="pl-k">value</span> == <span class="pl-c1">null</span>)
         {
-            <span class="pl-k">throw</span> <span class="pl-k">new</span> ArgumentException();
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-en">ArgumentException</span>();
         }
 
         Log += <span class="pl-k">value</span>;
@@ -96,7 +96,7 @@
 <span class="pl-k">using</span> <span class="pl-en">NUnit.Framework</span>;
 
 [TestFixture]
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestLogger</span> : <span class="pl-k">ZenjectUnitTestFixture</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestLogger</span> : <span class="pl-en">ZenjectUnitTestFixture</span>
 {
     [SetUp]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">CommonInstall</span>()
@@ -107,7 +107,7 @@
     [Test]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">TestInitialValues</span>()
     {
-        <span class="pl-k">var</span> logger = Container.Resolve&lt;Logger&gt;();
+        <span class="pl-k">var</span> <span class="pl-en">logger </span>= Container.Resolve&lt;Logger&gt;();
 
         Assert.That(logger.Log == <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>);
     }
@@ -115,7 +115,7 @@
     [Test]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">TestFirstEntry</span>()
     {
-        <span class="pl-k">var</span> logger = Container.Resolve&lt;Logger&gt;();
+        <span class="pl-k">var</span> <span class="pl-en">logger </span>= Container.Resolve&lt;Logger&gt;();
 
         logger.Write(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
         Assert.That(logger.Log == <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
@@ -124,7 +124,7 @@
     [Test]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">TestAppend</span>()
     {
-        <span class="pl-k">var</span> logger = Container.Resolve&lt;Logger&gt;();
+        <span class="pl-k">var</span> <span class="pl-en">logger </span>= Container.Resolve&lt;Logger&gt;();
 
         logger.Write(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
         logger.Write(<span class="pl-s"><span class="pl-pds">"</span>bar<span class="pl-pds">"</span></span>);
@@ -136,7 +136,7 @@
     [ExpectedException]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">TestNullValue</span>()
     {
-        <span class="pl-k">var</span> logger = Container.Resolve&lt;Logger&gt;();
+        <span class="pl-k">var</span> <span class="pl-en">logger </span>= Container.Resolve&lt;Logger&gt;();
 
         logger.Write(<span class="pl-c1">null</span>);
     }
@@ -147,11 +147,11 @@
 
 <p>As you can see above, this approach is very basic and just involves inheriting from the <code>ZenjectUnitTestFixture</code> class.  All this helper class does is ensure that a new Container is re-created before each test method is called.   That's it.  This is the entire code for it:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">abstract</span> <span class="pl-k">class</span> <span class="pl-en">ZenjectUnitTestFixture</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> abstract <span class="pl-k">class</span> <span class="pl-en">ZenjectUnitTestFixture</span>
 {
-    DiContainer _container;
+    <span class="pl-en">DiContainer</span> <span class="pl-en">_container</span>;
 
-    <span class="pl-k">protected</span> DiContainer Container
+    <span class="pl-k">protected </span><span class="pl-en">DiContainer</span> <span class="pl-en">Container</span>
     {
         <span class="pl-k">get</span>
         {
@@ -162,7 +162,7 @@
     [SetUp]
     <span class="pl-k">public</span> <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">Setup</span>()
     {
-        _container = <span class="pl-k">new</span> DiContainer();
+        _container = <span class="pl-k">new</span> <span class="pl-en">DiContainer</span>();
     }
 }</pre></div>
 
@@ -175,7 +175,7 @@
 <span class="pl-k">using</span> <span class="pl-en">NUnit.Framework</span>;
 
 [TestFixture]
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestLogger</span> : <span class="pl-k">ZenjectUnitTestFixture</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestLogger</span> : <span class="pl-en">ZenjectUnitTestFixture</span>
 {
     [SetUp]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">CommonInstall</span>()
@@ -185,7 +185,7 @@
     }
 
     [Inject]
-    Logger _logger;
+    <span class="pl-en">Logger</span> <span class="pl-en">_logger</span>;
 
     [Test]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">TestInitialValues</span>()
@@ -220,18 +220,18 @@
 <h3>
 <a id="user-content-integration-testss" class="anchor" href="#integration-testss" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Integration Testss</h3>
 
-<p>Integration tests, on the other hand, are executed in a similar environment to the scenes in your project.  A <code>SceneContext</code> and <code>ProjectContext</code> are created, so you can invoke MonoInstallers, ScriptableObjectInstallers, etc. as necessary.</p>
+<p>Integration tests, on the other hand, are executed in a similar environment to the scenes in your project.  Unlike ZenjectUnitTestFixture, a <code>SceneContext</code> and <code>ProjectContext</code> are created for each test, so your code will run in similar way that it would normally.  For example, any bindings to IInitializable and IDisposable will be executed how you expect.</p>
 
 <p>Let's pull from the included sample project and test one of the classes there (AsteroidManager):</p>
 
 <div class="highlight highlight-source-cs"><pre>[TestFixture]
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestAsteroidManager</span> : <span class="pl-k">ZenjectIntegrationTestFixture</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestAsteroidManager</span> : <span class="pl-en">ZenjectIntegrationTestFixture</span>
 {
     [SetUp]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">CommonInstall</span>()
     {
         GameSettingsInstaller.InstallFromResource(Container);
-        <span class="pl-k">var</span> gameSettings = Container.Resolve&lt;GameInstaller.Settings&gt;();
+        <span class="pl-k">var</span> <span class="pl-en">gameSettings </span>= Container.Resolve&lt;GameInstaller.Settings&gt;();
         Container.Bind&lt;AsteroidManager&gt;().AsSingle();
         Container.BindFactory&lt;Asteroid, Asteroid.Factory&gt;().FromPrefab(gameSettings.AsteroidPrefab);
         Container.Bind&lt;Camera&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>Main<span class="pl-pds">"</span></span>).FromGameObject();
@@ -241,10 +241,10 @@
     }
 
     [Inject]
-    AsteroidManager _asteroidManager;
+    <span class="pl-en">AsteroidManager</span> <span class="pl-en">_asteroidManager</span>;
 
     [Inject]
-    AsteroidManager.Settings _asteroidManagerSettings;
+    <span class="pl-en">AsteroidManager.Settings</span> _asteroidManagerSettings;
 
     [Test]
     [ValidateOnly]
@@ -276,7 +276,7 @@
 
 <p>When you start running a test through Unity's EditorTestRunner window, Unity will open up a new empty scene and run the tests there, and then Unity will re-open your previously open scenes once the tests complete.  This is great because any new game objects you create will not affect any currently open scenes (more details <a href="https://docs.unity3d.com/550/Documentation/Manual/testing-editortestsrunner.html">here</a>.)</p>
 
-<p>Before each one of your test methods are run, ZenjectIntegrationTestFixture will create a new SceneContext in this empty scene.  The Container that you reference in your tests refers to the container used by this new temporary SceneContext.  After you have finished installing all your bindings on the Container, either by using [SetUp] methods or from within your test method, you need to call ZenjectIntegrationTestFixture.Initialize().  This will resolve all the NonLazy bindings and also trigger IInitializable.Initialize for all classes that are bound to IInitializable.  If you have common fields on your test marked with [Inject] then these fields are also filled in at this time.  Alternatively, you can diretcly call <code>Container.Resolve&lt;&gt;</code> from within your test methods to get the classes you want to run tests on.</p>
+<p>Before each one of your test methods are run, ZenjectIntegrationTestFixture will create a new SceneContext in this empty scene.  The Container that you reference in your tests refers to the container used by this new temporary SceneContext.  After you have finished installing all your bindings on the Container, either by using [SetUp] methods or from within your test method, you need to call ZenjectIntegrationTestFixture.Initialize().  This will resolve all the NonLazy bindings and also trigger IInitializable.Initialize for all classes that are bound to IInitializable.  If you have common fields on your test marked with [Inject] then these fields are also filled in at this time.  Alternatively, you can directly call <code>Container.Resolve&lt;&gt;</code> from within your test methods to get the classes you want to run tests on.</p>
 
 <p>You can also run zenject validation on your test by adding a <code>[ValidateOnly]</code> attribute above your test method (as shown in example above).  This will cause the test to not instantiate any of your bindings and instead just verify that the configuration of your Container is valid.  However, you could also just as easily rely on configuration errors to be caught when running normal tests too, so it probably has limited use for you.</p>
 

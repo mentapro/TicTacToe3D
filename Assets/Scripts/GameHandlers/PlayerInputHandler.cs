@@ -9,30 +9,33 @@ namespace TicTacToe3D
     public class PlayerInputHandler : ITickable, IDisposable
     {
         private bool _tick;
-        private bool _isHumanActive;
-        
+
+        private GameInfo Info { get; set; }
         private BadgeSpawnPoint.Registry SpawnRegistry { get; set; }
         private BadgeSpawner BadgeSpawner { get; set; }
-        private ActivePlayerChanged ActivePlayerChanged { get; set; }
-        private GameInfo Info { get; set; }
+        private GameEvents GameEvents { get; set; }
 
-        public PlayerInputHandler(BadgeSpawnPoint.Registry spawnRegistry,
+        public PlayerInputHandler(GameInfo info,
+            BadgeSpawnPoint.Registry spawnRegistry,
             BadgeSpawner badgeSpawner,
-            ActivePlayerChanged activePlayerChanged,
-            GameInfo info)
+            GameEvents gameEvents)
         {
+            Info = info;
             SpawnRegistry = spawnRegistry;
             BadgeSpawner = badgeSpawner;
-            ActivePlayerChanged = activePlayerChanged;
-            Info = info;
+            GameEvents = gameEvents;
 
-            ActivePlayerChanged += OnActivePlayerChanged;
             Info.PropertyChanged += OnGameInfoPropertyChanged;
+            GameEvents.BadgeSpawned += OnBadgeSpawned;
         }
 
         public void Tick()
         {
-            if (_tick == false) return;
+            if (_tick == false)
+            {
+                return;
+            }
+
             RaycastHit hit;
             if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit))
             {
@@ -63,26 +66,48 @@ namespace TicTacToe3D
 
         public void Dispose()
         {
-            ActivePlayerChanged -= OnActivePlayerChanged;
             Info.PropertyChanged -= OnGameInfoPropertyChanged;
+            GameEvents.BadgeSpawned -= OnBadgeSpawned;
         }
 
         private void OnGameInfoPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "CurrentState")
+            if (e.PropertyName == "GameState" || e.PropertyName == "ActivePlayer" || e.PropertyName == "ActivePlayerMadeSteps")
             {
-                OnGameStateChanged(Info.CurrentState);
+                ValidateTick();
             }
         }
 
-        private void OnGameStateChanged(GameStates state)
+        private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
         {
-            _tick = state == GameStates.Started && _isHumanActive;
+            if (isVictorious)
+            {
+                _tick = false;
+            }
+            else
+            {
+                ValidateTick();
+            }
         }
 
-        private void OnActivePlayerChanged(Player activePlayer)
+        private void ValidateTick()
         {
-            _isHumanActive = activePlayer.Type == PlayerTypes.Human;
+            if (Info.GameState != GameStates.Started)
+            {
+                _tick = false;
+                return;
+            }
+            if (Info.ActivePlayer.Type == PlayerTypes.AI)
+            {
+                _tick = false;
+                return;
+            }
+            if (Info.ActivePlayerMadeSteps == Info.StepSize)
+            {
+                _tick = false;
+                return;
+            }
+            _tick = true;
         }
     }
 }

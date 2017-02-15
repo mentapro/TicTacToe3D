@@ -18,19 +18,19 @@ namespace TicTacToe3D
 
             Container.Bind<PlayerRowModel>().AsTransient();
             Container.BindFactory<PlayerRowFacade, PlayerRowFacade.Factory>()
-                .FromPrefab(_settings.PlayerRowFacadePrefab);
+                .FromComponentInNewPrefab(_settings.PlayerRowFacadePrefab);
 
-            Container.BindAllInterfacesAndSelf<ModalDialog>().To<ModalDialog>().AsSingle();
+            Container.BindInterfacesAndSelfTo<ModalDialog>().AsSingle();
 
             InstallPresenters();
         }
 
         private void InstallPresenters()
         {
-            Container.BindAllInterfacesAndSelf<MainMenuPresenter>().To<MainMenuPresenter>().AsSingle();
-            Container.BindAllInterfacesAndSelf<NewGameMenuPresenter>().To<NewGameMenuPresenter>().AsSingle();
-            Container.BindAllInterfacesAndSelf<GameInformationPresenter>().To<GameInformationPresenter>().AsSingle();
-            Container.BindAllInterfacesAndSelf<AdvancedSettingsPresenter>().To<AdvancedSettingsPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<MainMenuPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<NewGameMenuPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<GameInformationPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<AdvancedSettingsPresenter>().AsSingle();
         }
 
         [Serializable]

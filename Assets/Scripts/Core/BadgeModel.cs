@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using ModestTree;
+using UnityEngine;
 
 namespace TicTacToe3D
 {
@@ -7,9 +9,14 @@ namespace TicTacToe3D
         private BadgeFacade Facade { get; set; }
         private Registry _Registry { get; set; }
 
+        public bool IsConfirmed { get; set; }
         public Point Coordinates { get; private set; }
         public Player Owner { get; private set; }
-        
+        public ParticleSystem Glowing
+        {
+            get { return Facade.Glowing; }
+        }
+
         public BadgeModel(Registry registry)
         {
             _Registry = registry;
@@ -21,10 +28,13 @@ namespace TicTacToe3D
         {
             Facade = facade;
         }
-
-        public void Dispose()
+        
+        public void Destroy()
         {
-            
+            Assert.That(_Registry.Badges.Last() == this, "You can destroy only last badge in registry");
+
+            _Registry.RemoveBadge(this);
+            Object.Destroy(Facade.gameObject);
         }
 
         public void SetCoordinates(Point coordinates)
@@ -40,6 +50,8 @@ namespace TicTacToe3D
         public void SetBadgeColor(Color color)
         {
             Facade.Renderer.material.color = color;
+            var mainModule = Glowing.main;
+            mainModule.startColor = new ParticleSystem.MinMaxGradient(Owner.Color);
         }
     }
 }

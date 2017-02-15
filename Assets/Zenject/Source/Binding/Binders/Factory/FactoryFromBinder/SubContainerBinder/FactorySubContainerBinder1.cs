@@ -6,21 +6,20 @@ namespace Zenject
         : FactorySubContainerBinderWithParams<TContract>
     {
         public FactorySubContainerBinder(
-            BindInfo bindInfo, Type factoryType,
-            BindFinalizerWrapper finalizerWrapper, object subIdentifier)
-            : base(bindInfo, factoryType, finalizerWrapper, subIdentifier)
+            BindInfo bindInfo, FactoryBindInfo factoryBindInfo, object subIdentifier)
+            : base(bindInfo, factoryBindInfo, subIdentifier)
         {
         }
 
-        public ConditionBinder ByMethod(Action<DiContainer, TParam1> installerMethod)
+        public ConditionCopyNonLazyBinder ByMethod(Action<DiContainer, TParam1> installerMethod)
         {
-            SubFinalizer = CreateFinalizer(
+            ProviderFunc = 
                 (container) => new SubContainerDependencyProvider(
                     ContractType, SubIdentifier,
                     new SubContainerCreatorByMethod<TParam1>(
-                        container, installerMethod)));
+                        container, installerMethod));
 
-            return new ConditionBinder(BindInfo);
+            return new ConditionCopyNonLazyBinder(BindInfo);
         }
     }
 }

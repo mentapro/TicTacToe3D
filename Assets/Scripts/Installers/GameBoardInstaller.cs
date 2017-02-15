@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using Zenject;
 
@@ -15,66 +14,47 @@ namespace TicTacToe3D
         public override void InstallBindings()
         {
             if (_info == null)
-                InitializeGameInfo();
-
-            Container.BindInstance(_info).AsSingle();
+                Container.Bind<GameInfo>().AsSingle();
+            else
+                Container.BindInstance(_info).AsSingle();
 
             Container.Bind<BadgeModel>().AsTransient();
             Container.Bind<BadgeSpawner>().AsSingle();
+            Container.Bind<MenuManager>().AsSingle();
+            Container.Bind<GameEvents>().AsSingle();
 
-            Container.Bind<BadgeModel.Registry>().AsSingle();
-            Container.BindAllInterfacesAndSelf<BadgeSpawnPoint.Registry>().To<BadgeSpawnPoint.Registry>().AsSingle();
+            Container.BindInterfacesAndSelfTo<BadgeModel.Registry>().AsSingle();
+            Container.BindInterfacesAndSelfTo<BadgeSpawnPoint.Registry>().AsSingle();
+            Container.BindInterfacesAndSelfTo<History>().AsSingle();
 
-            Container.BindAllInterfaces<CameraHandler>().To<CameraHandler>().AsSingle();
-            Container.BindAllInterfaces<PlayerInputHandler>().To<PlayerInputHandler>().AsSingle();
-            Container.BindAllInterfaces<ActivePlayerHandler>().To<ActivePlayerHandler>().AsSingle();
-            Container.BindAllInterfaces<GameControlHandler>().To<GameControlHandler>().AsSingle();
-            Container.BindAllInterfaces<VictoryHandler>().To<VictoryHandler>().AsSingle();
-            Container.BindAllInterfaces<GameBoardSpawner>().To<GameBoardSpawner>().AsSingle();
-            Container.BindAllInterfaces<WinDetector>().To<WinDetector>().AsSingle();
+            Container.BindInterfacesTo<CameraHandler>().AsSingle();
+            Container.BindInterfacesTo<PlayerInputHandler>().AsSingle();
+            Container.BindInterfacesTo<ActivePlayerHandler>().AsSingle();
+            Container.BindInterfacesTo<GameControlHandler>().AsSingle();
+            Container.BindInterfacesTo<VictoryHandler>().AsSingle();
+            Container.BindInterfacesTo<GameBoardSpawner>().AsSingle();
             
             Container.BindInitializableExecutionOrder<GameControlHandler>(1000);
 
-            InstallSignals();
             InstallFactories();
-        }
-
-        private void InstallSignals()
-        {
-            Container.BindSignal<BadgeSpawned>();
-            Container.BindSignal<ActivePlayerChanged>(); // subscribe on this before Initialize (Start) because it will be fired during Initialize
-            Container.BindSignal<PlayerWon>();
+            InstallPresenters();
         }
 
         private void InstallFactories()
         {
-            Container.BindFactory<GameObject, GameBoardSpawner.BoardFactory>()
-                .FromPrefab(_settings.BoardPrefab);
-            Container.BindFactory<GameObject, GameBoardSpawner.StickFactory>()
-                .FromPrefab(_settings.StickPrefab)
-                .UnderTransformGroup("Sticks");
+            Container.Bind<GameBoardSpawner.BoardFactory>().AsSingle().WithArguments(_settings.BoardPrefab);
+            Container.Bind<GameBoardSpawner.StickFactory>().AsSingle().WithArguments(_settings.StickPrefab);
             Container.BindFactory<BadgeSpawnPoint, GameBoardSpawner.StickPartitionFactory>()
-                .FromPrefab(_settings.StickPartitionPrefab);
+                .FromComponentInNewPrefab(_settings.StickPartitionPrefab);
             Container.BindFactory<BadgeFacade, BadgeFacade.Factory>()
-                .FromPrefab(_settings.BadgePrefab);
+                .FromComponentInNewPrefab(_settings.BadgePrefab);
         }
 
-        private void InitializeGameInfo()
+        private void InstallPresenters()
         {
-            _info = new GameInfo
-            {
-                Dimension = 4,
-                BadgesToWin = 4,
-                StepSize = 1,
-                Players = new List<Player>
-                {
-                    new Player(PlayerTypes.Human, "Player 1", Color.red),
-                    new Player(PlayerTypes.Human, "Player 2", Color.blue),
-                    new Player(PlayerTypes.Human, "Player 3", Color.green)
-                }
-            };
+            Container.BindInterfacesAndSelfTo<ConfirmStepWindowPresenter>().AsSingle();
         }
-        
+
         [Serializable]
         public class Settings
         {

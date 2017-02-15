@@ -36,18 +36,18 @@
   <div class="page">
     <div id="preview-page" class="preview-page" data-autorefresh-url="">
 
-
+    
 
       <div role="main" class="main-content">
         <div class="container new-discussion-timeline experiment-repo-nav">
           <div class="repository-content">
             <div id="readme" class="readme boxed-group clearfix announce instapaper_body md">
-
+              
                 <h3>
                   <span class="octicon octicon-book"></span>
                   SubContainers.md
                 </h3>
-
+              
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 <h2>
 <a id="user-content-sub-containers-and-facades" class="anchor" href="#sub-containers-and-facades" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-sub-containers-and-facades"></a>Sub-Containers And Facades</h2>
@@ -56,7 +56,7 @@
 
 <p>Another example might be if you are designing an open-world space ship game, you might want each space ship to have it's own container that contains all the class instances responsible for running that specific spaceship.</p>
 
-<p>This is actually how global bindings work.  There is one global container for the entire application, and when a unity scene starts up, it creates a new sub-container "underneath" the global container.  All the bindings that you add in your scene MonoInstaller are bound to your sub-container.  This allows the dependencies in your scene to automatically get injected with global bindings, because sub-containers automatically inherit all the bindings in its parent (and grandparent, etc.).</p>
+<p>This is actually how ProjectContext bindings work.  There is one container for the entire project, and when a unity scene starts up, it container within each SceneContext is created "underneath" the ProjectContext container.  All the bindings that you add in your scene MonoInstaller are bound to your SceneContext container.  This allows the dependencies in your scene to automatically get injected with ProjectContext bindings, because sub-containers automatically inherit all the bindings in their parent (and grandparent, etc.).</p>
 
 <p>A common design pattern that we like to use in relation to sub-containers is the <a href="https://en.wikipedia.org/wiki/Facade_pattern">Facade pattern</a>.  This pattern is used to abstract away a related group of dependencies so that it can be used at a higher level when used by other modules in the code base.  This is relevant here because often when you are defining sub-containers in your application it is very useful to also define a Facade class that is used to interact with this sub-container as a whole.  So, to apply it to the spaceship example above, you might have a SpaceshipFacade class that represents very high-level operations on a spaceship such as "Start Engine", "Take Damage", "Fly to destination", etc.  And then internally, the SpaceshipFacade class can delegate the specific handling of all the parts of these requests to the relevant single-responsibility dependencies that exist within the sub-container.</p>
 
@@ -67,9 +67,9 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Greeter</span>
 {
-    <span class="pl-k">readonly</span> <span class="pl-k">string</span> _message;
+    <span class="pl-k">readonly </span><span class="pl-k">string</span> <span class="pl-en">_message</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Greeter</span>(<span class="pl-k">string</span> <span class="pl-smi">message</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Greeter</span>(string message)
     {
         _message = message;
     }
@@ -80,11 +80,11 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameController</span> : <span class="pl-k">IInitializable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameController</span> : <span class="pl-en">IInitializable</span>
 {
-    <span class="pl-k">readonly</span> Greeter _greeter;
+    <span class="pl-k">readonly </span><span class="pl-en">Greeter</span> <span class="pl-en">_greeter</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">GameController</span>(<span class="pl-k">Greeter</span> <span class="pl-smi">greeter</span>)
+    <span class="pl-k">public</span> <span class="pl-en">GameController</span>(Greeter greeter)
     {
         _greeter = greeter;
     }
@@ -95,15 +95,15 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;GameController&gt;().To&lt;GameController&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;GameController&gt;().AsSingle();
         Container.Bind&lt;Greeter&gt;().FromSubContainerResolve().ByMethod(InstallGreeter).AsSingle();
     }
 
-    <span class="pl-k">void</span> <span class="pl-en">InstallGreeter</span>(<span class="pl-k">DiContainer</span> <span class="pl-smi">subContainer</span>)
+    <span class="pl-k">void</span> <span class="pl-en">InstallGreeter</span>(<span class="pl-en">DiContainer</span> <span class="pl-smi">subContainer</span>)
     {
         subContainer.Bind&lt;Greeter&gt;().AsSingle();
         subContainer.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>Hello world!<span class="pl-pds">"</span></span>);
@@ -112,16 +112,16 @@
 
 <p>The important thing to understand here is that any bindings that we add inside the <code>InstallGreeter</code> method will only be visible to objects within this sub-container.  The only exception is the Facade class (in this case, Greeter) since it is bound to the parent container using the FromSubContainerResolve binding.  In other words, in this example, the string "Hello World" is only visible by the Greeter class.</p>
 
-<p>Note that you should always add a bind statement for whatever class is given to FromSubContainerResolve, otherwise this will fail.</p>
+<p>Note that you should always add a bind statement for whatever class is given to FromSubContainerResolve within the sub-container install method - otherwise you'll get exceptions and validation will fail.</p>
 
-<p>Note also that it is often better to use <code>ByInstaller</code> instead of <code>ByMethod</code>.  This is because when you use <code>ByMethod</code> it is easy to accidentally reference the Container instead of the subContainer.  Also, by using <code>ByInstaller</code> you can pass arguments into the Installer itself.</p>
+<p>Note also that unlike the above example, it is often better to use <code>ByInstaller</code> instead of <code>ByMethod</code>.  This is because when you use <code>ByMethod</code> it is easy to accidentally reference the Container instead of the subContainer.  Also, by using <code>ByInstaller</code> you can pass arguments into the Installer itself.</p>
 
 <h2>
 <a id="user-content-using-iinitializable--itickable--idisposable-within-sub-containers" class="anchor" href="#using-iinitializable--itickable--idisposable-within-sub-containers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-using-tickables-within-sub-containers"></a>Using IInitializable / ITickable / IDisposable within Sub-Containers</h2>
 
 <p>One issue with the Hello World example above is that if I wanted to add some ITickable's or IInitializable's or IDisposable's to my sub-container it would not work.  For example, I might try doing this:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GoodbyeHandler</span> : <span class="pl-k">IDisposable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GoodbyeHandler</span> : <span class="pl-en">IDisposable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Dispose</span>()
     {
@@ -129,7 +129,7 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">HelloHandler</span> : <span class="pl-k">IInitializable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">HelloHandler</span> : <span class="pl-en">IInitializable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
     {
@@ -145,25 +145,25 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
         Container.Bind&lt;Greeter&gt;().FromSubContainerResolve().ByMethod(InstallGreeter).AsSingle().NonLazy();
     }
 
-    <span class="pl-k">void</span> <span class="pl-en">InstallGreeter</span>(<span class="pl-k">DiContainer</span> <span class="pl-smi">subContainer</span>)
+    <span class="pl-k">void</span> <span class="pl-en">InstallGreeter</span>(<span class="pl-en">DiContainer</span> <span class="pl-smi">subContainer</span>)
     {
         subContainer.Bind&lt;Greeter&gt;().AsSingle();
 
-        subContainer.BindAllInterfaces&lt;GoodbyeHandler&gt;().To&lt;GoodbyeHandler&gt;().AsSingle();
-        subContainer.BindAllInterfaces&lt;HelloHandler&gt;().To&lt;HelloHandler&gt;().AsSingle();
+        subContainer.BindInterfacesTo&lt;GoodbyeHandler&gt;().AsSingle();
+        subContainer.BindInterfacesTo&lt;HelloHandler&gt;().AsSingle();
     }
 }</pre></div>
 
 <p>However, while we will find that our <code>Greeter</code> class is created (due to the fact we're using <code>NonLazy</code>) and the text "Created Greeter!" is printed to the console, the Hello and Goodbye messages are not.  To get this working we need to change it to the following:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GoodbyeHandler</span> : <span class="pl-k">IDisposable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GoodbyeHandler</span> : <span class="pl-en">IDisposable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Dispose</span>()
     {
@@ -171,7 +171,7 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">HelloHandler</span> : <span class="pl-k">IInitializable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">HelloHandler</span> : <span class="pl-en">IInitializable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
     {
@@ -179,7 +179,7 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Greeter</span> : <span class="pl-k">Kernel</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Greeter</span> : <span class="pl-en">Kernel</span>
 {
     <span class="pl-k">public</span> <span class="pl-en">Greeter</span>()
     {
@@ -187,32 +187,32 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfacesAndSelf&lt;Greeter&gt;()
-            .To&lt;Greeter&gt;().FromSubContainerResolve().ByMethod(InstallGreeter).AsSingle().NonLazy();
+        Container.BindInterfacesAndSelfTo&lt;Greeter&gt;()
+            .FromSubContainerResolve().ByMethod(InstallGreeter).AsSingle().NonLazy();
     }
 
-    <span class="pl-k">void</span> <span class="pl-en">InstallGreeter</span>(<span class="pl-k">DiContainer</span> <span class="pl-smi">subContainer</span>)
+    <span class="pl-k">void</span> <span class="pl-en">InstallGreeter</span>(<span class="pl-en">DiContainer</span> <span class="pl-smi">subContainer</span>)
     {
         subContainer.Bind&lt;Greeter&gt;().AsSingle();
 
-        subContainer.BindAllInterfaces&lt;GoodbyeHandler&gt;().To&lt;GoodbyeHandler&gt;().AsSingle();
-        subContainer.BindAllInterfaces&lt;HelloHandler&gt;().To&lt;HelloHandler&gt;().AsSingle();
+        subContainer.BindInterfacesTo&lt;GoodbyeHandler&gt;().AsSingle();
+        subContainer.BindInterfacesTo&lt;HelloHandler&gt;().AsSingle();
     }
 }
 </pre></div>
 
 <p>Now if we run it, we should see the Hello message, then if we stop playing we should see the Goodbye message.</p>
 
-<p>The reason this works is because we are now binding IInitializable, IDisposable, and ITickable on the root container to the Greeter class given by <code>Container.BindAllInterfacesAndSelf&lt;Greeter&gt;().To&lt;Greeter&gt;()</code>.  Greeter now inherits from Kernel, which inherits from all these interfaces and also handles forwarding these calls to the IInitializable's / ITickable's / IDisposable's in our sub container.  Note that we use AsSingle() here, which is important otherwise it will create a new sub-container for every interface which is not what we want.</p>
+<p>The reason this works is because we are now binding IInitializable, IDisposable, and ITickable on the root container to the Greeter class given by <code>Container.BindInterfacesAndSelfTo&lt;Greeter&gt;()</code>.  Greeter now inherits from Kernel, which inherits from all these interfaces and also handles forwarding these calls to the IInitializable's / ITickable's / IDisposable's in our sub container.  Note that we use AsSingle() here, which is important otherwise it will create a new sub-container for every interface which is not what we want.</p>
 
 <h2>
 <a id="user-content-creating-sub-containers-on-gameobjects-by-using-game-object-context" class="anchor" href="#creating-sub-containers-on-gameobjects-by-using-game-object-context" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-using-game-object-contexts"></a>Creating Sub-Containers on GameObject's by using Game Object Context</h2>
 
-<p>Another issue with the <a href="#hello-world-for-facades">sub-container hello world example</a> above is that it does not work very well for MonoBehaviour classes.  There is nothing preventing us from adding MonoBehaviour bindings such as FromPrefab, FromGameObject, etc. to our sub-container, however these will cause these new game objects to be added to the root of the scene heirarchy, so we'll have to manually track the lifetime of these objects ourselves by calling GameObject.Destroy on them when the Facade is destroyed.  Also, there is no way to have GameObject's that exist in our scene at the start but also exist within our sub-container.  These problems can be solved by using Game Object Context.</p>
+<p>Another issue with the <a href="#hello-world-for-facades">sub-container hello world example</a> above is that it does not work very well for MonoBehaviour classes.  There is nothing preventing us from adding MonoBehaviour bindings such as FromComponentInNewPrefab, FromNewComponentOnNewGameObject, etc. to our sub-container, however these will cause these new game objects to be added to the root of the scene heirarchy, so we'll have to manually track the lifetime of these objects ourselves by calling GameObject.Destroy on them when the Facade is destroyed.  Also, there is no way to have GameObject's that exist in our scene at the start but also exist within our sub-container.  These problems can be solved by using Game Object Context.</p>
 
 <p>For this example, let's try to actually implement something similar to the open world space ship game described in <a href="#sub-containers-and-facades">the sub-container introduction</a>:</p>
 
@@ -224,12 +224,12 @@
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 <span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-k">MonoBehaviour</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-en">MonoBehaviour</span>
 {
-    ShipHealthHandler _healthHandler;
+    <span class="pl-en">ShipHealthHandler</span> <span class="pl-en">_healthHandler</span>;
 
     [Inject]
-    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-k">ShipHealthHandler</span> <span class="pl-smi">healthHandler</span>)
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-en">ShipHealthHandler</span> <span class="pl-smi">healthHandler</span>)
     {
         _healthHandler = healthHandler;
     }
@@ -243,11 +243,11 @@
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 <span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameRunner</span> : <span class="pl-k">ITickable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameRunner</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">readonly</span> Ship _ship;
+    <span class="pl-k">readonly </span><span class="pl-en">Ship</span> <span class="pl-en">_ship</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">GameRunner</span>(<span class="pl-k">Ship</span> <span class="pl-smi">ship</span>)
+    <span class="pl-k">public</span> <span class="pl-en">GameRunner</span>(Ship ship)
     {
         _ship = ship;
     }
@@ -261,24 +261,24 @@
     }
 }</pre></div>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;GameRunner&gt;().To&lt;GameRunner&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;GameRunner&gt;().AsSingle();
     }
 }</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 <span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipHealthHandler</span> : <span class="pl-k">MonoBehaviour</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipHealthHandler</span> : <span class="pl-en">MonoBehaviour</span>
 {
-    <span class="pl-k">float</span> _health = <span class="pl-c1">100</span>;
+    <span class="pl-k">float</span> <span class="pl-en">_health</span> = <span class="pl-c1">100</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">OnGUI</span>()
     {
-        GUI.Label(<span class="pl-k">new</span> Rect(Screen.width / <span class="pl-c1">2</span>, Screen.height / <span class="pl-c1">2</span>, <span class="pl-c1">200</span>, <span class="pl-c1">100</span>), <span class="pl-s"><span class="pl-pds">"</span>Health: <span class="pl-pds">"</span></span> + _health);
+        GUI.Label(<span class="pl-k">new</span> <span class="pl-en">Rect</span>(Screen.width / <span class="pl-c1">2</span>, Screen.height / <span class="pl-c1">2</span>, <span class="pl-c1">200</span>, <span class="pl-c1">100</span>), <span class="pl-s"><span class="pl-pds">"</span>Health: <span class="pl-pds">"</span></span> + _health);
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">TakeDamage</span>(<span class="pl-k">float</span> <span class="pl-smi">damage</span>)
@@ -290,10 +290,10 @@
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 <span class="pl-k">using</span> <span class="pl-en">System.Collections</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInputHandler</span> : <span class="pl-k">MonoBehaviour</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInputHandler</span> : <span class="pl-en">MonoBehaviour</span>
 {
     [SerializeField]
-    <span class="pl-k">float</span> _speed = <span class="pl-c1">2</span>;
+    <span class="pl-k">float</span> <span class="pl-en">_speed</span> = <span class="pl-c1">2</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Update</span>()
     {
@@ -325,7 +325,7 @@
 <li>Your scene should look like this:</li>
 </ul>
 
-<p><a href="ShipFacadeExample1.png?raw=true" target="_blank"><img src="ShipFacadeExample1.png?raw=true" alt="Ship Facade Example" style="max-width:100%;"></a></p>
+<p><a href="../UnityProject/Assets/Zenject/Documentation/ShipFacadeExample1.png?raw=true" target="_blank"><img src="../UnityProject/Assets/Zenject/Documentation/ShipFacadeExample1.png?raw=true" alt="Ship Facade Example" style="max-width:100%;"></a></p>
 
 <ul>
 <li>The idea here is that everything at or underneath the Ship game object should be considered inside it's own sub-container.  When we're done, we should be able to add multiple ships to our scene, each with their own components ShipHealthHandler, ShipInputHandler, etc. that can treat each other as singletons.</li>
@@ -360,16 +360,16 @@
 
 <ul>
 <li>First, create a prefab for the entire <code>Ship</code> GameObject that we created above and then delete it from the Scene.</li>
-<li>Then just change </li>
+<li>Then just add the following changes</li>
 </ul>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameRunner</span> : <span class="pl-k">ITickable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameRunner</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">readonly</span> Ship.Factory _shipFactory;
+    <span class="pl-en">readonly</span> Ship.Factory _shipFactory;
 
-    Vector3 lastShipPosition;
+    <span class="pl-en">Vector3</span> <span class="pl-en">lastShipPosition</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">GameRunner</span>(<span class="pl-k">Ship.Factory</span> <span class="pl-smi">shipFactory</span>)
+    <span class="pl-k">public</span> <span class="pl-en">GameRunner</span>(Ship.Factory shipFactory)
     {
         _shipFactory = shipFactory;
     }
@@ -378,7 +378,7 @@
     {
         <span class="pl-k">if</span> (Input.GetKeyDown(KeyCode.Space))
         {
-            <span class="pl-k">var</span> ship = _shipFactory.Create();
+            <span class="pl-k">var</span> <span class="pl-en">ship </span>= _shipFactory.Create();
             ship.transform.position = lastShipPosition;
 
             lastShipPosition += Vector3.forward * <span class="pl-c1">2</span>;
@@ -386,16 +386,16 @@
     }
 }</pre></div>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     [SerializeField]
-    GameObject ShipPrefab;
+    <span class="pl-en">GameObject</span> <span class="pl-en">ShipPrefab</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;GameRunner&gt;().To&lt;GameRunner&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;GameRunner&gt;().AsSingle();
 
-        Container.BindFactory&lt;Ship, Ship.Factory&gt;().FromSubContainerResolve().ByPrefab(ShipPrefab);
+        Container.BindFactory&lt;Ship, Ship.Factory&gt;().FromSubContainerResolve().ByNewPrefab(ShipPrefab);
     }
 }</pre></div>
 
@@ -413,13 +413,13 @@
 <li>Change our classes to the following:</li>
 </ul>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameRunner</span> : <span class="pl-k">ITickable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameRunner</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">readonly</span> Ship.Factory _shipFactory;
+    <span class="pl-en">readonly</span> Ship.Factory _shipFactory;
 
-    Vector3 lastShipPosition;
+    <span class="pl-en">Vector3</span> <span class="pl-en">lastShipPosition</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">GameRunner</span>(<span class="pl-k">Ship.Factory</span> <span class="pl-smi">shipFactory</span>)
+    <span class="pl-k">public</span> <span class="pl-en">GameRunner</span>(Ship.Factory shipFactory)
     {
         _shipFactory = shipFactory;
     }
@@ -428,7 +428,7 @@
     {
         <span class="pl-k">if</span> (Input.GetKeyDown(KeyCode.Space))
         {
-            <span class="pl-k">var</span> ship = _shipFactory.Create(Random.RandomRange(<span class="pl-c1">2</span>, <span class="pl-c1">20</span>));
+            <span class="pl-k">var</span> <span class="pl-en">ship </span>= _shipFactory.Create(Random.RandomRange(<span class="pl-c1">2</span>, <span class="pl-c1">20</span>));
             ship.transform.position = lastShipPosition;
 
             lastShipPosition += Vector3.forward * <span class="pl-c1">2</span>;
@@ -436,28 +436,28 @@
     }
 }</pre></div>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     [SerializeField]
-    GameObject ShipPrefab;
+    <span class="pl-en">GameObject</span> <span class="pl-en">ShipPrefab</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;GameRunner&gt;().To&lt;GameRunner&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;GameRunner&gt;().AsSingle();
 
-        Container.BindFactory&lt;<span class="pl-k">float</span>, Ship, Ship.Factory&gt;().FromSubContainerResolve().ByPrefab&lt;ShipInstaller&gt;(ShipPrefab);
+        Container.BindFactory&lt;<span class="pl-k">float</span>, Ship, Ship.Factory&gt;().FromSubContainerResolve().ByNewPrefab&lt;ShipInstaller&gt;(<span class="pl-en">ShipPrefab</span>);
     }
 }</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 <span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-k">MonoBehaviour</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-en">MonoBehaviour</span>
 {
-    ShipHealthHandler _healthHandler;
+    <span class="pl-en">ShipHealthHandler</span> <span class="pl-en">_healthHandler</span>;
 
     [Inject]
-    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-k">ShipHealthHandler</span> <span class="pl-smi">healthHandler</span>)
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-en">ShipHealthHandler</span> <span class="pl-smi">healthHandler</span>)
     {
         _healthHandler = healthHandler;
     }
@@ -467,7 +467,7 @@
         _healthHandler.TakeDamage(damage);
     }
 
-    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-k">Factory</span>&lt;<span class="pl-k">float</span>, <span class="pl-k">Ship</span>&gt;
+    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-en">Factory</span>&lt;<span class="pl-k">float</span>, <span class="pl-en">Ship</span>&gt;
     {
     }
 }</pre></div>
@@ -476,10 +476,10 @@
 <span class="pl-k">using</span> <span class="pl-en">System.Collections</span>;
 <span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInputHandler</span> : <span class="pl-k">MonoBehaviour</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInputHandler</span> : <span class="pl-en">MonoBehaviour</span>
 {
     [Inject]
-    <span class="pl-k">float</span> _speed;
+    <span class="pl-k">float</span> <span class="pl-en">_speed</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Update</span>()
     {
@@ -500,10 +500,10 @@
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">using</span> <span class="pl-en">System</span>;
 <span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     [Inject]
-    <span class="pl-k">float</span> _speed;
+    <span class="pl-k">float</span> <span class="pl-en">_speed</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -530,11 +530,11 @@
 <span class="pl-k">using</span> <span class="pl-en">Zenject</span>;
 <span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ShipInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     [SerializeField]
     [InjectOptional]
-    <span class="pl-k">float</span> _speed;
+    <span class="pl-k">float</span> <span class="pl-en">_speed</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -544,7 +544,7 @@
 
 <p>This way, you can drop the Ship prefab into the scene and control the speed in the inspector, but you can also create them dynamically and pass the speed into the factory as a parameter.</p>
 
-<p>For a more real-world example see the "Sample2" demo project which makes heavy use of Game Object Contexts.</p>
+<p>For a more real-world example see the SpaceFighter sample project which makes heavy use of Game Object Contexts.</p>
 
               </article>
             </div>
@@ -552,7 +552,7 @@
         </div>
       </div>
 
-
+    
 
   </div>
   <div>&nbsp;</div>

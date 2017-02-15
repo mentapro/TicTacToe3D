@@ -24,16 +24,17 @@ namespace Zenject
 
         protected DiContainer Container
         {
-            get
-            {
-                return _sceneContext.Container;
-            }
+            get { return _sceneContext.Container; }
         }
 
         [SetUp]
-        public void SetUp()
+        public virtual void SetUp()
         {
-            ClearScene();
+            // Don't clear the scene to allow tests to initialize the scene how they
+            // want to set it up manually in their own [Setup] method (eg. TestFromComponentInChildren)
+            // Also, I think unity might already clear the scene anyway?
+            //ClearScene();
+
             _hasStarted = false;
             _isValidating = CurrentTestHasAttribute<ValidateOnlyAttribute>();
 
@@ -57,7 +58,7 @@ namespace Zenject
 
             if (_isValidating)
             {
-                Container.ValidateIValidatables();
+                Container.ValidateValidatables();
             }
             else
             {
@@ -87,11 +88,19 @@ namespace Zenject
             var fullMethodName = TestContext.CurrentContext.Test.FullName;
             var name = fullMethodName.Substring(fullMethodName.LastIndexOf(".")+1);
 
+            // Remove all characters after the first open bracket if there is one
+            int openBracketIndex = name.IndexOf("(");
+
+            if (openBracketIndex != -1)
+            {
+                name = name.Substring(0, openBracketIndex);
+            }
+
             return this.GetType().GetMethod(name).GetCustomAttributes(true)
                 .Cast<Attribute>().OfType<T>().Any();
         }
 
-        void ClearScene()
+        protected void ClearScene()
         {
             var scene = EditorSceneManager.GetActiveScene();
 

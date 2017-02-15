@@ -10,11 +10,11 @@ namespace TicTacToe3D
         public class Registry : IInitializable, IDisposable
         {
             private readonly List<BadgeSpawnPoint> _spawnPoints = new List<BadgeSpawnPoint>();
-            private BadgeSpawned BadgeSpawned { get; set; }
+            private GameEvents GameEvents { get; set; }
 
-            public Registry(BadgeSpawned badgeSpawned)
+            public Registry(GameEvents gameEvents)
             {
-                BadgeSpawned = badgeSpawned;
+                GameEvents = gameEvents;
             }
 
             public IEnumerable<BadgeSpawnPoint> Spawns
@@ -34,17 +34,27 @@ namespace TicTacToe3D
 
             public void Initialize()
             {
-                BadgeSpawned += OnBadgeSpawned;
+                GameEvents.BadgeSpawned += OnBadgeSpawned;
+                GameEvents.UndoSignal += OnUndo;
             }
 
             public void Dispose()
             {
-                BadgeSpawned -= OnBadgeSpawned;
+                GameEvents.BadgeSpawned -= OnBadgeSpawned;
+                GameEvents.UndoSignal -= OnUndo;
             }
 
-            private void OnBadgeSpawned(BadgeModel badge)
+            private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
             {
                 _spawnPoints.First(x => x.Coordinates == badge.Coordinates).Badge = badge;
+            }
+
+            private void OnUndo(List<HistoryItem> canceledSteps)
+            {
+                foreach (var canceledStep in canceledSteps)
+                {
+                    _spawnPoints.First(x => x.Coordinates == canceledStep.BadgeCoordinates).Badge = null;
+                }
             }
         }
     }

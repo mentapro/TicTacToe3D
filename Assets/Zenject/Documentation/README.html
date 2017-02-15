@@ -36,18 +36,18 @@
   <div class="page">
     <div id="preview-page" class="preview-page" data-autorefresh-url="">
 
-
+    
 
       <div role="main" class="main-content">
         <div class="container new-discussion-timeline experiment-repo-nav">
           <div class="repository-content">
             <div id="readme" class="readme boxed-group clearfix announce instapaper_body md">
-
+              
                 <h3>
                   <span class="octicon octicon-book"></span>
                   README.md
                 </h3>
-
+              
               <article class="markdown-body entry-content" itemprop="text" id="grip-content">
                 <p><a href="ZenjectLogo.png?raw=true" target="_blank"><img src="ZenjectLogo.png?raw=true" alt="Zenject" width="600px" height="134px" style="max-width:100%;"></a></p>
 
@@ -109,9 +109,10 @@
 <li>Support for global, project-wide bindings to add dependencies for all scenes</li>
 <li>Convention based binding, based on class name, namespace, or any other criteria</li>
 <li>Ability to validate object graphs at editor time (including dynamic object graphs created via factories)</li>
-<li>Commands and Signals</li>
 <li>Automatic binding on components in the scene using the <code>ZenjectBinding</code> component</li>
 <li>Auto-Mocking using the Moq library</li>
+<li>Built-in support for memory pools</li>
+<li>Just-in-time resolving using the Lazy&lt;&gt; construct</li>
 </ul>
 
 <h2>
@@ -201,9 +202,10 @@
 <li><a href="#itickable">ITickable</a></li>
 <li><a href="#iinitializable-and-postinject">IInitializable</a></li>
 <li><a href="#implementing-idisposable">IDisposable</a></li>
+<li><a href="#all-interfaces-shortcuts">BindInterfacesTo and BindInterfacesAndSelfTo</a></li>
+<li><a href="#using-the-unity-inspector-to-configure-settings">Using the Unity Inspector To Configure Settings</a></li>
 </ul>
 </li>
-<li><a href="#using-the-unity-inspector-to-configure-settings">Using the Unity Inspector To Configure Settings</a></li>
 <li><a href="#object-graph-validation">Object Graph Validation</a></li>
 <li><a href="#scene-bindings">Scene Bindings</a></li>
 <li><a href="#di-guidelines--recommendations">General Guidelines / Recommendations / Gotchas / Tips and Tricks</a></li>
@@ -225,21 +227,35 @@
 <li><a href="#identifiers">Identifiers</a></li>
 <li><a href="#non-generic-bindings">Non Generic bindings</a></li>
 <li><a href="#convention-based-bindings">Convention Based Binding</a></li>
-<li><a href="#unbind-rebind">Unbind / Rebind</a></li>
 <li><a href="#singleton-identifiers">Singleton Identifiers</a></li>
 </ul>
 </li>
 <li><a href="#scriptableobject-installer">Scriptable Object Installer</a></li>
 <li><a href="#runtime-parameters-for-installers">Runtime Parameters For Installers</a></li>
 <li><a href="#creating-objects-dynamically">Creating Objects Dynamically Using Factories</a></li>
+<li><a href="#memory-pools">Memory Pools</a></li>
 <li><a href="#update--initialization-order">Update / Initialization Order</a></li>
 <li><a href="#zenject-order-of-operations">Zenject Order Of Operations</a></li>
 <li><a href="#injecting-data-across-scenes">Injecting data across scenes</a></li>
 <li><a href="#scene-parenting">Scene Parenting Using Contract Names</a></li>
+<li><a href="#just-in-time-resolve">Just-In-Time Resolving Using Lazy&lt;&gt;</a></li>
+<li>
+<a href="#dicontainer-methods">DiContainer Methods</a>
+
+<ul>
+<li><a href="#dicontainer-methods-instantiate">DiContainer.Instantiate</a></li>
+<li><a href="#binding">DiContainer.Bind</a></li>
+<li><a href="#dicontainer-methods-resolve">DiContainer.Resolve</a></li>
+<li><a href="#dicontainer-methods-inject">DiContainer.Inject</a></li>
+<li><a href="#dicontainer-methods-queueforinject">DiContainer.QueueForInject</a></li>
+<li><a href="#dicontainer-methods-rebind">DiContainer Unbind / Rebind</a></li>
+<li><a href="#dicontainer-methods-other">Other DiContainer methods</a></li>
+</ul>
+</li>
 <li><a href="#scenes-decorator">Scene Decorators</a></li>
 <li><a href="#sub-containers-and-facades">Sub-Containers And Facades</a></li>
 <li><a href="#writing-tests">Writing Automated Unit Tests / Integration Tests</a></li>
-<li><a href="#commands-and-signals">Commands And Signals</a></li>
+<li><a href="#signals">Signals</a></li>
 <li><a href="#auto-mocking-using-moq">Auto-Mocking using Moq</a></li>
 <li><a href="#editor-windows">Creating Unity EditorWindow's with Zenject</a></li>
 </ul>
@@ -274,11 +290,11 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    ISomeService _service;
+    <span class="pl-en">ISomeService</span> <span class="pl-en">_service</span>;
 
     <span class="pl-k">public</span> <span class="pl-en">Foo</span>()
     {
-        _service = <span class="pl-k">new</span> SomeService();
+        _service = <span class="pl-k">new</span> <span class="pl-en">SomeService</span>();
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">DoSomething</span>()
@@ -294,9 +310,9 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    ISomeService _service;
+    <span class="pl-en">ISomeService</span> <span class="pl-en">_service</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">ISomeService</span> <span class="pl-smi">service</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(ISomeService service)
     {
         _service = service;
     }
@@ -314,7 +330,7 @@
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">DoSomething</span>()
     {
-        <span class="pl-k">var</span> foo = <span class="pl-k">new</span> Foo(<span class="pl-k">new</span> SomeService());
+        <span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>(<span class="pl-k">new</span> <span class="pl-en">SomeService</span>());
         foo.DoSomething();
         ...
     }
@@ -324,16 +340,16 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
 {
-    ISomeService _service;
+    <span class="pl-en">ISomeService</span> <span class="pl-en">_service</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(<span class="pl-k">ISomeService</span> <span class="pl-smi">service</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(ISomeService service)
     {
         _service = service;
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">DoSomething</span>()
     {
-        <span class="pl-k">var</span> foo = <span class="pl-k">new</span> Foo(_service);
+        <span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>(_service);
         foo.DoSomething();
         ...
     }
@@ -341,9 +357,10 @@
 
 <p>So we find that it is useful to push the responsibility of deciding which specific implementations of which classes to use further and further up in the 'object graph' of the application.  Taking this to an extreme, we arrive at the entry point of the application, at which point all dependencies must be satisfied before things start.  The dependency injection lingo for this part of the application is called the 'composition root'.  It would normally look like this:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> service = <span class="pl-k">new</span> SomeService();
-<span class="pl-k">var</span> foo = <span class="pl-k">new</span> Foo(service);
-<span class="pl-k">var</span> bar = <span class="pl-k">new</span> Bar(foo);
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">service </span>= <span class="pl-k">new</span> <span class="pl-en">SomeService</span>();
+<span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>(<span class="pl-en">service</span>);
+<span class="pl-k">var</span> <span class="pl-en">bar </span>= <span class="pl-k">new</span> <span class="pl-en">Bar</span>(<span class="pl-en">service</span>);
+<span class="pl-k">var</span> <span class="pl-en">qux </span>= <span class="pl-k">new</span> <span class="pl-en">Qux</span>(<span class="pl-en">bar</span>);
 
 .. etc.</pre></div>
 
@@ -377,18 +394,18 @@
 <span class="pl-k">using</span> <span class="pl-en">UnityEngine</span>;
 <span class="pl-k">using</span> <span class="pl-en">System.Collections</span>;
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
         Container.Bind&lt;<span class="pl-k">string</span>&gt;().FromInstance(<span class="pl-s"><span class="pl-pds">"</span>Hello World!<span class="pl-pds">"</span></span>);
-        Container.Bind&lt;TestRunner&gt;().NonLazy();
+        Container.Bind&lt;Greeter&gt;().NonLazy();
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestRunner</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Greeter</span>
 {
-    <span class="pl-k">public</span> <span class="pl-en">TestRunner</span>(<span class="pl-k">string</span> <span class="pl-smi">message</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Greeter</span>(string message)
     {
         Debug.Log(message);
     }
@@ -400,7 +417,7 @@
 <li>Create a new scene in Unity</li>
 <li>Right Click inside the Hierarchy tab and select <code>Zenject -&gt; Scene Context</code>
 </li>
-<li>Right Click in a folder within the Scene Heirarchy and Choose <code>Create -&gt; Zenject -&gt; MonoInstaller</code>.  Name it TestInstaller.cs.  (Note that you can also just directly create this file too without using this template).</li>
+<li>Right Click in a folder within the Project Tab and Choose <code>Create -&gt; Zenject -&gt; MonoInstaller</code>.  Name it TestInstaller.cs.  (Note that you can also just directly create this file too without using this template).</li>
 <li>Add your TestInstaller script to the scene (as its own GameObject or on the same GameObject as the SceneContext, it doesn't matter)</li>
 <li>Add a reference to your TestInstaller to the properties of the SceneContext by adding a new row in the inspector of the "Installers" property (press the + button) and then dragging the TestInstaller GameObject to it</li>
 <li>Open up TestInstaller and paste the above code into it</li>
@@ -410,20 +427,20 @@
 <li>Observe unity console for output</li>
 </ul>
 
-<p>The SceneContext MonoBehaviour is the entry point of the application, where Zenject sets up all the various dependencies before kicking off your scene.  To add content to your Zenject scene, you need to write what is referred to in Zenject as an 'Installer', which declares all the dependencies used in your scene and their relationships with each other.  All dependencies that are marked as "NonLazy" are automatically created at this point, as well as any dependencies that implement the standard Zenject interfaces such as <code>IInitializable</code>, <code>ITickable</code>, etc.  If the above doesn't make sense to you yet, keep reading!</p>
+<p>The SceneContext MonoBehaviour is the entry point of the application, where Zenject sets up all the various dependencies before kicking off your scene.  To add content to your Zenject scene, you need to write what is referred to in Zenject as an 'Installer', which declares all the dependencies used in your scene and their relationships with each other.  All dependencies that are marked as "NonLazy" are automatically created at this point, which is why the Greeter class that we added above gets created on startup.  If the above doesn't make sense to you yet, keep reading!</p>
 
 <h2>
 <a id="user-content-injection" class="anchor" href="#injection" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-injection"></a>Injection</h2>
 
-<p>There are many different ways of binding types on the container, which are documented in the <a href="#binding">next section</a>.  There are also several ways of having these dependencies injected into your classes. These are:</p>
+<p>There are many different ways of declaring dependencies on the container, which are documented in the <a href="#binding">next section</a>.  There are also several ways of having these dependencies injected into your classes. These are:</p>
 
 <p>1 - <strong>Constructor Injection</strong></p>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    IBar _bar;
+    <span class="pl-en">IBar</span> <span class="pl-en">_bar</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">IBar</span> <span class="pl-smi">bar</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(IBar bar)
     {
         _bar = bar;
     }
@@ -434,7 +451,7 @@
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
     [Inject]
-    IBar _bar;
+    <span class="pl-en">IBar</span> <span class="pl-en">_bar</span>;
 }</pre></div>
 
 <p>Field injection occurs immediately after the constructor is called.  All fields that are marked with the [Inject] attribute are looked up in the container and given a value.  Note that these fields can be private or public and injection will still occur.</p>
@@ -444,10 +461,10 @@
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
     [Inject]
-    <span class="pl-k">public</span> IBar Bar
+    <span class="pl-k">public </span><span class="pl-en">IBar</span> <span class="pl-en">Bar</span>
     {
         <span class="pl-k">get</span>;
-        <span class="pl-k">private</span> <span class="pl-k">set</span>;
+        <span class="pl-en">private</span> <span class="pl-en">set</span>;
     }
 }</pre></div>
 
@@ -457,11 +474,11 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    IBar _bar;
-    Qux _qux;
+    <span class="pl-en">IBar</span> <span class="pl-en">_bar</span>;
+    <span class="pl-en">Qux</span> <span class="pl-en">_qux</span>;
 
     [Inject]
-    <span class="pl-k">public</span> <span class="pl-en">Init</span>(<span class="pl-k">IBar</span> <span class="pl-smi">bar</span>, <span class="pl-k">Qux</span> <span class="pl-smi">qux</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Init</span>(IBar bar, Qux qux)
     {
         _bar = bar;
         _qux = qux;
@@ -470,26 +487,23 @@
 
 <p>Method Inject injection works very similarly to constructor injection.</p>
 
-<p>Note that these methods are called after all other injection types.  It is designed this way so that these methods can be used to execute initialization logic which might make use of one of these dependencies.  Note also that you can leave the parameter list empty if you just want to do some initialization logic only.</p>
+<p>Note that inject methods are called after all other injection types.  It is designed this way so that these methods can be used to execute initialization logic which might make use of one of these dependencies.  Note also that you can leave the parameter list empty if you just want to do some initialization logic only.</p>
 
 <p>Note that there can be any number of inject methods.  In this case, they are called in the order of Base class to Derived class.  This can be useful to avoid the need to forward many dependencies from derived classes to the base class via constructor parameters, while also guaranteeing that the base class inject methods complete first, just like how constructors work.</p>
 
-<p>Note that the dependencies that you receive via inject methods should themselves have already been injected.  This can be important if you use inject methods to perform some basic initialization, since you may need the given dependencies to themselves be initialized via their Inject methods.</p>
+<p>Note that the dependencies that you receive via inject methods should themselves have already been injected (the only exception to this is in the case where you have circular dependencies).  This can be important if you use inject methods to perform some basic initialization, since you may need the given dependencies to themselves be initialized via their Inject methods.</p>
 
 <p>Using [Inject] methods to inject dependencies is the recommended approach for MonoBehaviours, since MonoBehaviours cannot have constructors.</p>
 
 <p><strong>Recommendations</strong></p>
 
-<ul>
-<li>Best practice is to prefer constructor injection or method injection to field or property injection.
+<p>Best practice is to prefer constructor injection or method injection to field or property injection.</p>
 
 <ul>
 <li>Constructor injection forces the dependency to only be resolved once, at class creation, which is usually what you want.  In most cases you don't want to expose a public property for your initial dependencies because this suggests that it's open to changing.</li>
 <li>Constructor injection guarantees no circular dependencies between classes, which is generally a bad thing to do.  You can do this however using method injection or field injection if necessary.</li>
 <li>Constructor/Method injection is more portable for cases where you decide to re-use the code without a DI framework such as Zenject.  You can do the same with public properties but it's more error prone (it's easier to forget to initialize one field and leave the object in an invalid state)</li>
-<li>Finally, Constructor/Method injection makes it clear what all the dependencies of a class are when another programmer is reading the code.  They can simply look at the parameter list of the method.  This is also good because it will be more obvious when a class has too many dependencies and should therefore be split up (since it's constructor parameter list will be too long)</li>
-</ul>
-</li>
+<li>Finally, Constructor/Method injection makes it clear what all the dependencies of a class are when another programmer is reading the code.  They can simply look at the parameter list of the method.  This is also good because it will be more obvious when a class has too many dependencies and should therefore be split up (since it's constructor parameter list will start to seem long)</li>
 </ul>
 
 <h2>
@@ -505,9 +519,9 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    IBar _bar;
+    <span class="pl-en">IBar</span> <span class="pl-en">_bar</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">IBar</span> <span class="pl-smi">bar</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(IBar bar)
     {
         _bar = bar;
     }
@@ -515,8 +529,8 @@
 
 <p>You can wire up the dependencies for this class with the following:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Bar&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>This tells Zenject that every class that requires a dependency of type Foo should use the same instance, which it will automatically create when needed.  And similarly, any class that requires the IBar interface (like Foo) will be given the same instance of type Bar.</p>
 
@@ -530,7 +544,7 @@ Container.Bind&lt;<b>ContractType</b>&gt;()
     .As<b>Scope</b>()
     .WithArguments(<b>Arguments</b>)
     .When(<b>Condition</b>)
-    .InheritInSubContainers()
+    .CopyIntoAllSubContainers()
     .NonLazy();
 </pre>
 
@@ -559,7 +573,7 @@ Container.Bind&lt;<b>ContractType</b>&gt;()
 
 <ul>
 <li>Default: FromNew()</li>
-<li>Examples: eg. FromGetter, FromMethod, FromPrefab, FromResolve, FromSubContainerResolve, FromInstance, etc.</li>
+<li>Examples: eg. FromGetter, FromMethod, FromResolve, FromComponentInNewPrefab, FromSubContainerResolve, FromInstance, etc.</li>
 </ul>
 </li>
 <li>
@@ -577,7 +591,7 @@ Container.Bind&lt;<b>ContractType</b>&gt;()
 <li>
 <strong>AsCached</strong> - Will re-use the same instance of <strong>ResultType</strong> every time <strong>ContractType</strong> is requested, which it will lazily generate upon first use</li>
 <li>
-<strong>AsSingle</strong> - Will re-use the same instance of <strong>ResultType</strong> across the entire DiContainer, which it will lazily generate upon first use.  It can be thought of as a stronger version of AsCached, because it allows you to bind to the same instance across multiple bind commands.  It will also ensure that there is only ever exactly one instance of <strong>ResultType</strong> in the DiContainer (ie. it will enforce <strong>ResultType</strong> to be a 'Singleton' hence the name).</li>
+<strong>AsSingle</strong> - Will re-use the same instance of <strong>ResultType</strong> across the entire DiContainer, which it will lazily generate upon first use.  It can be thought of as a stronger version of AsCached, because it allows you to bind to the same instance across multiple bind commands.  It will also ensure that there is only ever exactly one instance of <strong>ResultType</strong> in the DiContainer (ie. it will enforce <strong>ResultType</strong> to be a 'Singleton' hence the name).  Note however that it will only guarantee that there is only one instance across the given container, which means that using AsSingle with the same binding in a sub-container could generate a second instance.</li>
 </ol>
 </li>
 <li><p>In most cases, you will likely want to just use AsSingle, however AsTransient and AsCached have their uses too.</p></li>
@@ -588,26 +602,26 @@ Container.Bind&lt;<b>ContractType</b>&gt;()
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span> : <span class="pl-k">IBar</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span> : <span class="pl-en">IBar</span>
 {
 }
 
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>()
 {
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">Bar</span> <span class="pl-smi">bar</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(Bar bar)
     {
     }
 }</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// This will cause every instance of Foo to be given a brand new instance of Bar</span>
-Container.Bind&lt;Bar&gt;().AsTransient();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsTransient</span>();</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// This will cause every instance of Foo to be given the same instance of Bar</span>
-Container.Bind&lt;Bar&gt;().AsCached();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsCached</span>();</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Qux</span>()
 {
-    <span class="pl-k">public</span> <span class="pl-en">Qux</span>(<span class="pl-k">IBar</span> <span class="pl-smi">bar</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Qux</span>(IBar bar)
     {
     }
 }</pre></div>
@@ -615,20 +629,20 @@ Container.Bind&lt;Bar&gt;().AsCached();</pre></div>
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// This will cause both Foo and Qux to get different instances of type Bar</span>
 <span class="pl-c">// However, every instance of Foo will be given the the same instance of type Bar</span>
 <span class="pl-c">// and similarly for Qux</span>
-Container.Bind&lt;Bar&gt;().AsCached();
-Container.Bind&lt;IBar&gt;().To&lt;Bar&gt;().AsCached();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsCached</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsCached</span>();</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// This will cause both Foo and Qux to get the same instance of type Bar</span>
-Container.Bind&lt;Bar&gt;().AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Bar&gt;().AsSingle();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 </li>
 </ul>
 </li>
-<li><p><strong>Arguments</strong> = A list of objects to use when constructing the new instance of type <strong>ResultType</strong>.  This can be useful as an alternative to <code>Container.BindInstance(arg).WhenInjectedInto&lt;ResultType&gt;()</code></p></li>
+<li><p><strong>Arguments</strong> = A list of objects to use when constructing the new instance of type <strong>ResultType</strong>.  This can be useful as an alternative to adding other bindings for the arguments in the form <code>Container.BindInstance(arg).WhenInjectedInto&lt;ResultType&gt;()</code></p></li>
 <li>
 <strong>Condition</strong> = The condition that must be true for this binding to be chosen.  See <a href="#conditional-bindings">here</a> for more details.</li>
 <li>
-<strong>InheritInSubContainers</strong> = If supplied, then this binding will automatically be inherited from any subcontainers that are created from it.  In other words, the result will be equivalent to copying and pasting the <code>Container.Bind</code> statement into the installer for every sub-container.</li>
+<strong>CopyIntoAllSubContainers</strong> = If supplied, then this binding will automatically be inherited from any subcontainers that are created from it.  In other words, the result will be equivalent to copying and pasting the <code>Container.Bind</code> statement into the installer for every sub-container.</li>
 <li>
 <strong>NonLazy</strong> = Normally, the <strong>ResultType</strong> is only ever instantiated when the binding is first used (aka "lazily").  However, when NonLazy is used, <strong>ResultType</strong> will immediately by created on startup.</li>
 </ul>
@@ -641,65 +655,157 @@ Container.Bind&lt;IBar&gt;().To&lt;Bar&gt;().AsSingle();</pre></div>
 <p><strong>FromNew</strong> - Create via the C# new operator. This is the default if no construction method is specified.</p>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// These are both the same</span>
-Container.Bind&lt;Foo&gt;();
-Container.Bind&lt;Foo&gt;().FromNew();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromNew</span>();</pre></div>
 </li>
 <li>
-<p><strong>FromInstance</strong> - Use a given instance</p>
+<p><strong>FromInstance</strong> - Add a given instance to the container.  Note that the given instance will not be injected in this case.  If you also want your instance to be injected at startup, see <a href="#dicontainer-methods-queueforinject">QueueForInject</a></p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromInstance(<span class="pl-k">new</span> Foo());
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromInstance</span>(<span class="pl-en">new</span> <span class="pl-smi">Foo</span>());
 
 <span class="pl-c">// You can also use this short hand which just takes ContractType from the parameter type</span>
-Container.BindInstance(<span class="pl-k">new</span> Foo());
+<span class="pl-en">Container.BindInstance</span>(new <span class="pl-en">Foo</span>());
 
 <span class="pl-c">// This is also what you would typically use for primitive types</span>
-Container.BindInstance(<span class="pl-c1">5.13f</span>);
-Container.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);</pre></div>
+<span class="pl-en">Container.BindInstance</span>(5.13f);
+<span class="pl-en">Container.BindInstance</span>("foo");
+
+<span class="pl-c">// Or, if you have many instances, you can use BindInstances</span>
+<span class="pl-en">Container.BindInstances</span>(5.13f, "foo", new <span class="pl-en">Foo</span>());</pre></div>
 </li>
 <li>
 <p><strong>FromMethod</strong> - Create via a custom method</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromMethod(SomeMethod);
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromMethod</span>(SomeMethod);
 
-Foo SomeMethod(InjectContext context)
+<span class="pl-en">Foo</span> <span class="pl-en">SomeMethod</span>(<span class="pl-en">InjectContext</span> <span class="pl-smi">context</span>)
 {
     ...
-    <span class="pl-k">return</span> <span class="pl-k">new</span> Foo();
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
 }</pre></div>
 </li>
 <li>
-<p><strong>FromComponent</strong> - Create as a new component on an existing game object.  <strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+<p><strong>FromMethodMultiple</strong> - Same as FromMethod except allows returning multiple instances at once.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromComponent(someGameObject);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromMethodMultiple</span>(GetFoos);
+
+<span class="pl-en">IEnumerable</span>&lt;<span class="pl-en">Foo</span>&gt; <span class="pl-en">GetFoos</span>(<span class="pl-en">InjectContext</span> <span class="pl-smi">context</span>)
+{
+    ...
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Foo</span>[]
+    {
+        <span class="pl-k">new</span> <span class="pl-en">Foo</span>(),
+        <span class="pl-k">new</span> <span class="pl-en">Foo</span>(),
+        <span class="pl-k">new</span> <span class="pl-en">Foo</span>(),
+    }
+}</pre></div>
 </li>
 <li>
-<p><strong>FromSiblingComponent</strong> - Create as a new component on the same game object where the component is being injected into.  <strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+<p><strong>FromFactory</strong> - Create instance using a custom factory class.  This construction method is similar to <code>FromMethod</code> except can be cleaner in cases where the logic is more complicated or requires dependencies (since the factory itself can have dependencies injected)</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromSiblingComponent(someGameObject);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">class</span> <span class="pl-en">FooFactory</span> : <span class="pl-en">IFactory</span>&lt;<span class="pl-en">Foo</span>&gt;
+{
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span> <span class="pl-en">Create</span>()
+    {
+        <span class="pl-c">// ...</span>
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
+    }
+}
+
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromFactory</span>&lt;<span class="pl-en">FooFactory</span>&gt;()</pre></div>
 </li>
 <li>
-<p><strong>FromGameObject</strong> - Create as a new component on a new game object.  <strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+<p><strong>FromComponentInNewPrefab</strong> - Instantiate the given prefab as a new game object, inject any MonoBehaviour's on it, and then search the result for type <strong>ResultType</strong>.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromGameObject();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(somePrefab);</pre></div>
+
+<p><strong>ResultType</strong> must either be an interface or derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
 </li>
 <li>
-<p><strong>FromPrefab</strong> - Create by instantiating the given prefab and then searching it for type <strong>ResultType</strong>.  <strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+<p><strong>FromComponentInNewPrefabResource</strong> - Instantiate the given prefab (found at the given resource path) as a new game object, inject any MonoBehaviour's on it, and then search the result for type <strong>ResultType</strong>.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromPrefab(somePrefab);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefabResource</span>(<span class="pl-s"><span class="pl-pds">"</span>Some/Path/Foo<span class="pl-pds">"</span></span>);</pre></div>
+
+<p><strong>ResultType</strong> must either be an interface or derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
 </li>
 <li>
-<p><strong>FromPrefabResource</strong> - Create by instantiating the prefab at the given resource path and then searching it for type <strong>ResultType</strong>.   <strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+<p><strong>FromNewComponentOnNewGameObject</strong> - Create a new empty game object and then instantiate a new component of the given type on it.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromPrefabResource(<span class="pl-s"><span class="pl-pds">"</span>Some/Path/Foo<span class="pl-pds">"</span></span>);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromNewComponentOnNewGameObject</span>();</pre></div>
+
+<p><strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
 </li>
 <li>
-<p><strong>FromResource</strong> - Create by calling the Unity3d function <code>Resources.Load</code> for <strong>ResultType</strong>.  This can be used to load any type that <code>Resources.Load</code> can load, such as textures, sounds, prefabs, custom classes deriving from ScriptableObject, etc.</p>
+<p><strong>FromNewComponentOn</strong> - Instantiate a new component of the given type on the given game object</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span> : <span class="pl-k">ScriptableObject</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponent</span>(someGameObject);</pre></div>
+
+<p><strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+</li>
+<li>
+<p><strong>FromNewComponentSibling</strong> - Instantiate a new component of the given on the current transform.  The current transform here is taken from the object being injected, which must therefore be a MonoBehaviour derived type.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromNewComponentSibling</span>();</pre></div>
+
+<p><strong>ResultType</strong> must derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+
+<p>Also note that if a non-MonoBehaviour requests the given type, an exception will be thrown, since there is no current transform in that case.</p>
+</li>
+<li>
+<p><strong>FromComponentInHierarchy</strong> - Look up the component within the scene hierarchy associated with the current context, as well as the hierarchy associated with any parent contexts.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInHierarchy</span>();</pre></div>
+
+<p><strong>ResultType</strong> must either be an interface or derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+
+<p>In the most common case where the context is a SceneContext, this will search the entire scene hierarchy (except any sub-contexts such as GameObjectContext).  In other words, when the current context is a scene context, it will behave similar to <code>GameObject.FindObjectsOfType</code>.  Note that since this could be a big search, it should be used with caution, just like <code>GameObject.FindObjectsOfType</code> should be used with caution.</p>
+
+<p>In the case where the context is GameObjectContext, it will only search within and underneath the game object root (and any parent contexts).</p>
+
+<p>In the case where the context is ProjectContext, it will only search within the project context prefab</p>
+</li>
+<li>
+<p><strong>FromComponentSibling</strong> - Look up the given component type by searching over the components that are attached to the current transform.  The current transform here is taken from the object being injected, which must therefore be a MonoBehaviour derived type. </p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentSibling</span>();</pre></div>
+
+<p><strong>ResultType</strong> must either be an interface or derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+
+<p>Note that if a non-MonoBehaviour requests the given type, an exception will be thrown, since there is no current transform in that case.</p>
+</li>
+<li>
+<p><strong>FromComponentInParents</strong> - Look up the component by searching the current transform or any parent for the given component type.  The current transform here is taken from the object being injected, which must therefore be a MonoBehaviour derived type. </p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInParents</span>();</pre></div>
+
+<p><strong>ResultType</strong> must either be an interface or derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+
+<p>Note that if a non-MonoBehaviour requests the given type, an exception will be thrown, since there is no current transform in that case.</p>
+</li>
+<li>
+<p><strong>FromComponentInChildren</strong> - Look up the component by searching the current transform or any child transform for the given component type.  The current transform here is taken from the object being injected, which must therefore be a MonoBehaviour derived type. </p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInChildren</span>();</pre></div>
+
+<p><strong>ResultType</strong> must either be an interface or derive from UnityEngine.MonoBehaviour / UnityEngine.Component in this case</p>
+
+<p>Note that if a non-MonoBehaviour requests the given type, an exception will be thrown, since there is no current transform in that case.</p>
+</li>
+<li>
+<p><strong>FromResource</strong> - Create by calling the Unity3d function <code>Resources.Load</code> for <strong>ResultType</strong>.  This can be used to load any type that <code>Resources.Load</code> can load, such as textures, sounds, prefabs, etc.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Texture</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>Glass<span class="pl-pds">"</span></span>).<span class="pl-en">FromResource</span>(<span class="pl-s"><span class="pl-pds">"</span>Some/Path/Glass<span class="pl-pds">"</span></span>);</pre></div>
+</li>
+<li>
+<p><strong>FromScriptableObjectResource</strong> - Create a new ScriptableObject class by cloning a previously created instance saved to the resources folder.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span> : <span class="pl-en">ScriptableObject</span>
 {
 }
 
-Container.Bind&lt;Foo&gt;().FromResource(<span class="pl-s"><span class="pl-pds">"</span>Some/Path/Foo<span class="pl-pds">"</span></span>);</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromScriptableObjectResource</span>(<span class="pl-s"><span class="pl-pds">"</span>Some/Path/Foo<span class="pl-pds">"</span></span>);</pre></div>
+
+<p>Note that unlike FromResource, the value returned from Resources.Load in this case will be cloned by calling ScriptableObject.Instantiate.  This is necessary to allow multiple instances of the same scriptable object resource.</p>
 </li>
 <li>
 <p><strong>FromResolve</strong> - Get instance by doing another lookup on the container (in other words, calling <code>DiContainer.Resolve&lt;ResultType&gt;()</code>).  Note that for this to work, <strong>ResultType</strong> must be bound in a separate bind statement.  This construction method can be especially useful when you want to bind an interface to another interface, as shown in the below example</p>
@@ -708,33 +814,19 @@ Container.Bind&lt;Foo&gt;().FromResource(<span class="pl-s"><span class="pl-pds"
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-en">IBar</span> : <span class="pl-k">IFoo</span>
+<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-en">IBar</span> : <span class="pl-en">IFoo</span>
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span> : <span class="pl-k">IBar</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span> : <span class="pl-en">IBar</span>
 {
 }
 
-Container.Bind&lt;IFoo&gt;().To&lt;IBar&gt;().FromResolve();
-Container.Bind&lt;IBar&gt;().To&lt;Foo&gt;();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">FromResolve</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
 </li>
 <li>
-<p><strong>FromFactory</strong> - Create instance using a custom factory class.  This construction method is similar to <code>FromMethod</code> except can be cleaner in cases where the logic is more complicated or requires dependencies (the factory itself can have dependencies injected)</p>
-
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">class</span> <span class="pl-en">FooFactory</span> : <span class="pl-k">IFactory</span>&lt;<span class="pl-k">Foo</span>&gt;
-{
-    <span class="pl-k">public</span> Foo <span class="pl-en">Create</span>()
-    {
-        <span class="pl-c">// ...</span>
-        <span class="pl-k">return</span> <span class="pl-k">new</span> Foo();
-    }
-}
-
-Container.Bind&lt;Foo&gt;().FromFactory&lt;FooFactory&gt;()</pre></div>
-</li>
-<li>
-<p><strong>FromResolveGetter</strong> - Get instance from the property of another dependency which is obtained by doing another lookup on the container (in other words, calling <code>DiContainer.Resolve&lt;ObjectType&gt;()</code> and then accessing a value on the returned instance of type <strong>ResultType</strong>).  Note that for this to work, <strong>ObjectType</strong> must be bound in a separate bind statement.</p>
+<p><strong>FromResolveGetter&lt;ObjectType&gt;</strong> - Get instance from the property of another dependency which is obtained by doing another lookup on the container (in other words, calling <code>DiContainer.Resolve&lt;ObjectType&gt;()</code> and then accessing a value on the returned instance of type <strong>ResultType</strong>).  Note that for this to work, <strong>ObjectType</strong> must be bound in a separate bind statement.</p>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
 {
@@ -742,14 +834,14 @@ Container.Bind&lt;Foo&gt;().FromFactory&lt;FooFactory&gt;()</pre></div>
 
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    <span class="pl-k">public</span> Bar <span class="pl-en">GetBar</span>()
+    <span class="pl-k">public</span> <span class="pl-en">Bar</span> <span class="pl-en">GetBar</span>()
     {
-        <span class="pl-k">return</span> <span class="pl-k">new</span> Bar();
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Bar</span>();
     }
 }
 
-Container.Bind&lt;Foo&gt;();
-Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">FromResolveGetter</span>&lt;<span class="pl-en">Foo</span>&gt;(x =&gt; x.GetBar());</pre></div>
 </li>
 <li>
 <p><strong>FromSubContainerResolve</strong> - Get <strong>ResultType</strong> by doing a lookup on a subcontainer.  Note that for this to work, the sub-container must have a binding for <strong>ResultType</strong>.  This approach can be very powerful, because it allows you to group related dependencies together inside a mini-container, and then expose only certain classes (aka <a href="https://en.wikipedia.org/wiki/Facade_pattern">"Facades"</a>) to operate on this group of dependencies at a higher level.  For more details on using sub-containers, see <a href="#sub-containers-and-facades">this section</a>.  There are 4 different ways to define the subcontainer:</p>
@@ -758,19 +850,19 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 <li>
 <p><strong>ByMethod</strong> - Initialize the subcontainer by using a method.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromSubContainerResolve().ByMethod(InstallFooFacade);
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromSubContainerResolve</span>().<span class="pl-en">ByMethod</span>(InstallFooFacade);
 
-<span class="pl-k">void</span> InstallFooFacade(DiContainer subContainer)
+<span class="pl-k">void</span> <span class="pl-en">InstallFooFacade</span>(<span class="pl-en">DiContainer</span> <span class="pl-smi">subContainer</span>)
 {
     subContainer.Bind&lt;Foo&gt;();
 }</pre></div>
 </li>
 <li>
-<p><strong>ByInstaller</strong> - Initialize the subcontainer by using a class derived from <code>Installer</code>.  This can be a cleaner and less error-prone alternative than using <code>ByMethod</code>, especially if you need to inject data into the installer itself.  Less error prone because when using ByMethod it is common to accidentally use Container instead of subContainer in your method.</p>
+<p><strong>ByInstaller</strong> - Initialize the subcontainer by using a class derived from <code>Installer</code>.  This can be a cleaner and less error-prone alternative than <code>ByMethod</code>, especially if you need to inject data into the installer itself.  Less error prone because when using ByMethod it is common to accidentally use Container instead of subContainer in your method.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromSubContainerResolve().ByInstaller&lt;FooFacadeInstaller&gt;();
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromSubContainerResolve</span>().<span class="pl-en">ByInstaller</span>&lt;<span class="pl-en">FooFacadeInstaller</span>&gt;();
 
-<span class="pl-k">class</span> <span class="pl-en">FooFacadeInstaller</span> : <span class="pl-k">Installer</span>
+<span class="pl-k">class</span> <span class="pl-en">FooFacadeInstaller</span> : <span class="pl-en">Installer</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -779,13 +871,13 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 }</pre></div>
 </li>
 <li>
-<p><strong>ByPrefab</strong> - Initialize subcontainer using a prefab.  Note that the prefab must contain a <code>GameObjectContext</code> component attached to the root game object.  For details on <code>GameObjectContext</code> see <a href="#sub-containers-and-facades">this section</a>.</p>
+<p><strong>ByNewPrefab</strong> - Initialize subcontainer by instantiating a new prefab.  Note that the prefab must contain a <code>GameObjectContext</code> component attached to the root game object.  For details on <code>GameObjectContext</code> see <a href="#sub-containers-and-facades">this section</a>.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromSubContainerResolve().ByPrefab(MyPrefab);
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromSubContainerResolve</span>().<span class="pl-en">ByNewPrefab</span>(MyPrefab);
 
 <span class="pl-c">// Assuming here that this installer is added to the GameObjectContext at the root</span>
 <span class="pl-c">// of the prefab.  You could also use a ZenjectBinding in the case where Foo is a MonoBehaviour</span>
-<span class="pl-k">class</span> <span class="pl-en">FooFacadeInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">class</span> <span class="pl-en">FooFacadeInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -794,9 +886,9 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 }</pre></div>
 </li>
 <li>
-<p><strong>ByPrefabResource</strong> - Initialize subcontainer using a prefab obtained via <code>Resources.Load</code>.  Note that the prefab must contain a <code>GameObjectContext</code> component attached to the root game object.</p>
+<p><strong>ByNewPrefabResource</strong> - Initialize subcontainer instantiating a new prefab obtained via <code>Resources.Load</code>.  Note that the prefab must contain a <code>GameObjectContext</code> component attached to the root game object.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromSubContainerResolve().ByPrefabResource(<span class="pl-s"><span class="pl-pds">"</span>Path/To/MyPrefab<span class="pl-pds">"</span></span>);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromSubContainerResolve</span>().<span class="pl-en">ByNewPrefabResource</span>(<span class="pl-s"><span class="pl-pds">"</span>Path/To/MyPrefab<span class="pl-pds">"</span></span>);</pre></div>
 </li>
 </ol>
 </li>
@@ -807,12 +899,12 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 
 <p>Often, there is some collections of related bindings for each sub-system and so it makes sense to group those bindings into a re-usable object.  In Zenject this re-usable object is called an 'installer'.  You can define a new installer as follows:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;Foo&gt;().To&lt;Foo&gt;().AsSingle();
         Container.Bind&lt;Bar&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;Foo&gt;().AsSingle();
         <span class="pl-c">// etc...</span>
     }
 }</pre></div>
@@ -825,7 +917,7 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 
 <p>You can also call an installer from another installer.  For example:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">BarInstaller</span> : <span class="pl-k">Installer</span>&lt;<span class="pl-k">BarInstaller</span>&gt;
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">BarInstaller</span> : <span class="pl-en">Installer</span>&lt;<span class="pl-en">BarInstaller</span>&gt;
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -833,7 +925,7 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -841,9 +933,9 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
     }
 }</pre></div>
 
-<p>Note that in this case BarInstaller is of type Installer and not MonoInstaller, which is why we can simply call <code>BarInstaller.Install(Container)</code> and don't require that BarInstaller be added to our scene already.  Any calls to BarInstaller.Install will immediately create a temporary instance of BarInstaller and then call InstallBindings on it.  This will repeat for any installers that this installer installs.  Note also that when using the Installer base class, we always must pass in ourself as the generic argument to Installer&lt;&gt;.  This is necessary so that the Installer&lt;&gt; base class can define the static method <code>BarInstaller.Install</code>.  It is also designed this way to support runtime parameters (described below).</p>
+<p>Note that in this case BarInstaller is of type <code>Installer&lt;&gt;</code> (note the generic arguments) and not MonoInstaller, which is why we can simply call <code>BarInstaller.Install(Container)</code> and don't require that BarInstaller be added to our scene already.  Any calls to BarInstaller.Install will immediately create a temporary instance of BarInstaller and then call InstallBindings on it.  This will repeat for any installers that this installer installs.  Note also that when using the <code>Installer&lt;&gt;</code> base class, we always must pass in ourself as the generic argument to <code>Installer&lt;&gt;</code>.  This is necessary so that the <code>Installer&lt;&gt;</code> base class can define the static method <code>BarInstaller.Install</code>.  It is also designed this way to support runtime parameters (described below).</p>
 
-<p>One of the main reasons we use installers as opposed to just having all our bindings declared all at once for each scene, is to make them re-usable.  This is not a problem for installers of type <code>Installer</code> because you can simply call <code>FooInstaller.Install</code> as described above for every scene you wish to use it in, but then how would we re-use a MonoInstaller in multiple scenes?</p>
+<p>One of the main reasons we use installers as opposed to just having all our bindings declared all at once for each scene, is to make them re-usable.  This is not a problem for installers of type <code>Installer&lt;&gt;</code> because you can simply call <code>FooInstaller.Install</code> as described above for every scene you wish to use it in, but then how would we re-use a MonoInstaller in multiple scenes?</p>
 
 <p>There are three ways to do this.</p>
 
@@ -853,18 +945,18 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 <li><p><strong>Prefabs within Resources folder</strong>.  You can also place your installer prefabs underneath a Resoures folder and install them directly from code by using the Resources path.  For details on usage see <a href="#runtime-parameters-for-installers">here</a>.</p></li>
 </ol>
 
-<p>Another option in addition to MonoInstaller and Installer is to use ScriptableObjectInstaller which has some advantages (especially for settings) - for details see <a href="#scriptableobject-installer">here</a>.</p>
+<p>Another option in addition to MonoInstaller and <code>Installer&lt;&gt;</code> is to use ScriptableObjectInstaller which has some advantages (especially for settings) - for details see <a href="#scriptableobject-installer">here</a>.</p>
 
 <p>When calling installers from other installers it is common to want to pass parameters into it.  See <a href="#runtime-parameters-for-installers">here</a> for details on how that is done.</p>
 
 <h2>
 <a id="user-content-itickable" class="anchor" href="#itickable" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-itickable"></a>ITickable</h2>
 
-<p>In many cases it is preferable to avoid the extra weight of MonoBehaviours in favour of just normal C# classes.  Zenject allows you to do this much more easily by providing interfaces that mirror functionality that you would normally need to use a MonoBehaviour for.</p>
+<p>In some cases it is preferable to avoid the extra weight of MonoBehaviours in favour of just normal C# classes.  Zenject allows you to do this much more easily by providing interfaces that mirror functionality that you would normally need to use a MonoBehaviour for.</p>
 
 <p>For example, if you have code that needs to run per frame, then you can implement the <code>ITickable</code> interface:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-k">ITickable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-en">ITickable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Tick</span>()
     {
@@ -872,15 +964,13 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
     }
 }</pre></div>
 
-<p>Then it's just a matter of including the following in one of your installers:</p>
+<p>Then, to hook it up in an installer:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;ITickable&gt;().To&lt;Ship&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">ITickable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Ship</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
-<p>Or if you don't want to have to remember which interfaces Ship implements:</p>
+<p>Or if you don't want to have to always remember which interfaces your class implements, you can use the <a href="#all-interfaces-shortcuts">shortcut described here</a></p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindAllInterfaces&lt;Ship&gt;().To&lt;Ship&gt;().AsSingle();</pre></div>
-
-<p>Note that the order that Tick() is called on all ITickables is also configurable, as outlined <a href="#update--initialization-order">here</a>.</p>
+<p>Note that the order that the Tick() is called in for all ITickables is also configurable, as outlined <a href="#update--initialization-order">here</a>.</p>
 
 <p>Also note that there are interfaces <code>ILateTickable</code> and <code>IFixedTickable</code> which work similarly for the other unity update methods.</p>
 
@@ -889,13 +979,21 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 
 <p>If you have some initialization that needs to occur on a given object, you could include this code in the constructor.  However, this means that the initialization logic would occur in the middle of the object graph being constructed, so it may not be ideal.</p>
 
-<p>One alternative is to implement <code>IInitializable</code>, and then perform initialization logic in an <code>Initialize()</code> method.  This Initialize method would then be called after the entire object graph is constructed and all constructors have been called.</p>
+<p>A better alternative is to implement <code>IInitializable</code>, and then perform initialization logic in an <code>Initialize()</code> method. </p>
 
-<p>Note that the constructors for the initial object graph are called during Unity's Awake event, and that the <code>IInitializable.Initialize</code> methods are called immediately on Unity's Start event.  Using <code>IInitializable</code> as opposed to a constructor is therefore more in line with Unity's own recommendations, which suggest that the Awake phase be used to set up object references, and the Start phase should be used for more involved initialization logic.</p>
+<p>Then, to hook it up in an installer:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IInitializable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
+
+<p>Or if you don't want to have to always remember which interfaces your class implements, you can use the <a href="#all-interfaces-shortcuts">shortcut described here</a></p>
+
+<p>The Foo.Initialize method would then be called after the entire object graph is constructed and all constructors have been called.</p>
+
+<p>Note that the constructors for the initial object graph are called during Unity's Awake event, and that the <code>IInitializable.Initialize</code> methods are called immediately on Unity's Start event.  Using <code>IInitializable</code> as opposed to a constructor is therefore more in line with Unity's own recommendations, which suggest that the Awake phase be used to set up object references, and the Start phase be used for more involved initialization logic.</p>
 
 <p>This can also be better than using constructors or <code>[Inject]</code> methods because the initialization order is customizable in a similar way to <code>ITickable</code>, as explained <a href="#update--initialization-order">here</a>.</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-k">IInitializable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Ship</span> : <span class="pl-en">IInitializable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
     {
@@ -908,7 +1006,7 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
     [Inject]
-    IBar _bar;
+    <span class="pl-en">IBar</span> <span class="pl-en">_bar</span>;
 
     [Inject]
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
@@ -922,11 +1020,11 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 <h2>
 <a id="user-content-idisposable" class="anchor" href="#idisposable" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-implementing-idisposable"></a>IDisposable</h2>
 
-<p>If you have external resources that you want to clean up when the app closes, the scene changes, or for whatever reason the context object is destroyed, you can simply declare your class as <code>IDisposable</code> like below:</p>
+<p>If you have external resources that you want to clean up when the app closes, the scene changes, or for whatever reason the context object is destroyed, you can declare your class as <code>IDisposable</code> like below:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Logger</span> : <span class="pl-k">IInitializable</span>, <span class="pl-k">IDisposable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Logger</span> : <span class="pl-en">IInitializable</span>, <span class="pl-en">IDisposable</span>
 {
-    FileStream _outStream;
+    <span class="pl-en">FileStream</span> <span class="pl-en">_outStream</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
     {
@@ -946,48 +1044,108 @@ Container.Bind&lt;Bar&gt;().FromResolveGetter&lt;Foo&gt;(x =&gt; x.GetBar());</p
 
 <p>Then in your installer you can include:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Logger&gt;().AsSingle();
-Container.Bind&lt;IInitializable&gt;().To&lt;Logger&gt;().AsSingle();
-Container.Bind&lt;IDisposable&gt;().To&lt;Logger&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Logger</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IInitializable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Logger</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IDisposable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Logger</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
-<p>Or you can use the following shortcut:</p>
+<p>Or you can use the <a href="#all-interfaces-shortcuts">BindInterfaces shortcut</a>:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindAllInterfacesAndSelf&lt;Logger&gt;().To&lt;Logger&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInterfacesAndSelfTo</span>&lt;<span class="pl-en">Logger</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>This works because when the scene changes or your unity application is closed, the unity event OnDestroy() is called on all MonoBehaviours, including the SceneContext class, which then triggers Dispose() on all objects that are bound to <code>IDisposable</code></p>
 
-<p>Note that this example may or may not be a good idea (for example, the file will be left open if your app crashes), but illustrates the point  :)</p>
+<h2>
+<a id="user-content-bindinterfacesto-and-bindinterfacesandselfto" class="anchor" href="#bindinterfacesto-and-bindinterfacesandselfto" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-all-interfaces-shortcuts"></a>BindInterfacesTo and BindInterfacesAndSelfTo</h2>
+
+<p>If you end up using the ITickable, IInitializable, and IDisposable interfaces as described above, you will often end up with code like this:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IInitializable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IDisposable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
+
+<p>You can simplify this a bit by using the non generic bind method:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(Foo), <span class="pl-en">typeof</span>(IInitializable), <span class="pl-en">typeof</span>(IDisposable)).<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
+
+<p>This is better but it could still be more readable.  Also, this is still not ideal because if I later on decide that Foo doesn't need a Tick() or a Dispose() then I have to keep the installer in sync.</p>
+
+<p>A better idea would be to just always use the interfaces like this:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(new[] { <span class="pl-k">typeof</span>(<span class="pl-en">Foo</span>) }.<span class="pl-en">Concat</span>(<span class="pl-en">typeof</span>(Foo).<span class="pl-en">GetInterfaces</span>())).<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
+
+<p>This pattern is useful enough that Zenject includes a custom bind method for it.  The above code is equivalent to:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInterfacesAndSelfTo</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
+
+<p>Now, we can add and remove interfaces to/from Foo and the installer remains the same.</p>
+
+<p>In some cases you might <em>only</em> want to bind the interfaces, and keep Foo hidden from other classes.  In that case you would use the BindInterfacesTo method instead:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInterfacesTo</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>()</pre></div>
+
+<p>Which, in this case, would expand to:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(IInitializable), <span class="pl-en">typeof</span>(IDisposable)).<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
+
+<p>Or, equivalently:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IInitializable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IDisposable</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <h2>
 <a id="user-content-using-the-unity-inspector-to-configure-settings" class="anchor" href="#using-the-unity-inspector-to-configure-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-using-the-unity-inspector-to-configure-settings"></a>Using the Unity Inspector To Configure Settings</h2>
 
-<p>One implication of writing most of your code as normal C# classes instead of MonoBehaviour's is that you lose the ability to configure data on them using the inspector.  You can however still take advantage of this in Zenject by using the following pattern, as seen in the sample project:</p>
+<p>One implication of writing most of your code as normal C# classes instead of MonoBehaviour's is that you lose the ability to configure data on them using the inspector.  You can however still take advantage of this in Zenject by using the following pattern:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">AsteroidsInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">public</span> Settings SceneSettings;
+    <span class="pl-k">readonly </span><span class="pl-en">Settings</span> <span class="pl-en">_settings</span>;
 
-    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(Settings settings)
     {
-        ...
-        Container.BindInstance(SceneSettings.StateMoving);
-        ...
+        _settings = settings;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Tick</span>()
+    {
+        Debug.Log(<span class="pl-s"><span class="pl-pds">"</span>Speed: <span class="pl-pds">"</span></span> + _settings.Speed);
     }
 
     [Serializable]
     <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Settings</span>
     {
-        ...
-        <span class="pl-k">public</span> ShipStateMoving.Settings StateMoving;
-        ...
+        <span class="pl-k">public </span><span class="pl-k">float</span> <span class="pl-en">Speed</span>;
     }
 }</pre></div>
 
-<p>Note that if you follow this method, you will have to make sure to always include the [Serializable] attribute on your settings wrappers, otherwise they won't show up in the Unity inspector.</p>
+<p>Then, in an installer:</p>
 
-<p>To see this in action, start the asteroids scene and try adjusting <code>Ship -&gt; State Moving -&gt; Move Speed</code> setting and watch live as your ship changes speed.</p>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>&lt;<span class="pl-en">TestInstaller</span>&gt;
+{
+    <span class="pl-k">public</span> <span class="pl-en">Foo.Settings</span> FooSettings;
 
-<p>Another way to do this is to use ScriptableObjectInstaller to store settings, which have the added advantage that you can change your settings at runtime and have those changes automatically persist when play mode is stopped.  See <a href="#scriptableobject-installer">here</a> for details.</p>
+    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
+    {
+        Container.BindInstance(FooSettings);
+        Container.BindInterfacesTo&lt;Foo&gt;().AsSingle();
+    }
+}</pre></div>
+
+<p>Or, equivalently:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>&lt;<span class="pl-en">TestInstaller</span>&gt;
+{
+    <span class="pl-k">public</span> <span class="pl-en">Foo.Settings</span> FooSettings;
+
+    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
+    {
+        Container.BindInterfacesTo&lt;Foo&gt;().AsSingle().WithArguments(FooSettings);
+    }
+}</pre></div>
+
+<p>Now, if we run our scene we can change the speed value to tune the Foo class in real time.</p>
+
+<p>Another (arguably better) way to do this is to use ScriptableObjectInstaller instead of MonoInstaller, which have the added advantage that you can change your settings at runtime and have those changes automatically persist when play mode is stopped.  See <a href="#scriptableobject-installer">here</a> for details.</p>
 
 <h2>
 <a id="user-content-object-graph-validation" class="anchor" href="#object-graph-validation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-object-graph-validation"></a>Object Graph Validation</h2>
@@ -1077,13 +1235,13 @@ public class GameRunner : IInitializable
 
 <p>This is equivalent to the first example where we did this:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromInstance(_foo);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromInstance</span>(_foo);</pre></div>
 
-<p>Which is also the same as this:</p>
+<p>Or, equivalently:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindInstance(_foo);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInstance</span>(_foo);</pre></div>
 
-<p>So if we duplicate this game object to have multiple game objects with <code>Foo</code> on them (and its <code>ZenjectBinding</code>), they will all be bound to the Container this way.  So after doing this, we would have to change <code>GameRunner</code> above to take a <code>List&lt;Foo&gt;</code> otherwise we would get Zenject exceptions (see <a href="#list-bindings">here</a> for info on list bindings).</p>
+<p>So if we duplicate this game object to have multiple game objects with <code>Foo</code> on them (as well as the <code>ZenjectBinding</code>), they will all be bound to the Container this way.  So after doing this, we would have to change <code>GameRunner</code> above to take a <code>List&lt;Foo&gt;</code> otherwise we would get Zenject exceptions (see <a href="#list-bindings">here</a> for info on list bindings).</p>
 
 <ol>
 <li><code>AllInterfaces</code></li>
@@ -1091,9 +1249,9 @@ public class GameRunner : IInitializable
 
 <p>This bind type is equivalent to the following:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindAllInterfaces(_foo.GetType()).FromInstance(_foo);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInterfacesTo</span>(_foo.<span class="pl-en">GetType</span>()).<span class="pl-en">FromInstance</span>(_foo);</pre></div>
 
-<p>Note however, in this case, that <code>GameRunner</code> must ask for type <code>IFoo</code> in its constructor.  If we left <code>GameRunner</code> asking for type <code>Foo</code> then Zenject would throw exceptions, since the <code>BindAllInterfaces</code> method only binds the interfaces, not the concrete type.  If you want the concrete type as well then you can use:</p>
+<p>Note however, in this case, that <code>GameRunner</code> must ask for type <code>IFoo</code> in its constructor.  If we left <code>GameRunner</code> asking for type <code>Foo</code> then Zenject would throw exceptions, since the <code>BindInterfaces</code> method only binds the interfaces, not the concrete type.  If you want the concrete type as well then you can use:</p>
 
 <ol>
 <li><code>AllInterfacesAndSelf</code></li>
@@ -1101,7 +1259,7 @@ public class GameRunner : IInitializable
 
 <p>This bind type is equivalent to the following:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindAllInterfacesAndSelf(_foo.GetType()).FromInstance(_foo);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInterfacesAndSelfTo</span>(_foo.<span class="pl-en">GetType</span>()).<span class="pl-en">FromInstance</span>(_foo);</pre></div>
 
 <p>This is the same as AllInterfaces except we can directly access Foo using type Foo instead of needing an interface.</p>
 
@@ -1111,14 +1269,14 @@ public class GameRunner : IInitializable
 
 <p>This bind type is equivalent to the following:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindAllInterfacesAndSelf(_foo.GetType().BaseType()).FromInstance(_foo);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindAllInterfacesAndSelf</span>(_foo.<span class="pl-en">GetType</span>().<span class="pl-en">BaseType</span>()).<span class="pl-en">FromInstance</span>(_foo);</pre></div>
 </li>
 <li>
 <p>Identifier - This value can be left empty most of the time.  It will determine what is used as the <a href="#binding">identifier</a> for the binding.   For example, when set to "Foo1", it is equivalent to doing the following:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindInstance(_foo).WithId(<span class="pl-s"><span class="pl-pds">"</span>Foo1<span class="pl-pds">"</span></span>);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInstance</span>(_foo).<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>Foo1<span class="pl-pds">"</span></span>);</pre></div>
 </li>
-<li><p>Context - This is completely optional and in most cases should be left unset.  This will determine which Context to apply the binding to.  If left unset, it will use whatever context the GameObject is in.  In most cases this will be SceneContext, but if it's inside a GameObjectContext it will be bound into that container instead.  One important use case for this field is to allow dragging the SceneContext into this field, for cases where the component is inside a GameObjectContext.  This allows you to treat this MonoBehaviour as a <a href="https://en.wikipedia.org/wiki/Facade_pattern">Facade</a> for the entire sub-container given by the GameObjectContext.</p></li>
+<li><p>Context - This is completely optional and in most cases should be left unset.  This will determine which Context to apply the binding to.  If left unset, it will use whatever context the GameObject is in.  In most cases this will be SceneContext, but if it's inside a GameObjectContext it will be bound into the GameObjectContext container instead.  One important use case for this field is to allow dragging the SceneContext into this field, for cases where the component is inside a GameObjectContext.  This allows you to treat this MonoBehaviour as a <a href="https://en.wikipedia.org/wiki/Facade_pattern">Facade</a> for the entire sub-container given by the GameObjectContext.</p></li>
 </ul>
 
 <h2>
@@ -1129,7 +1287,7 @@ public class GameRunner : IInitializable
 <p><strong>Do not use GameObject.Instantiate if you want your objects to have their dependencies injected</strong></p>
 
 <ul>
-<li>If you want to instantiate a prefab at runtime and have any MonoBehaviour's automatically injected, we recommend using a <a href="#creating-objects-dynamically">factory</a>.  You can also instantiate a prefab by directly using the DiContainer by calling any of the <code>InstantiatePrefab</code> methods.  Using these ways as opposed to GameObject.Instantiate will ensure any fields that are marked with the [Inject] attribute are filled in properly, and all [Inject] methods within the prefab are called.</li>
+<li>If you want to instantiate a prefab at runtime and have any MonoBehaviour's automatically injected, we recommend using a <a href="#creating-objects-dynamically">factory</a>.  You can also instantiate a prefab by directly using the DiContainer by calling any of the <a href="#dicontainer-methods-instantiate">InstantiatePrefab</a> methods.  Using these ways as opposed to GameObject.Instantiate will ensure any fields that are marked with the [Inject] attribute are filled in properly, and all [Inject] methods within the prefab are called.</li>
 </ul>
 </li>
 <li>
@@ -1191,54 +1349,52 @@ public class GameRunner : IInitializable
 <li>Another common mistake is to leave out the call which defines the scope (eg. <code>AsSingle</code>, <code>AsTransient</code>, or <code>AsCached</code>) and therefore unintentionally use the default (<code>AsTransient</code>).  For example:</li>
 </ul>
 
-<p><code>Container.BindAllInterfacesAndSelf&lt;Foo&gt;().To&lt;Foo&gt;();</code></p>
+<pre lang="Container.BindInterfacesAndSelfTo&lt;Foo&gt;();```"><code>
+* The above binding is almost certainly not what you want to do, because it will create an instance of Foo for every interface that Foo has.  Instead, you almost certainly want to use either `AsCached` or `AsSingle` in this case
+
+Please feel free to submit any other sources of confusion to sfvermeulen@gmail.com and I will add it here.
+
+## &lt;a id="game-object-bind-methods"&gt;&lt;/a&gt;Game Object Bind Methods
+
+For bindings that create new game objects (eg. FromComponentInNewPrefab or FromGameObject) there are also two extra bind methods.
+
+* **WithGameObjectName** = The name to give the new Game Object associated with this binding.
+
+```csharp
+Container.Bind&lt;Foo&gt;().FromComponentInNewPrefabResource("Some/Path/Foo").WithGameObjectName("Foo1");
+Container.Bind&lt;Foo&gt;().FromNewComponentOnNewGameObject().WithGameObjectName("Foo1");
+</code></pre>
 
 <ul>
-<li>The above binding is almost certainly not what you want to do, because it will create an instance of Foo for every interface that Foo has.  Instead, you almost certainly want to use either <code>AsCached</code> or <code>AsSingle</code> in this case</li>
+<li>
+<strong>UnderTransformGroup(string)</strong> = The name of the transform group to place the new game object under.  This is especially useful for factories, which can be used to create many copies of a prefab, so it can be nice to have them automatically grouped together within the scene heirarchy.</li>
 </ul>
-</li>
-</ul>
 
-<p>Please feel free to submit any other sources of confusion to <a href="mailto:sfvermeulen@gmail.com">sfvermeulen@gmail.com</a> and I will add it here.</p>
-
-<h2>
-<a id="user-content-game-object-bind-methods" class="anchor" href="#game-object-bind-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-game-object-bind-methods"></a>Game Object Bind Methods</h2>
-
-<p>For bindings that create new game objects (eg. FromPrefab or FromGameObject) there are also two extra bind methods</p>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindFactory</span>&lt;<span class="pl-en">Bullet</span>, Bullet.Factory&gt;()
+    .<span class="pl-en">FromComponentInNewPrefab</span>(BulletPrefab)
+    .<span class="pl-en">UnderTransformGroup</span>(<span class="pl-s"><span class="pl-pds">"</span>Bullets<span class="pl-pds">"</span></span>);</pre></div>
 
 <ul>
 <li>
-<p><strong>WithGameObjectName</strong> = The name to give the new Game Object associated with this binding.</p>
-
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromPrefabResource(<span class="pl-s"><span class="pl-pds">"</span>Some/Path/Foo<span class="pl-pds">"</span></span>).WithGameObjectName(<span class="pl-s"><span class="pl-pds">"</span>Foo1<span class="pl-pds">"</span></span>);
-Container.Bind&lt;Foo&gt;().FromGameObject().WithGameObjectName(<span class="pl-s"><span class="pl-pds">"</span>Foo2<span class="pl-pds">"</span></span>);</pre></div>
-</li>
-<li>
-<p><strong>UnderTransformGroup(string)</strong> = The name of the transform group to place the new game object under.  This is especially useful for factories, which can be used to create many copies of a prefab, so it can be nice to have them automatically grouped together within the scene heirarchy.</p>
-
-<div class="highlight highlight-source-cs"><pre>Container.BindFactory&lt;Bullet, Bullet.Factory&gt;()
-    .FromPrefab(BulletPrefab)
-    .UnderTransformGroup(<span class="pl-s"><span class="pl-pds">"</span>Bullets<span class="pl-pds">"</span></span>);</pre></div>
-</li>
-<li>
-<p><strong>UnderTransform(Transform)</strong> = The actual transform to place the new game object under.</p>
-
-<div class="highlight highlight-source-cs"><pre>Container.BindFactory&lt;Bullet, Bullet.Factory&gt;()
-    .FromPrefab(BulletPrefab)
-    .UnderTransform(BulletTransform);</pre></div>
-</li>
+<strong>UnderTransform(Transform)</strong> = The actual transform to place the new game object under.</li>
 </ul>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindFactory</span>&lt;<span class="pl-en">Bullet</span>, Bullet.Factory&gt;()
+    .<span class="pl-en">FromComponentInNewPrefab</span>(BulletPrefab)
+    .<span class="pl-en">UnderTransform</span>(BulletTransform);</pre></div>
 
 <h2>
 <a id="user-content-optional-binding" class="anchor" href="#optional-binding" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-optional-binding"></a>Optional Binding</h2>
 
 <p>You can declare some dependencies as optional as follows:</p>
+</li>
+</ul>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
 {
     <span class="pl-k">public</span> <span class="pl-en">Bar</span>(
         [InjectOptional]
-        <span class="pl-k">IFoo</span> <span class="pl-smi">foo</span>)
+        IFoo foo)
     {
         ...
     }
@@ -1246,7 +1402,7 @@ Container.Bind&lt;Foo&gt;().FromGameObject().WithGameObjectName(<span class="pl-
 ...
 
 <span class="pl-c">// You can comment this out and it will still work</span>
-Container.Bind&lt;IFoo&gt;().AsSingle();</pre></div>
+Container.<span class="pl-en">Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>If an optional dependency is not bound in any installers, then it will be injected as null.</p>
 
@@ -1256,7 +1412,7 @@ Container.Bind&lt;IFoo&gt;().AsSingle();</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
 {
-    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(<span class="pl-k">int</span> <span class="pl-smi">foo</span> <span class="pl-k">=</span> <span class="pl-c1">5</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(int foo = 5)
     {
         ...
     }
@@ -1264,7 +1420,7 @@ Container.Bind&lt;IFoo&gt;().AsSingle();</pre></div>
 ...
 
 <span class="pl-c">// Can comment this out and 5 will be used instead</span>
-Container.BindInstance(<span class="pl-c1">1</span>);</pre></div>
+Container.<span class="pl-en">BindInstance</span>(<span class="pl-c1">1</span>);</pre></div>
 
 <p>Note also that the <code>[InjectOptional]</code> is not necessary in this case, since it's already implied by the default value.</p>
 
@@ -1272,7 +1428,7 @@ Container.BindInstance(<span class="pl-c1">1</span>);</pre></div>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
 {
-    <span class="pl-k">int</span> _foo;
+    <span class="pl-k">int</span> <span class="pl-en">_foo</span>;
 
     <span class="pl-k">public</span> <span class="pl-en">Bar</span>(
         [InjectOptional]
@@ -1293,19 +1449,19 @@ Container.BindInstance(<span class="pl-c1">1</span>);</pre></div>
 ...
 
 <span class="pl-c">// Can comment this out and it will use 5 instead</span>
-Container.BindInstance(<span class="pl-c1">1</span>);</pre></div>
+Container.<span class="pl-en">BindInstance</span>(<span class="pl-c1">1</span>);</pre></div>
 
 <h2>
 <a id="user-content-conditional-bindings" class="anchor" href="#conditional-bindings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-conditional-bindings"></a>Conditional Bindings</h2>
 
 <p>In many cases you will want to restrict where a given dependency is injected.  You can do this using the following syntax:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To&lt;Foo1&gt;().AsSingle().WhenInjectedInto&lt;Bar1&gt;();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle().WhenInjectedInto&lt;Bar2&gt;();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo1</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Bar1</span>&gt;();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo2</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Bar2</span>&gt;();</pre></div>
 
 <p>Note that <code>WhenInjectedInto</code> is simple shorthand for the following, which uses the more general <code>When()</code> method:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle().When(context =&gt; context.ObjectType == <span class="pl-k">typeof</span>(Bar));</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>().<span class="pl-en">When</span>(context =&gt; context.ObjectType == typeof(Bar));</pre></div>
 
 <p>The InjectContext class (which is passed as the <code>context</code> parameter above) contains the following information that you can use in your conditional:</p>
 
@@ -1336,29 +1492,20 @@ Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle().WhenInjectedInto&lt;Bar
 <p>When Zenject finds multiple bindings for the same type, it interprets that to be a list.  So, in the example code below, Bar would get a list containing a new instance of Foo1, Foo2, and Foo3:</p>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// In an installer somewhere</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo1&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo3&gt;().AsSingle();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo1</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo2</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo3</span>&gt;().<span class="pl-en">AsSingle</span>();
 
 ...
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
+public class Bar
 {
-    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(List&lt;IFoo&gt; foos)
+    public Bar(List&lt;IFoo&gt; foos)
     {
     }
 }</pre></div>
 
-<p>Also worth noting is that if you try and declare a single dependency of IFoo (like Bar below) and there are multiple bindings for it, then Zenject will throw an exception, since Zenject doesn't know which instance of IFoo to use.</p>
-
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
-{
-    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(<span class="pl-k">IFoo</span> <span class="pl-smi">foo</span>)
-    {
-    }
-}</pre></div>
-
-<p>Also, if the empty list is valid, then you should mark your List constructor parameter (or [Inject] field) as optional (see <a href="#optional-binding">here</a> for details).</p>
+<p>The order of the list will be the same as the order in which they were added with a Bind method.  The only exception is when you use subcontainers, since in that case the list will be ordered first by the associated subcontainer, with the first set of instances taken from the bottom most subcontainer, and then the parent, then the grandparent, etc.</p>
 
 <h2>
 <a id="user-content-global-bindings-using-project-context" class="anchor" href="#global-bindings-using-project-context" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-global-bindings"></a>Global Bindings Using Project Context</h2>
@@ -1375,28 +1522,28 @@ Container.Bind&lt;IFoo&gt;().To&lt;Foo3&gt;().AsSingle();
 
 <p>The reason that all the bindings you add to a global installer are available for any classes within each individual scene, is because the Container in each scene uses the ProjectContext Container as it's "parent".  For more information on nested containers see <a href="#sub-containers-and-facades">here</a>.</p>
 
-<p>ProjectContext is a very convenient place to put objects that you want to persist across scenes.  However, the fact that it's completely global to every scene can lead to some unintended behaviour.  For example, this means that even if you write a simple test scene that uses Zenject, it will load the ProjectContext, which may not be what you want.  To address these problems it is sometimes better to use Scene Parenting instead, since that approach allows you to be selective in terms of which scenes inherit the same common bindings.  See <a href="#scene-parenting">here</a> for more details on that approach.</p>
+<p>ProjectContext is a very convenient place to put objects that you want to persist across scenes.  However, the fact that it's completely global to every scene can lead to some unintended behaviour.  For example, this means that even if you write a simple test scene that uses Zenject, it will load the ProjectContext, which may not be what you want.  To address these problems it is often better to use Scene Parenting instead, since that approach allows you to be selective in terms of which scenes inherit the same common bindings.  See <a href="#scene-parenting">here</a> for more details on that approach.</p>
 
 <h2>
 <a id="user-content-identifiers" class="anchor" href="#identifiers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-identifiers"></a>Identifiers</h2>
 
 <p>You can also give an ID to your binding if you need to have distinct bindings for the same type, and you don't want it to just result in a <code>List&lt;&gt;</code>.  For example:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().WithId(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>).To&lt;Foo1&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle();
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>).<span class="pl-en">To</span>&lt;<span class="pl-en">Foo1</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo2</span>&gt;().<span class="pl-en">AsSingle</span>();
 
 ...
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar1</span>
+public class Bar1
 {
     [Inject(Id = <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>)]
-    IFoo _foo;
+    <span class="pl-en">IFoo</span> <span class="pl-en">_foo</span>;
 }
 
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar2</span>
 {
     [Inject]
-    IFoo _foo;
+    <span class="pl-en">IFoo</span> <span class="pl-en">_foo</span>;
 }</pre></div>
 
 <p>In this example, the <code>Bar1</code> class will be given an instance of <code>Foo1</code>, and the <code>Bar2</code> class will use the default version of <code>IFoo</code> which is bound to <code>Foo2</code>.</p>
@@ -1405,10 +1552,10 @@ Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle();
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
 {
-    Foo _foo;
+    <span class="pl-en">Foo</span> <span class="pl-en">_foo</span>;
 
     <span class="pl-k">public</span> <span class="pl-en">Bar</span>(
-        [Inject(Id = <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>)] 
+        [<span class="pl-en">Inject</span>(Id = <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>)] 
         Foo foo)
     {
     }
@@ -1416,14 +1563,14 @@ Container.Bind&lt;IFoo&gt;().To&lt;Foo2&gt;().AsSingle();
 
 <p>In many cases, the ID is created as a string, however you can actually use any type you like for this.  For example, it's sometimes useful to use an enum instead:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">enum</span> <span class="pl-en">Cameras</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">enum</span> Cameras
 {
-    Main,
-    Player,
+    <span class="pl-en">Main</span>,
+    <span class="pl-en">Player</span>,
 }
 
-Container.Bind&lt;Camera&gt;().WithId(Cameras.Main).FromInstance(MyMainCamera);
-Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamera);</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Camera</span>&gt;().<span class="pl-en">WithId</span>(Cameras.Main).<span class="pl-en">FromInstance</span>(MyMainCamera);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Camera</span>&gt;().<span class="pl-en">WithId</span>(Cameras.Player).<span class="pl-en">FromInstance</span>(MyPlayerCamera);</pre></div>
 
 <p>You can also use custom types, as long as they implement the <code>Equals</code> operator.</p>
 
@@ -1450,26 +1597,24 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
 <li>Following the approach to settings outlined <a href="#using-the-unity-inspector-to-configure-settings">here</a>, you might then replace it with the following:</li>
 </ul>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameSettings</span> : <span class="pl-k">ScriptableObjectInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameSettings</span> : <span class="pl-en">ScriptableObjectInstaller</span>
 {
-    <span class="pl-k">public</span> Player.Settings Player;
-    <span class="pl-k">public</span> SomethingElse.Settings SomethingElse;
+    <span class="pl-k">public</span> <span class="pl-en">Player.Settings</span> Player;
+    <span class="pl-k">public</span> <span class="pl-en">SomethingElse.Settings</span> SomethingElse;
     <span class="pl-c">// ... etc.</span>
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindInstance(Player);
-        Container.BindInstance(SomethingElse);
-        <span class="pl-c">// ... etc.</span>
+        Container.BindInstances(Player, SomethingElse, etc.);
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Player</span> : <span class="pl-k">ITickable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Player</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">readonly</span> Settings _settings;
-    Vector3 _position;
+    <span class="pl-k">readonly </span><span class="pl-en">Settings</span> <span class="pl-en">_settings</span>;
+    <span class="pl-en">Vector3</span> <span class="pl-en">_position</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Player</span>(<span class="pl-k">Settings</span> <span class="pl-smi">settings</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Player</span>(Settings settings)
     {
         _settings = settings;
     }
@@ -1482,7 +1627,7 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
     [Serializable]
     <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Settings</span>
     {
-        <span class="pl-k">public</span> <span class="pl-k">float</span> Speed;
+        <span class="pl-k">public </span><span class="pl-k">float</span> <span class="pl-en">Speed</span>;
     }
 }</pre></div>
 
@@ -1495,11 +1640,11 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
 
 <p>Often when calling installers from other installers it is desirable to be able to pass parameters.  You can do this by adding generic arguments to whichever installer base class you are using with the types for the runtime parameters. For example, when using a non-MonoBehaviour Installer:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-k">Installer</span>&lt;<span class="pl-k">string</span>, <span class="pl-k">FooInstaller</span>&gt;
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-en">Installer</span>&lt;<span class="pl-k">string</span>, <span class="pl-en">FooInstaller</span>&gt;
 {
-    <span class="pl-k">string</span> _value;
+    <span class="pl-k">string</span> <span class="pl-en">_value</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">FooInstaller</span>(<span class="pl-k">string</span> <span class="pl-smi">value</span>)
+    <span class="pl-k">public</span> <span class="pl-en">FooInstaller</span>(string value)
     {
         _value = <span class="pl-k">value</span>;
     }
@@ -1512,7 +1657,7 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MainInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MainInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -1523,9 +1668,9 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
 
 <p>Or when using a MonoInstaller prefab:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-k">MonoInstaller</span>&lt;<span class="pl-k">string</span>, <span class="pl-k">FooInstaller</span>&gt;
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-en">MonoInstaller</span>&lt;<span class="pl-k">string</span>, <span class="pl-en">FooInstaller</span>&gt;
 {
-    <span class="pl-k">string</span> _value;
+    <span class="pl-k">string</span> <span class="pl-en">_value</span>;
 
     <span class="pl-c">// Note that in this case we can't use a constructor</span>
     [Inject]
@@ -1542,62 +1687,37 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MainInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MainInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
         <span class="pl-c">// For this to work, there must be a prefab with FooInstaller attached to it at</span>
         <span class="pl-c">// Resources/My/Custom/ResourcePath.prefab</span>
-        FooInstaller.InstallFromResource(<span class="pl-s"><span class="pl-pds">"</span>My/Custom/ResourcePath<span class="pl-pds">"</span></span>, Container, <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>);
+        FooInstaller.InstallFromResource(<span class="pl-s"><span class="pl-pds">"</span>My/Custom/ResourcePath<span class="pl-pds">"</span></span>, Container, <span class="pl-k">new</span> <span class="pl-k">object</span>[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span> });
 
-        <span class="pl-c">// In this case the prefab will be assumed to exist at 'Resources/Installers/FooInstaller'</span>
-        <span class="pl-c">// FooInstaller.InstallFromResource(Container, "asdf");</span>
+        <span class="pl-c">// If a resource path is not provided then it is assumed to exist at resource path </span>
+        <span class="pl-c">// 'Resources/Installers/FooInstaller'</span>
+        <span class="pl-c">// For example:</span>
+        <span class="pl-c">// FooInstaller.InstallFromResource(Container, new object[] { "asdf" });</span>
     }
 }</pre></div>
 
-<p>Or, by using a ScriptableObjectInstaller:</p>
-
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">FooInstaller</span> : <span class="pl-k">ScriptableObjectInstaller</span>&lt;<span class="pl-k">string</span>, <span class="pl-k">FooInstaller</span>&gt;
-{
-    <span class="pl-k">string</span> _value;
-
-    <span class="pl-c">// Note that in this case we can't use a constructor</span>
-    [Inject]
-    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-k">string</span> <span class="pl-smi">value</span>)
-    {
-        _value = <span class="pl-k">value</span>;
-    }
-
-    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
-    {
-        ...
-
-        Container.BindInstance(_value).WhenInjectedInto&lt;Foo&gt;();
-    }
-}
-
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">MainInstaller</span> : <span class="pl-k">MonoInstaller</span>
-{
-    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
-    {
-        <span class="pl-c">// For this to work, there must be an instance of FooInstaller added at</span>
-        <span class="pl-c">// Resources/My/Custom/ResourcePath.asset</span>
-        FooInstaller.InstallFromResource(<span class="pl-s"><span class="pl-pds">"</span>My/Custom/ResourcePath<span class="pl-pds">"</span></span>, Container, <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>);
-
-        <span class="pl-c">// In this case the FooInstaller asset will be assumed to exist at 'Resources/Installers/FooInstaller'</span>
-        <span class="pl-c">// FooInstaller.InstallFromResource(Container, "asdf");</span>
-    }
-}</pre></div>
+<p>ScriptableObjectInstaller works the same as MonoInstaller in this regard.</p>
 
 <h2>
-<a id="user-content-commands-and-signals" class="anchor" href="#commands-and-signals" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-commands-and-signals"></a>Commands And Signals</h2>
+<a id="user-content-signals" class="anchor" href="#signals" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-signals"></a>Signals</h2>
 
-<p>See <a href="CommandsAndSignals.html">here</a>.</p>
+<p>See <a href="Signals.html">here</a>.</p>
 
 <h2>
 <a id="user-content-creating-objects-dynamically-using-factories" class="anchor" href="#creating-objects-dynamically-using-factories" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-creating-objects-dynamically"></a>Creating Objects Dynamically Using Factories</h2>
 
 <p>See <a href="Factories.html">here</a>.</p>
+
+<h2>
+<a id="user-content-memory-pools" class="anchor" href="#memory-pools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-memory-pools"></a>Memory Pools</h2>
+
+<p>See <a href="MemoryPools.html">here</a>.</p>
 
 <h2>
 <a id="user-content-update--initialization-order" class="anchor" href="#update--initialization-order" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-update--initialization-order"></a>Update / Initialization Order</h2>
@@ -1606,11 +1726,11 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
 
 <p>In Zenject, by default, ITickables and IInitializables are called in the order that they are added, however for cases where the update or initialization order does matter, there is a much better way:  By specifying their priorities explicitly in the installer.  For example, in the sample project you can find this code in the scene installer:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">AsteroidsInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">AsteroidsInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     ...
 
-    <span class="pl-k">void</span> <span class="pl-en">InitExecutionOrder</span>()
+    void <span class="pl-en">InitExecutionOrder</span>()
     {
         <span class="pl-c">// In many cases you don't need to worry about execution order,</span>
         <span class="pl-c">// however sometimes it can be important</span>
@@ -1625,7 +1745,7 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
 
     ...
 
-    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
+    public override void <span class="pl-en">InstallBindings</span>()
     {
         ...
         InitExecutionOrder();
@@ -1640,31 +1760,44 @@ Container.Bind&lt;Camera&gt;().WithId(Cameras.Player).FromInstance(MyPlayerCamer
 
 <p>You can also assign priorities for each specific interface separately like this:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindInitializableExecutionOrder&lt;Foo&gt;(-<span class="pl-c1">10</span>);
-Container.BindInitializableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">20</span>);
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInitializableExecutionOrder</span>&lt;<span class="pl-en">Foo</span>&gt;(-10);
+<span class="pl-en">Container.BindInitializableExecutionOrder</span>&lt;<span class="pl-en">Bar</span>&gt;(-20);
 
-Container.BindTickableExecutionOrder&lt;Foo&gt;(<span class="pl-c1">10</span>);
-Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);</pre></div>
+<span class="pl-en">Container.BindTickableExecutionOrder</span>&lt;<span class="pl-en">Foo</span>&gt;(10);
+<span class="pl-en">Container.BindTickableExecutionOrder</span>&lt;<span class="pl-en">Bar</span>&gt;(-80);</pre></div>
 
 <p>Any ITickables, IInitializables, or <code>IDisposable</code>'s that are not assigned a priority are automatically given the priority of zero.  This allows you to have classes with explicit priorities executed either before or after the unspecified classes.  For example, the above code would result in 'Foo.Initialize' being called before 'Bar.Initialize'.</p>
 
 <h2>
 <a id="user-content-zenject-order-of-operations" class="anchor" href="#zenject-order-of-operations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-zenject-order-of-operations"></a>Zenject Order Of Operations</h2>
 
-<p>A Zenject driven application is executed by the following steps:</p>
+<p>What follows below is a more detailed view of what happens when running a scene that uses Zenject.  This can be useful to know to fully understand exactly how Zenject works.</p>
 
 <ul>
 <li>Unity Awake() phase begins
 
 <ul>
 <li>SceneContext.Awake() method is called.  This should always be the first thing executed in your scene.  It should work this way by default (see <a href="#bad-execution-order">here</a> if you are noticing otherwise).</li>
-<li>If this is the first scene to be loaded during this play session, SceneContext will create the ProjectContext prefab.  If ProjectContext has already been created by a previous scene, we skip this step and directly initialize the SceneContext</li>
-<li>ProjectContext iterates through all the Installers that have been added to its prefab via the Unity Inspector, updates them to point to its DiContainer, then calls InstallBindings() on each.  Each Installer calls some number of Bind&lt;&gt; methods on the DiContainer.</li>
-<li>ProjectContext then injects all MonoBehaviours attached to its game object as well as its children</li>
+<li>Project Context is initialized. Note that this only happens once per play session.  If a previous scene already initialized the ProjectContext, then this step is skipped
+
+<ul>
+<li>All injectable MonoBehaviour's on the ProjectContext prefab are passed to the container via <a href="#dicontainer-methods-queueforinject">DiContainer.QueueForInject</a>
+</li>
+<li>ProjectContext iterates through all the Installers that have been added to its prefab via the Unity Inspector, updates them to point to its DiContainer, then calls InstallBindings() on each.  Each Installer calls some number of Bind methods on the DiContainer.</li>
+<li>All instances that were added via <a href="#dicontainer-methods-queueforinject">DiContainer.QueueForInject</a> are injected</li>
 <li>ProjectContext then constructs all the non-lazy root objects, which includes any classes that derive from ITickable / IInitializable or IDisposable, as well as those classes that are added with a <code>NonLazy()</code> binding.</li>
+</ul>
+</li>
+<li>Scene Context is initialized.
+
+<ul>
+<li>All injectable MonoBehaviour's in the entire scene are passed to the SceneContext container via <a href="#dicontainer-methods-queueforinject">DiContainer.QueueForInject</a>
+</li>
 <li>SceneContext iterates through all the Installers that have been added to it via the Unity Inspector, updates them to point to its DiContainer, then calls InstallBindings() on each.  Each Installer calls some number of Bind&lt;&gt; methods on the DiContainer.</li>
-<li>SceneContext then injects all objects in the scene (except those objects that are parented to the ProjectContext)</li>
+<li>All instances that were added via <a href="#dicontainer-methods-queueforinject">DiContainer.QueueForInject</a> are injected</li>
 <li>SceneContext then constructs all the non-lazy root objects, which includes any classes that derive from ITickable / IInitializable or IDisposable, as well as those classes that are added with a <code>NonLazy()</code> binding.</li>
+</ul>
+</li>
 <li>If any required dependencies cannot be resolved, a ZenjectResolveException is thrown</li>
 <li>All other MonoBehaviour's in the scene have their Awake() method called</li>
 </ul>
@@ -1690,6 +1823,7 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 <li>Unity scene is unloaded
 
 <ul>
+<li>Dispose() is called on all objects mapped to <code>IDisposable</code> within all the GameObjectContext's (see <a href="#implementing-idisposable">here</a> for details)</li>
 <li>Dispose() is called on all objects mapped to <code>IDisposable</code> within the SceneContext installers (see <a href="#implementing-idisposable">here</a> for details)</li>
 </ul>
 </li>
@@ -1708,13 +1842,13 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 
 <p>Let's pretend you want to specify a 'level' string to the next scene.  You have the following class that requires the input:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">LevelHandler</span> : <span class="pl-k">IInitializable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">LevelHandler</span> : <span class="pl-en">IInitializable</span>
 {
-    <span class="pl-k">readonly</span> <span class="pl-k">string</span> _startLevel;
+    <span class="pl-k">readonly </span><span class="pl-k">string</span> <span class="pl-en">_startLevel</span>;
 
     <span class="pl-k">public</span> <span class="pl-en">LevelHandler</span>(
         [InjectOptional]
-        <span class="pl-k">string</span> <span class="pl-smi">startLevel</span>)
+        string startLevel)
     {
         <span class="pl-k">if</span> (startLevel == <span class="pl-c1">null</span>)
         {
@@ -1739,16 +1873,16 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 <div class="highlight highlight-source-cs"><pre>
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    <span class="pl-k">readonly</span> ZenjectSceneLoader _sceneLoader;
+    <span class="pl-k">readonly </span><span class="pl-en">ZenjectSceneLoader</span> <span class="pl-en">_sceneLoader</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">ZenjectSceneLoader</span> <span class="pl-smi">sceneLoader</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(ZenjectSceneLoader sceneLoader)
     {
         _sceneLoader = sceneLoader;
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">AdvanceScene</span>()
     {
-        _sceneLoader.LoadScene(<span class="pl-s"><span class="pl-pds">"</span>NameOfSceneToLoad<span class="pl-pds">"</span></span>, LoadSceneMode.Single, (container) =&gt;
+        _sceneLoader.LoadScene(<span class="pl-s"><span class="pl-pds">"</span>NameOfSceneToLoad<span class="pl-pds">"</span></span>, LoadSceneMode.Single, (<span class="pl-en">container</span>) =&gt;
             {
                 container.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>custom_level<span class="pl-pds">"</span></span>).WhenInjectedInto&lt;LevelHandler&gt;();
             });
@@ -1761,11 +1895,11 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 
 <p>An alternative and arguably cleaner way to do this would be to customize the installer itself rather than the <code>LevelHandler</code> class.  In this case we can write our <code>LevelHandler</code> class like this (without the <code>[InjectOptional]</code> flag).</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">LevelHandler</span> : <span class="pl-k">IInitializable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">LevelHandler</span> : <span class="pl-en">IInitializable</span>
 {
-    <span class="pl-k">readonly</span> <span class="pl-k">string</span> _startLevel;
+    <span class="pl-k">readonly </span><span class="pl-k">string</span> <span class="pl-en">_startLevel</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">LevelHandler</span>(<span class="pl-k">string</span> <span class="pl-smi">startLevel</span>)
+    <span class="pl-k">public</span> <span class="pl-en">LevelHandler</span>(string startLevel)
     {
         _startLevel = startLevel;
     }
@@ -1780,14 +1914,14 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 
 <p>Then, in the installer for our scene we can include the following:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-k">Installer</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-en">Installer</span>
 {
     [InjectOptional]
-    <span class="pl-k">public</span> <span class="pl-k">string</span> LevelName = <span class="pl-s"><span class="pl-pds">"</span>default_level<span class="pl-pds">"</span></span>;
+    <span class="pl-k">public </span><span class="pl-k">string</span> <span class="pl-en">LevelName</span> = <span class="pl-s"><span class="pl-pds">"</span>default_level<span class="pl-pds">"</span></span>;
 
     ...
 
-    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
+    public override void <span class="pl-en">InstallBindings</span>()
     {
         ...
         Container.BindInstance(LevelName).WhenInjectedInto&lt;LevelHandler&gt;();
@@ -1800,16 +1934,16 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 <div class="highlight highlight-source-cs"><pre>
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
 {
-    <span class="pl-k">readonly</span> ZenjectSceneLoader _sceneLoader;
+    <span class="pl-k">readonly </span><span class="pl-en">ZenjectSceneLoader</span> <span class="pl-en">_sceneLoader</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(<span class="pl-k">ZenjectSceneLoader</span> <span class="pl-smi">sceneLoader</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Foo</span>(ZenjectSceneLoader sceneLoader)
     {
         _sceneLoader = sceneLoader;
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">AdvanceScene</span>()
     {
-        _sceneLoader.LoadScene(<span class="pl-s"><span class="pl-pds">"</span>NameOfSceneToLoad<span class="pl-pds">"</span></span>, (container) =&gt;
+        _sceneLoader.LoadScene(<span class="pl-s"><span class="pl-pds">"</span>NameOfSceneToLoad<span class="pl-pds">"</span></span>, (<span class="pl-en">container</span>) =&gt;
             {
                 container.BindInstance(<span class="pl-s"><span class="pl-pds">"</span>custom_level<span class="pl-pds">"</span></span>).WhenInjectedInto&lt;GameInstaller&gt;();
             });
@@ -1833,7 +1967,7 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 
 <p>Note that you do not need to load the environment scene and the ship scene at the same time for this to work.  For example, you might want to have a menu embedded inside the environment to allow the user to choose their ship before starting.  So you could create a menu scene and load that after the environment scene.   Then once the user chooses their ship, you could load the associated ship scene by calling the unity method <code>SceneManager.LoadScene</code> (making sure to use <code>LoadSceneMode.Additive</code>).</p>
 
-<p>Also note that the Validate command can be used to quickly verify the different multi-scene setups.</p>
+<p>Also note that the Validate command can be used to quickly verify the different multi-scene setups.  If you find that scenes are unloaded when you do this see <a href="https://github.com/modesttree/Zenject/issues/168">here</a>.</p>
 
 <p>Also, I should mention that Unity currently doesn't have a built-in way to save and restore multi-scene setups.  We use a simple editor script for this that you can find <a href="https://gist.github.com/svermeulen/8927b29b2bfab4e84c950b6788b0c677">here</a> if interested.</p>
 
@@ -1860,7 +1994,7 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 </li>
 </ul>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ExampleDecoratorInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">ExampleDecoratorInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
@@ -1868,7 +2002,7 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestHotKeysAdder</span> : <span class="pl-k">ITickable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestHotKeysAdder</span> : <span class="pl-en">ITickable</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Tick</span>()
     {
@@ -1881,7 +2015,7 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 
 <p>If you run your scene it should now behave exactly like the main scene except with the added functionality in your decorator installer.  Also note that while not shown here, both scenes can access each other's bindings as if everything was in the same scene.</p>
 
-<p>Also note that the Validate command (CTRL+SHIFT+V) can be used to quickly verify the different multi-scene setups.</p>
+<p>Also note that the Validate command (CTRL+SHIFT+V) can be used to quickly verify the different multi-scene setups.  If you find that scenes are unloaded when you do this see <a href="https://github.com/modesttree/Zenject/issues/168">here</a>.</p>
 
 <p>Also, note that decorator scenes must be loaded before the scenes that they are decorating.</p>
 
@@ -1898,48 +2032,409 @@ Container.BindTickableExecutionOrder&lt;Bar&gt;(-<span class="pl-c1">80</span>);
 <p>See <a href="WritingAutomatedTests.html">here</a>.</p>
 
 <h2>
+<a id="user-content-just-in-time-resolving-using-lazy" class="anchor" href="#just-in-time-resolving-using-lazy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-just-in-time-resolve"></a>Just-In-Time Resolving Using Lazy&lt;&gt;</h2>
+
+<p>In some cases it can be useful to delay the creation of certain dependencies until after startup.  You can use the <code>Lazy&lt;&gt;</code> construct for this.</p>
+
+<p>For example, let's imagine a scenario like this:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Foo</span>
+{
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Run</span>()
+    {
+        ...
+    }
+}
+
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
+{
+    <span class="pl-en">Foo</span> <span class="pl-en">_foo</span>;
+
+    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(Foo foo)
+    {
+        _foo = foo;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Run</span>()
+    {
+        _foo.Run();
+    }
+}
+
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>&lt;<span class="pl-en">TestInstaller</span>&gt;
+{
+    <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
+    {
+        Container.Bind&lt;Foo&gt;().AsSingle();
+        Container.Bind&lt;Bar&gt;().AsSingle();
+    }
+}</pre></div>
+
+<p>Let's also imagine that we would only like to create an instance of Foo if it's actually used (that is, when the Bar.Run method is called).  As it stands above, Foo would always be created every time that Bar is created, even if Bar.Run is never called.  We can fix this by changing Bar to the following:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Bar</span>
+{
+    <span class="pl-en">Lazy</span>&lt;<span class="pl-en">Foo</span>&gt; <span class="pl-en">_foo</span>;
+
+    <span class="pl-k">public</span> <span class="pl-en">Bar</span>(Lazy&lt;Foo&gt; foo)
+    {
+        _foo = foo;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Run</span>()
+    {
+        _foo.Value.Run();
+    }
+}</pre></div>
+
+<p>Now, by using <code>Lazy&lt;&gt;</code> instead, the Foo class will not be created until Bar.Run is first called.  After that, it will use the same instance of Foo.</p>
+
+<p>Note that the installers remain the same in both cases.  Any injected dependency can be made lazy by simply wrapping it in <code>Lazy&lt;&gt;</code>.</p>
+
+<h2>
+<a id="user-content-dicontainer-methods" class="anchor" href="#dicontainer-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods"></a>DiContainer Methods</h2>
+
+<p>In addition to the bind methods documented above, there are also some other methods you might want to occasionally use on DiContainer.  For example, if you are writing a custom factory, you might want to directly call one of the <code>DiContainer.Instantiate</code> methods.  Or you might have a situation where another library is creating instances of your classes (for example, a networking library) and you need to manually call DiContainer.Inject.</p>
+
+<p>DiContainer is always added to itself, so you can always get it injected into any class.  However, note that injecting the DiContainer is usually a sign of bad practice, since there is almost always a better way to design your code such that you don't need to reference DiContainer directly (the exception being custom factories).  Once again, best practice with dependency injection is to only reference the DiContainer in the "composition root layer" which includes any custom factories you might have as well as the installers.  However there are exceptions to this rule.</p>
+
+<h3>
+<a id="user-content-dicontainerinstantiate" class="anchor" href="#dicontainerinstantiate" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods-instantiate"></a>DiContainer.Instantiate</h3>
+
+<p>These instantiate methods might be useful for example inside a custom factory.  Note however that in most cases, you can probably get away with using a normal <a href="#creating-objects-dynamically">Factory</a> instead without needing to directly reference DiContainer.</p>
+
+<p>When instantiating objects directly, you can either use DiContainer or you can use IInstantiator, which DiContainer inherits from.  IInstantiator exists because often, in custom factories, you are only interested in the instantiate operation so you don't need the Bind, Resolve, etc. methods</p>
+
+<ol>
+<li>
+<p><strong>Instantiate&lt;T&gt;</strong> - Create the given class using the new operator and then inject it.  Note that this method should not be used for Components/MonoBehaviours.  However, it can be used for ScriptableObject derived classes (in which case Zenject will automatically call ScriptableObject.CreateInstance).</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Foo</span> <span class="pl-en">foo</span> = <span class="pl-en">Container.Instantiate</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
+
+<p>You can also pass extra arguments to it like this:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Foo</span> <span class="pl-en">foo</span> = <span class="pl-en">Container.Instantiate</span>&lt;<span class="pl-en">Foo</span>&gt;(new object[] { <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>, <span class="pl-c1">5</span> });</pre></div>
+
+<p>There is also non-generic versions:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Foo</span> <span class="pl-en">foo</span> = (<span class="pl-en">Foo</span>)<span class="pl-en">Container.Instantiate</span>(<span class="pl-en">typeof</span>(Foo));
+<span class="pl-en">Foo</span> <span class="pl-en">foo</span> = (<span class="pl-en">Foo</span>)<span class="pl-en">Container.Instantiate</span>(<span class="pl-en">typeof</span>(Foo), new object[] { <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>, <span class="pl-c1">5</span> });</pre></div>
+</li>
+<li>
+<p><strong>InstantiatePrefab</strong> - Instantiate the given prefab and then inject into any MonoBehaviour's that are on it.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">GameObject</span> <span class="pl-en">gameObject</span> = <span class="pl-en">Container.InstantiatePrefab</span>(MyPrefab);</pre></div>
+
+<p>This method is equivalent to calling <code>var gameObject = GameObject.Instantiate(MyPrefab)</code> yourself and then calling <code>DiContainer.Inject(gameObject)</code>.  Note that MyPrefab above can either be a GameObject or it can be a direct reference to a component on the prefab.</p>
+
+<p>Similar to <code>GameObject.Instantiate</code>, you can also pass an initial parent transform to use:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">GameObject</span> <span class="pl-en">gameObject</span> = <span class="pl-en">Container.InstantiatePrefab</span>(MyPrefab, MyParentTransform);</pre></div>
+</li>
+<li>
+<p><strong>InstantiatePrefabResource</strong> - Same as InstantiatePrefab except instead of passing a prefab, you pass a path within the unity Resources folder where the prefab exists.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">GameObject</span> <span class="pl-en">gameObject</span> = <span class="pl-en">Container.InstantiatePrefabResource</span>("path/to/myprefab");</pre></div>
+
+<p>This method is simply a shortcut to calling <code>Container.InstantiatePrefab(Resources.Load("path/to/myprefab"));</code></p>
+</li>
+<li>
+<p><strong>InstantiatePrefabForComponent&lt;T&gt;</strong> - Instantiates the given prefab, injects on the prefab, and then returns the given component which is assumed to exist somewhere in the heirarchy of the prefab.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiatePrefabForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(FooPrefab)</pre></div>
+
+<p>Unlike the InstantiatePrefab methods above, this method also allows passing parameters to the given component:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiatePrefabForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(FooPrefab, new object[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>, <span class="pl-c1">6.0f</span> })</pre></div>
+</li>
+<li>
+<p><strong>InstantiatePrefabResourceForComponent&lt;T&gt;</strong> - Same as InstantiatePrefabForComponent, except the prefab is provided as a resource path instead of as a direct reference</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiatePrefabResourceForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;("path/to/fooprefab")
+var foo = Container.<span class="pl-en">InstantiatePrefabResourceForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(<span class="pl-s"><span class="pl-pds">"</span>path/to/fooprefab<span class="pl-pds">"</span></span>, <span class="pl-en">new</span> <span class="pl-smi">object</span>[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>, <span class="pl-c1">6.0f</span> })</pre></div>
+</li>
+<li>
+<p><strong>InstantiateComponent&lt;T&gt;</strong> - Add the given component to a given game object.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiateComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(gameObject);
+<span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiateComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(gameObject, new object[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>, <span class="pl-c1">6.0f</span> });</pre></div>
+
+<p>Note that this is equivalent to calling GameObject.AddComponent yourself then immediatly calling DiContainer.Inject on the new component instance.</p>
+</li>
+<li>
+<p><strong>InstantiateComponentOnNewGameObject&lt;T&gt;</strong> - Create a new empty game object then instantiate a new component of the given type on it</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiateComponentOnNewGameObject</span>&lt;<span class="pl-en">Foo</span>&gt;();
+<span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiateComponentOnNewGameObject</span>&lt;<span class="pl-en">Foo</span>&gt;(new object[] { <span class="pl-s"><span class="pl-pds">"</span>zxcv<span class="pl-pds">"</span></span> });</pre></div>
+
+<p>This is similar to calling <code>new GameObject()</code>, then call DiContainer.InstantiateComponent on the result.</p>
+</li>
+<li>
+<p><strong>InstantiateScriptableObjectResource&lt;T&gt;</strong> - Instantiate the given ScriptableObject type which is assumed to exist at the given resource path.  Note that if you want to create an entirely new ScriptableObject, you can just use DiContainer.Instantiate.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InstantiateScriptableObjectResource</span>&lt;<span class="pl-en">Foo</span>&gt;("path/to/fooscriptableobject")
+var foo = Container.<span class="pl-en">InstantiateScriptableObjectResource</span>&lt;<span class="pl-en">Foo</span>&gt;(<span class="pl-s"><span class="pl-pds">"</span>path/to/fooscriptableobject<span class="pl-pds">"</span></span>, <span class="pl-en">new</span> <span class="pl-smi">object</span>[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>, <span class="pl-c1">6.0f</span> })</pre></div>
+</li>
+</ol>
+
+<h3>
+<a id="user-content-dicontainerbind" class="anchor" href="#dicontainerbind" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>DiContainer.Bind</h3>
+
+<p>See <a href="#binding">here</a></p>
+
+<h3>
+<a id="user-content-dicontainerresolve" class="anchor" href="#dicontainerresolve" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods-resolve"></a>DiContainer.Resolve</h3>
+
+<ol>
+<li>
+<p><strong>DiContainer.Resolve</strong> - Get instance to match the given type.  This may involve creating a new instance or it might return an existing instance, depending on how the given type was bound.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+...
+var foo = Container.<span class="pl-en">Resolve</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
+
+<p>An exception will be thrown if no bindings were found for the given type or if multiple bindings were found.  See TryResolve / ResolveAll for those cases.</p>
+</li>
+<li>
+<p><strong>DiContainer.ResolveId</strong> - Same as resolve except includes an identifier</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">WithId</span>(<span class="pl-s"><span class="pl-pds">"</span>foo1<span class="pl-pds">"</span></span>).<span class="pl-en">AsSingle</span>();
+...
+var foo = Container.<span class="pl-en">ResolveId</span>&lt;<span class="pl-en">Foo</span>&gt;(<span class="pl-s"><span class="pl-pds">"</span>foo1<span class="pl-pds">"</span></span>);</pre></div>
+</li>
+<li>
+<p><strong>DiContainer.TryResolve</strong> - Same as DiContainer.Resolve except instead of throwing an exception when a match is not found, a null value is returned.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.TryResolve</span>&lt;<span class="pl-en">Foo</span>&gt;();
+
+<span class="pl-k">if</span> (<span class="pl-en">foo</span> != null)
+{
+    ...
+}</pre></div>
+</li>
+<li><p><strong>DiContainer.TryResolveId</strong> - Same as DiContainer.TryResolve except also takes an identifier</p></li>
+<li>
+<p><strong>DiContainer.ResolveAll</strong> - Same as DiContainer.Resolve except it will return all matches instead of assuming just one.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">List</span>&lt;<span class="pl-en">Foo</span>&gt; <span class="pl-en">foos</span> = <span class="pl-en">Container.ResolveAll</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
+</li>
+<li><p><strong>DiContainer.ResolveIdAll</strong> - Same as DiContainer.ResolveAll except also takes an identifier</p></li>
+<li>
+<p><strong>DiContainer.ResolveType</strong> - Returns the type that would be retrieved/instantiated if Resolve is called with the same type/identifier.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">if</span> (<span class="pl-en">Container.ResolveType</span>&lt;<span class="pl-en">IFoo</span>&gt;() == <span class="pl-en">typeof</span>(Foo))
+{
+    ...
+}</pre></div>
+
+<p>This is safe to call during install phase since nothing will be instantiated by calling this.  Note also that if there are multiple matches found or zero matches then an exception will be thrown.</p>
+</li>
+<li><p><strong>DiContainer.ResolveTypeAll</strong> - Same as ResolveType except returns all matches instead of assuming a single match.</p></li>
+</ol>
+
+<h3>
+<a id="user-content-dicontainerinject" class="anchor" href="#dicontainerinject" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods-inject"></a>DiContainer.Inject</h3>
+
+<ol>
+<li>
+<p><strong>DiContainer.Inject</strong> - Inject on the given instance.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Inject</span>(foo);</pre></div>
+
+<p>Note that you can also pass extra arguments to inject:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Inject</span>(foo, new object[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>, <span class="pl-c1">6</span> });</pre></div>
+
+<p>This will inject in the following order:</p>
+
+<ol>
+<li>Fields</li>
+<li>Properties</li>
+<li>Inject methods</li>
+</ol>
+</li>
+<li>
+<p><strong>DiContainer.InjectGameObject</strong> - Inject into all MonoBehaviour's attached to the given game object as well as any children.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.InjectGameObject</span>(gameObject);</pre></div>
+
+<p>Note that it will inject in a bottom-up fashion.  So the root transforms in the given game object will always be injected last.</p>
+</li>
+<li>
+<p><strong>DiContainer.InjectGameObjectForComponent</strong> - Same as InjectGameObject except it will return the given component after injection completes.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InjectGameObjectForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(gameObject);</pre></div>
+
+<p>Also, unlike InjectGameObject, this method supports passing extra arguments to the given component:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">Container.InjectGameObjectForComponent</span>&lt;<span class="pl-en">Foo</span>&gt;(gameObject, new object[] { <span class="pl-s"><span class="pl-pds">"</span>asdf<span class="pl-pds">"</span></span>, <span class="pl-c1">5.1f</span> });</pre></div>
+
+<p>Note however that it is assumed here that there is only one match for the given component.  Multiple matches (or zero matches) will generate an exception.</p>
+</li>
+</ol>
+
+<h3>
+<a id="user-content-dicontainerqueueforinject" class="anchor" href="#dicontainerqueueforinject" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods-queueforinject"></a>DiContainer.QueueForInject</h3>
+
+<p><strong>DiContainer.QueueForInject</strong> will queue the given instance for injection once the initial object graph is constructed.</p>
+
+<p>Sometimes, there are instances that are not created by Zenject and which exist at startup, and which you want to be injected.  In these cases you will often add them to the container like this:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-k">new</span> <span class="pl-en">Foo</span>();
+...
+Container.<span class="pl-en">Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromInstance</span>(foo);</pre></div>
+
+<p>Or, equivalently, using this shortcut:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInstance</span>(foo);</pre></div>
+
+<p>However, using FromInstance will not cause the given instance to be injected.</p>
+
+<p>One approach would be to inject on the instance immediately like this:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInstance</span>(foo);
+<span class="pl-en">Container.Inject</span>(foo);</pre></div>
+
+<p>However, this is bad practice.   You do not ever want to instantiate or inject during the install phase, because the objects that you are injecting could require bindings that have not yet been added.</p>
+
+<p>Therefore the correct way to handle these cases is to use QueueForInject:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInstance</span>(foo);
+<span class="pl-en">Container.QueueForInject</span>(foo);</pre></div>
+
+<p>This way, our <code>foo</code> object will be injected at the same time the initial object graph is constructed, immediately after the install phase.</p>
+
+<p>Another important advantage of using QueueForInject is that Zenject will guarantee that your instances are injected in the correct order.  In other words, if you have the following classes:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">class</span> <span class="pl-en">A</span>
+{
+    [Inject]
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Init</span>()
+    {
+        ...
+    }
+}
+
+<span class="pl-k">class</span> <span class="pl-en">B</span>
+{
+    [Inject]
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Init</span>(<span class="pl-en">A</span> <span class="pl-smi">a</span>)
+    {
+        ...
+    }
+}</pre></div>
+
+<p>And they are added to the container this way:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">a </span>= <span class="pl-k">new</span> <span class="pl-en">A</span>();
+<span class="pl-k">var</span> <span class="pl-en">b </span>= <span class="pl-k">new</span> <span class="pl-en">B</span>();
+
+<span class="pl-en">Container.BindInstance</span>(a);
+<span class="pl-en">Container.BindInstance</span>(b);
+
+<span class="pl-en">Container.QueueForInject</span>(a);
+<span class="pl-en">Container.QueueForInject</span>(b);</pre></div>
+
+<p>Then, you can assume that A will have its inject method called before B, regardless of the order that they were added to the container.  This is nice in the case where you have some initialization logic that occurs in the [Inject] method for B, and which requires that A has been initialized.</p>
+
+<p>This is also precisely how the initial MonoBehaviour's in the scene are injected.  They are all simply added to the container with the QueueForInject method.</p>
+
+<h3>
+<a id="user-content-dicontainer-unbind--rebind" class="anchor" href="#dicontainer-unbind--rebind" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods-rebind"></a>DiContainer Unbind / Rebind</h3>
+
+<p>It is possible to remove or replace bindings that were added in a previous bind statement.</p>
+
+<ol>
+<li>
+<p><strong>Unbind</strong> - Remove all bindings matching the given type/id from container.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;();
+
+<span class="pl-c">// This will nullify the above statement</span>
+<span class="pl-en">Container.Unbind</span>&lt;<span class="pl-en">IFoo</span>&gt;();</pre></div>
+</li>
+<li>
+<p><strong>Rebind</strong> - Override existing bindings with a new one.  This is equivalent to calling unbind with the given type and then immediately calling bind afterwards.</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;();
+
+<span class="pl-en">Container.Rebind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;();</pre></div>
+</li>
+</ol>
+
+<h3>
+<a id="user-content-other-dicontainer-methods" class="anchor" href="#other-dicontainer-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-dicontainer-methods-other"></a>Other DiContainer methods</h3>
+
+<ol>
+<li> <strong>DiContainer.ParentContainer</strong> - The parent container for the given DiContainer.  For example, for the DiContainer associated with SceneContext, this will usually be the DiContainer associated with the ProjectContext (unless you're using Scene Parenting in which case it will be another SceneContext)</li>
+<li> <strong>DiContainer.IsValidating</strong> - Returns true if the container is being run for validation.  This can be useful in some edge cases where special logic needs to be added during the validation step only.</li>
+<li>
+<p><strong>DiContainer.CreateSubContainer</strong> - Creates a new container as a child of the current container.  This might be useful for custom factories that involve creating objects with complex inter-dependencies.  For example:</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">var</span> <span class="pl-en">subContainer </span>= <span class="pl-en">Container.CreateSubContainer</span>();
+
+<span class="pl-en">subContainer.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;();
+<span class="pl-en">subContainer.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;();
+<span class="pl-en">subContainer.Bind</span>&lt;<span class="pl-en">Qux</span>&gt;();
+
+<span class="pl-k">var</span> <span class="pl-en">foo </span>= <span class="pl-en">subContainer.Resolve</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
+
+<p>Although in most cases you should probably use the FromSubContainerResolve methods rather than doing it this way.</p>
+</li>
+<li>
+<p><strong>DiContainer.HasBinding</strong> - Returns true if a binding that matches the given type/id has already been added.  This can be useful if you want to avoid adding a duplicate binding that may have been added in a previous installer</p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">if</span> (!<span class="pl-en">Container.HasBinding</span>&lt;<span class="pl-en">IFoo</span>&gt;())
+{
+    Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
+}</pre></div>
+</li>
+<li><p><strong>DiContainer.GetDependencyContracts</strong> - Returns a list of all the types that the given type depends on.  This might be useful, for exmaple, if you wanted to do some static analysis of your project, or if you wanted to automatically generate a dependency diagram, etc.</p></li>
+</ol>
+
+<h2>
 <a id="user-content-non-generic-bindings" class="anchor" href="#non-generic-bindings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-non-generic-bindings"></a>Non Generic bindings</h2>
 
 <p>In some cases you may not know the exact type you want to bind at compile time.  In these cases you can use the overload of the <code>Bind</code> method which takes a <code>System.Type</code> value instead of a generic parameter.</p>
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-c">// These two lines will result in the same behaviour</span>
-Container.Bind(<span class="pl-k">typeof</span>(Foo));
-Container.Bind&lt;Foo&gt;();</pre></div>
+<span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(Foo));
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
 
 <p>Note also that when using non generic bindings, you can pass multiple arguments:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind(<span class="pl-k">typeof</span>(Foo), <span class="pl-k">typeof</span>(Bar), <span class="pl-k">typeof</span>(Qux)).AsSingle();
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(Foo), <span class="pl-en">typeof</span>(Bar), <span class="pl-en">typeof</span>(Qux)).<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// The above line is equivalent to these three:</span>
-Container.Bind&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;Bar&gt;().AsSingle();
-Container.Bind&lt;Qux&gt;().AsSingle();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Qux</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>The same goes for the To method:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To(<span class="pl-k">typeof</span>(Foo), <span class="pl-k">typeof</span>(Bar)).AsSingle();
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>(typeof(Foo), <span class="pl-en">typeof</span>(Bar)).<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// The above line is equivalent to these two:</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Bar&gt;().AsSingle();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>You can also do both:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind(<span class="pl-k">typeof</span>(IFoo), <span class="pl-k">typeof</span>(IBar)).To(<span class="pl-k">typeof</span>(Foo1), <span class="pl-k">typeof</span>(Foo2)).AsSingle();
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(IFoo), <span class="pl-en">typeof</span>(IBar)).<span class="pl-en">To</span>(typeof(Foo1), <span class="pl-en">typeof</span>(Foo2)).<span class="pl-en">AsSingle</span>();
 
 <span class="pl-c">// The above line is equivalent to these:</span>
-Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IFoo&gt;().To&lt;Bar&gt;().AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Bar&gt;().AsSingle();</pre></div>
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>This can be especially useful when you have a class that implements multiple interfaces:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind(<span class="pl-k">typeof</span>(ITickable), <span class="pl-k">typeof</span>(IInitializable), <span class="pl-k">typeof</span>(IDisposable)).To&lt;Foo&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(<span class="pl-en">typeof</span>(ITickable), <span class="pl-en">typeof</span>(IInitializable), <span class="pl-en">typeof</span>(IDisposable)).<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>Though in this particular example there is already a built-in shortcut method for this:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.BindAllInterfaces&lt;Foo&gt;().To&lt;Foo&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.BindInterfacesTo</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <h2>
 <a id="user-content-convention-based-binding" class="anchor" href="#convention-based-binding" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-convention-based-bindings"></a>Convention Based Binding</h2>
@@ -1956,7 +2451,7 @@ Container.Bind&lt;IBar&gt;().To&lt;Bar&gt;().AsSingle();</pre></div>
 
 <p>They are specified in a similar way to <a href="#non-generic-bindings">Non Generic bindings</a>, except instead of giving a list of types to the <code>Bind()</code> and <code>To()</code> methods, you describe the convention using a Fluent API.  For example, to bind <code>IFoo</code> to every class that implements it in the entire codebase:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To(x =&gt; x.AllTypes().DerivingFrom&lt;IFoo&gt;());</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllTypes().<span class="pl-en">DerivingFrom</span>&lt;<span class="pl-en">IFoo</span>&gt;());</pre></div>
 
 <p>Note that you can use the same Fluent API in the <code>Bind()</code> method as well, and you can also use it in both <code>Bind()</code> and <code>To()</code> at the same time.</p>
 
@@ -2044,64 +2539,40 @@ x.<b>InitialList</b>().<b>Conditional</b>().<b>AssemblySources</b>()
 <li>
 <p>Bind <code>IFoo</code> to every class that implements it in the entire codebase:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To(x =&gt; x.AllTypes().DerivingFrom&lt;IFoo&gt;());</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllTypes().<span class="pl-en">DerivingFrom</span>&lt;<span class="pl-en">IFoo</span>&gt;());</pre></div>
 
 <p>Note that this will also have the same result:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To(x =&gt; x.AllNonAbstractTypes());</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllNonAbstractTypes());</pre></div>
 
 <p>This is because Zenject will skip any bindings in which the concrete type does not actually derive from the base type.  Also note that in this case we have to make sure we use <code>AllNonAbstractTypes</code> instead of just <code>AllTypes</code>, to ensure that we don't bind <code>IFoo</code> to itself</p>
 </li>
 <li>
 <p>Bind an interface to all classes implementing it within a given namespace</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To(x =&gt; x.AllTypes().DerivingFrom&lt;IFoo&gt;().InNamespace(<span class="pl-s"><span class="pl-pds">"</span>MyGame.Foos<span class="pl-pds">"</span></span>));</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllTypes().<span class="pl-en">DerivingFrom</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">InNamespace</span>(<span class="pl-s"><span class="pl-pds">"</span>MyGame.Foos<span class="pl-pds">"</span></span>));</pre></div>
 </li>
 <li>
 <p>Auto-bind <code>IController</code> every class that has the suffix "Controller" (as is done in ASP.NET MVC):</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IController&gt;().To(x =&gt; x.AllNonAbstractTypes().WithSuffix(<span class="pl-s"><span class="pl-pds">"</span>Controller<span class="pl-pds">"</span></span>));</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IController</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllNonAbstractTypes().<span class="pl-en">WithSuffix</span>(<span class="pl-s"><span class="pl-pds">"</span>Controller<span class="pl-pds">"</span></span>));</pre></div>
 
 <p>You could also do this using <code>MatchingRegex</code>:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IController&gt;().To(x =&gt; x.AllNonAbstractTypes().MatchingRegex(<span class="pl-s"><span class="pl-pds">"</span>Controller$<span class="pl-pds">"</span></span>));</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IController</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllNonAbstractTypes().<span class="pl-en">MatchingRegex</span>(<span class="pl-s"><span class="pl-pds">"</span>Controller$<span class="pl-pds">"</span></span>));</pre></div>
 </li>
 <li>
 <p>Bind all types with the prefix "Widget" and inject into Foo</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;<span class="pl-k">object</span>&gt;().To(x =&gt; x.AllNonAbstractTypes().WithPrefix(<span class="pl-s"><span class="pl-pds">"</span>Widget<span class="pl-pds">"</span></span>)).WhenInjectedInto&lt;Foo&gt;();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-k">object</span>&gt;().<span class="pl-en">To</span>(x =&gt; x.AllNonAbstractTypes().<span class="pl-en">WithPrefix</span>(<span class="pl-s"><span class="pl-pds">"</span>Widget<span class="pl-pds">"</span></span>)).<span class="pl-en">WhenInjectedInto</span>&lt;<span class="pl-en">Foo</span>&gt;();</pre></div>
 </li>
 <li>
 <p>Auto-bind the interfaces that are used by every type in a given namespace</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind(x =&gt; x.AllInterfaces())
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>(x =&gt; x.AllInterfaces())
     .To(x =&gt; x.AllNonAbstractClasses().InNamespace(<span class="pl-s"><span class="pl-pds">"</span>MyGame.Things<span class="pl-pds">"</span></span>));</pre></div>
 
-<p>This is equivalent to calling <code>Container.BindAllInterfaces&lt;T&gt;().To&lt;T&gt;()</code> for every type in the namespace "MyGame.Things".  This works because, as touched on above, Zenject will skip any bindings in which the concrete type does not actually derive from the base type.  So even though we are using <code>AllInterfaces</code> which matches every single interface in every single loaded assembly, this is ok because it will not try and bind an interface to a type that doesn't implement this interface.</p>
-</li>
-</ol>
-
-<h2>
-<a id="user-content-unbind--rebind" class="anchor" href="#unbind--rebind" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><a id="user-content-unbind-rebind"></a>Unbind / Rebind</h2>
-
-<p>It is also possible to remove or replace bindings that were added in another bind statement.</p>
-
-<ol>
-<li>
-<p>Unbind - Remove binding from container.</p>
-
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;();
-
-<span class="pl-c">// This will nullify the above statement</span>
-Container.Unbind&lt;IFoo&gt;();</pre></div>
-</li>
-<li>
-<p>Rebind - Override an existing binding with a new one.  This is equivalent to calling unbind with the given type and then immediately calling bind afterwards.</p>
-
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;();
-
-<span class="pl-c">// </span>
-Container.Rebind&lt;IFoo&gt;().To&lt;Bar&gt;();</pre></div>
+<p>This is equivalent to calling <code>Container.BindInterfacesTo&lt;T&gt;()</code> for every type in the namespace "MyGame.Things".  This works because, as touched on above, Zenject will skip any bindings in which the concrete type does not actually derive from the base type.  So even though we are using <code>AllInterfaces</code> which matches every single interface in every single loaded assembly, this is ok because it will not try and bind an interface to a type that doesn't implement this interface.</p>
 </li>
 </ol>
 
@@ -2112,26 +2583,26 @@ Container.Rebind&lt;IFoo&gt;().To&lt;Bar&gt;();</pre></div>
 
 <p>This allows you to force Zenject to create multiple singletons instead of just one, since otherwise the singleton is uniquely identified based on the type given as generic argument to the <code>To&lt;&gt;</code> method.  So for example:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IBar&gt;().To&lt;Foo&gt;().AsSingle();
-Container.Bind&lt;IQux&gt;().To&lt;Qux&gt;().AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IQux</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Qux</span>&gt;().<span class="pl-en">AsSingle</span>();</pre></div>
 
 <p>In the above code, both <code>IFoo</code> and <code>IBar</code> will be bound to the same instance.  Only one instance of Foo will be created.</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;IFoo&gt;().To&lt;Foo&gt;().AsSingle(<span class="pl-s"><span class="pl-pds">"</span>foo1<span class="pl-pds">"</span></span>);
-Container.Bind&lt;IBar&gt;().To&lt;Foo&gt;().AsSingle(<span class="pl-s"><span class="pl-pds">"</span>foo2<span class="pl-pds">"</span></span>);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IFoo</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>(<span class="pl-s"><span class="pl-pds">"</span>foo1<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">IBar</span>&gt;().<span class="pl-en">To</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">AsSingle</span>(<span class="pl-s"><span class="pl-pds">"</span>foo2<span class="pl-pds">"</span></span>);</pre></div>
 
 <p>In this case however, two instances will be created.</p>
 
 <p>Another use case for this is to allow creating multiple singletons from the same prefab.  For example, Given the following:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromPrefab(MyPrefab).AsSingle();
-Container.Bind&lt;Bar&gt;().FromPrefab(MyPrefab).AsSingle();</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(MyPrefab).<span class="pl-en">AsSingle</span>();
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(MyPrefab).<span class="pl-en">AsSingle</span>();</pre></div>
 
-<p>It will only instantiate the prefab MyPrefab once, since the singleton is identified solely by the prefab when using <code>FromPrefab</code>.  The concrete type given can be interpreted as "Search the instantiated prefab for this component".  But, if instead you want Zenject to instantiate a new instance of the prefab for each <code>FromPrefab</code> binding, then you can do that as well by supplying an identifier to the <code>AsSingle</code> function like this:</p>
+<p>It will only instantiate the prefab MyPrefab once, since the singleton is identified solely by the prefab when using <code>FromComponentInNewPrefab</code>.  The concrete type given can be interpreted as "Search the instantiated prefab for this component".  But, if instead you want Zenject to instantiate a new instance of the prefab for each <code>FromComponentInNewPrefab</code> binding, then you can do that as well by supplying an identifier to the <code>AsSingle</code> function like this:</p>
 
-<div class="highlight highlight-source-cs"><pre>Container.Bind&lt;Foo&gt;().FromPrefab(MyPrefab).AsSingle(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
-Container.Bind&lt;Bar&gt;().FromPrefab(MyPrefab).AsSingle(<span class="pl-s"><span class="pl-pds">"</span>bar<span class="pl-pds">"</span></span>);</pre></div>
+<div class="highlight highlight-source-cs"><pre><span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Foo</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(MyPrefab).<span class="pl-en">AsSingle</span>(<span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span>);
+<span class="pl-en">Container.Bind</span>&lt;<span class="pl-en">Bar</span>&gt;().<span class="pl-en">FromComponentInNewPrefab</span>(MyPrefab).<span class="pl-en">AsSingle</span>(<span class="pl-s"><span class="pl-pds">"</span>bar<span class="pl-pds">"</span></span>);</pre></div>
 
 <p>Now two instances of the prefab will be created.</p>
 
@@ -2151,30 +2622,30 @@ Container.Bind&lt;Bar&gt;().FromPrefab(MyPrefab).AsSingle(<span class="pl-s"><sp
 <li>Right now it is empty, so let's add some content to it.  Open it up and replace the contents with the following:</li>
 </ol>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TimerWindow</span> : <span class="pl-k">ZenjectEditorWindow</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TimerWindow</span> : <span class="pl-en">ZenjectEditorWindow</span>
 {
-    TimerController.State _timerState = <span class="pl-k">new</span> TimerController.State();
+    <span class="pl-en">TimerController.State</span> _timerState = new TimerController.<span class="pl-en">State</span>();
 
     [MenuItem(<span class="pl-s"><span class="pl-pds">"</span>Window/TimerWindow<span class="pl-pds">"</span></span>)]
-    <span class="pl-k">public</span> <span class="pl-k">static</span> TimerWindow <span class="pl-en">GetOrCreateWindow</span>()
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-en">TimerWindow</span> <span class="pl-en">GetOrCreateWindow</span>()
     {
-        <span class="pl-k">var</span> window = EditorWindow.GetWindow&lt;TimerWindow&gt;();
-        window.titleContent = <span class="pl-k">new</span> GUIContent(<span class="pl-s"><span class="pl-pds">"</span>TimerWindow<span class="pl-pds">"</span></span>);
+        <span class="pl-k">var</span> <span class="pl-en">window </span>= EditorWindow.GetWindow&lt;TimerWindow&gt;();
+        window.titleContent = <span class="pl-k">new</span> <span class="pl-en">GUIContent</span>(<span class="pl-s"><span class="pl-pds">"</span>TimerWindow<span class="pl-pds">"</span></span>);
         <span class="pl-k">return</span> window;
     }
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
         Container.BindInstance(_timerState);
-        Container.BindAllInterfaces&lt;TimerController&gt;().To&lt;TimerController&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;TimerController&gt;().AsSingle();
     }
 }
 
-<span class="pl-k">class</span> <span class="pl-en">TimerController</span> : <span class="pl-k">IGuiRenderable</span>, <span class="pl-k">ITickable</span>, <span class="pl-k">IInitializable</span>
+<span class="pl-k">class</span> <span class="pl-en">TimerController</span> : <span class="pl-en">IGuiRenderable</span>, <span class="pl-en">ITickable</span>, <span class="pl-en">IInitializable</span>
 {
-    <span class="pl-k">readonly</span> State _state;
+    <span class="pl-k">readonly </span><span class="pl-en">State</span> <span class="pl-en">_state</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">TimerController</span>(<span class="pl-k">State</span> <span class="pl-smi">state</span>)
+    <span class="pl-k">public</span> <span class="pl-en">TimerController</span>(State state)
     {
         _state = state;
     }
@@ -2186,9 +2657,9 @@ Container.Bind&lt;Bar&gt;().FromPrefab(MyPrefab).AsSingle(<span class="pl-s"><sp
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">GuiRender</span>()
     {
-        GUI.Label(<span class="pl-k">new</span> Rect(<span class="pl-c1">25</span>, <span class="pl-c1">25</span>, <span class="pl-c1">200</span>, <span class="pl-c1">200</span>), <span class="pl-s"><span class="pl-pds">"</span>Tick Count: <span class="pl-pds">"</span></span> + _state.TickCount);
+        GUI.Label(<span class="pl-k">new</span> <span class="pl-en">Rect</span>(<span class="pl-c1">25</span>, <span class="pl-c1">25</span>, <span class="pl-c1">200</span>, <span class="pl-c1">200</span>), <span class="pl-s"><span class="pl-pds">"</span>Tick Count: <span class="pl-pds">"</span></span> + _state.TickCount);
 
-        <span class="pl-k">if</span> (GUI.Button(<span class="pl-k">new</span> Rect(<span class="pl-c1">25</span>, <span class="pl-c1">50</span>, <span class="pl-c1">200</span>, <span class="pl-c1">50</span>), <span class="pl-s"><span class="pl-pds">"</span>Restart<span class="pl-pds">"</span></span>))
+        <span class="pl-k">if</span> (GUI.Button(<span class="pl-k">new</span> <span class="pl-en">Rect</span>(<span class="pl-c1">25</span>, <span class="pl-c1">50</span>, <span class="pl-c1">200</span>, <span class="pl-c1">50</span>), <span class="pl-s"><span class="pl-pds">"</span>Restart<span class="pl-pds">"</span></span>))
         {
             _state.TickCount = <span class="pl-c1">0</span>;
         }
@@ -2202,7 +2673,7 @@ Container.Bind&lt;Bar&gt;().FromPrefab(MyPrefab).AsSingle(<span class="pl-s"><sp
     [Serializable]
     <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">State</span>
     {
-        <span class="pl-k">public</span> <span class="pl-k">int</span> TickCount;
+        <span class="pl-k">public </span><span class="pl-k">int</span> <span class="pl-en">TickCount</span>;
     }
 }</pre></div>
 
@@ -2240,6 +2711,8 @@ Container.Bind&lt;Bar&gt;().FromPrefab(MyPrefab).AsSingle(<span class="pl-s"><sp
 <p>DI can affect start-up time when it builds the initial object graph. However it can also affect performance any time you instantiate new objects at run time.</p>
 
 <p>Zenject uses C# reflection which is typically slow, but in Zenject this work is cached so any performance hits only occur once for each class type.  In other words, Zenject avoids costly reflection operations by making a trade-off between performance and memory to ensure good performance.</p>
+
+<p>You can also force Zenject to populate this cache by calling <code>Zenject.TypeAnalyzer.GetInfo</code> for each type you want Zenject to cache the reflection information for.</p>
 
 <p>For some benchmarks on Zenject versus other DI frameworks, see <a href="https://github.com/svermeulen/IocPerformance/tree/Zenject">here</a>.</p>
 
@@ -2299,11 +2772,6 @@ public class TestInstaller : MonoInstaller
 <p>Yet another option is to use a coroutine library that implements similar functionality to what Unity provides.  See <a href="https://github.com/svermeulen/UnityCoroutinesWithoutMonoBehaviours">here</a> for one example that we've used in the past at Modest Tree</p>
 </li>
 <li>
-<p><strong><a id="user-content-memorypools"></a>How do I use Zenject with pools to minimize memory allocations?</strong></p>
-
-<p>Currently, Zenject does not support memory pooling.  When you bind something to transient or use a factory, Zenject will always create a brand new instance from scratch.  We realize that this can be inefficient in cases where you are creating many objects (especially on mobile) so it is something we want to address in future versions.</p>
-</li>
-<li>
 <p><strong><a id="user-content-what-games-are-using-zenject"></a>What games/tools/libraries are using Zenject?</strong></p>
 
 <p>If you know of other projects that are using Zenject, please add a comment <a href="https://github.com/modesttree/Zenject/issues/153">here</a> so that I can add it to this list.</p>
@@ -2320,6 +2788,15 @@ public class TestInstaller : MonoInstaller
 <a href="https://github.com/shiwano/submarine">Submarine</a> (iOS and Android)</li>
 <li>
 <a href="https://itunes.apple.com/us/app/nova-black-holes/id1114574985?mt=8">NOVA Black Holes</a> (iOS)</li>
+<li>
+<a href="http://www.farmawaygame.com/">Farm Away!</a> (iOS and Android)</li>
+<li>
+<a href="http://www.buildawaygame.com/">Build Away!</a> (iOS and Android)</li>
+<li>Stick Soccer 2 (<a href="https://itunes.apple.com/gb/app/stick-soccer-2/id1104214157?mt=8">iOS</a> and <a href="https://play.google.com/store/apps/details?id=com.sticksports.soccer2&amp;hl=en_GB">Android</a>)</li>
+<li>
+<a href="https://play.google.com/store/apps/details?id=com.numinousgames.Untethered&amp;hl=en">Untethered</a> (Google VR)</li>
+<li>
+<a href="https://toyclash.com/">Toy Clash</a> - (<a href="https://www.oculus.com/experiences/gear-vr/1407846952568081/">GearVR</a>)</li>
 </ul>
 
 <p>Libraries</p>
@@ -2329,15 +2806,17 @@ public class TestInstaller : MonoInstaller
 <a href="https://github.com/grofit/ecsrx">EcsRx</a> - A framework for Unity using the ECS pattern</li>
 <li>
 <a href="https://github.com/cgarciae/karma">Karma</a> - An MVC framework for Unity</li>
+<li>
+<a href="http://blog.jamjardavies.co.uk/index.php/2016/04/12/view-controller-with-zenject/">View Controller</a> - A view controller system</li>
 </ul>
 
 <p>Tools</p>
 
 <ul>
 <li>
-<a href="https://www.modest3d.com/editor">Modest 3D</a> (WebGL, WebPlayer, PC) - An IDE to allow users to quickly and easily create procedural training content</li>
+<a href="http://www.modest3d.com/editor">Modest 3D</a> (WebGL, WebPlayer, PC) - An IDE to allow users to quickly and easily create procedural training content</li>
 <li>
-<a href="https://www.modest3d.com/explorer">Modest 3D Explorer</a> (WebGL, WebPlayer, iOS, Android, PC, Windows Store) - A simple editor to quickly create a 3D presentation with some number of slides</li>
+<a href="http://www.modest3d.com/explorer">Modest 3D Explorer</a> (WebGL, WebPlayer, iOS, Android, PC, Windows Store) - A simple editor to quickly create a 3D presentation with some number of slides</li>
 </ul>
 </li>
 </ul>
@@ -2389,7 +2868,7 @@ SOFTWARE.
         </div>
       </div>
 
-
+    
 
   </div>
   <div>&nbsp;</div>

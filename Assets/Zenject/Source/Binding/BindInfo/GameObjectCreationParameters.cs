@@ -31,6 +31,8 @@ namespace Zenject
             set;
         }
 
+        public static readonly GameObjectCreationParameters Default = new GameObjectCreationParameters();
+
         public override int GetHashCode()
         {
             unchecked // Overflow is fine, just wrap

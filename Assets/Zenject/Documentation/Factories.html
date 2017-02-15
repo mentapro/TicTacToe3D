@@ -58,9 +58,9 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Enemy</span>
 {
-    DiContainer Container;
+    <span class="pl-en">DiContainer</span> <span class="pl-en">Container</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(<span class="pl-k">DiContainer</span> <span class="pl-smi">container</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(DiContainer container)
     {
         Container = container;
     }
@@ -68,7 +68,7 @@
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Update</span>()
     {
         ...
-        <span class="pl-k">var</span> player = Container.Resolve&lt;Player&gt;();
+        <span class="pl-k">var</span> <span class="pl-en">player </span>= Container.Resolve&lt;Player&gt;();
         WalkTowards(player.Position);
         ...
         etc.
@@ -81,9 +81,9 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Enemy</span>
 {
-    Player _player;
+    <span class="pl-en">Player</span> <span class="pl-en">_player</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(<span class="pl-k">Player</span> <span class="pl-smi">player</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(Player player)
     {
         _player = player;
     }
@@ -102,19 +102,19 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemySpawner</span>
 {
-    List&lt;Enemy&gt; _enemies = <span class="pl-k">new</span> List&lt;Enemy&gt;();
+    <span class="pl-en">List</span>&lt;<span class="pl-en">Enemy</span>&gt; <span class="pl-en">_enemies</span> = <span class="pl-k">new</span> <span class="pl-en">List</span>&lt;Enemy&gt;();
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Update</span>()
     {
         <span class="pl-k">if</span> (ShouldSpawnNewEnemy())
         {
-            <span class="pl-k">var</span> enemy = <span class="pl-k">new</span> Enemy();
+            <span class="pl-k">var</span> <span class="pl-en">enemy </span>= <span class="pl-k">new</span> <span class="pl-en">Enemy</span>();
             _enemies.Add(enemy);
         }
     }
 }</pre></div>
 
-<p>This will not work however, since in our case the Enemy class requires a reference to the Player class in its constructor.  We could add a dependency to the Player class to the EnemySpawner class, but then we have the problem described <a href="#theory">above</a>.  The EnemySpawner class doesn't care about filling in the dependencies for the Enemy class.  All the EnemySpawner class cares about is getting a new Enemy instance.</p>
+<p>This will not work however, since in our case the Enemy class requires a reference to the Player class in its constructor.  We could add a dependency to the Player class to the EnemySpawner class, but then we have the problem described <a href="../README.md#theory">above</a>.  The EnemySpawner class doesn't care about filling in the dependencies for the Enemy class.  All the EnemySpawner class cares about is getting a new Enemy instance.</p>
 
 <p>The recommended way to do this in Zenject is the following:</p>
 
@@ -124,23 +124,23 @@
 
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Enemy</span>
 {
-    <span class="pl-k">readonly</span> Player _player;
+    <span class="pl-k">readonly </span><span class="pl-en">Player</span> <span class="pl-en">_player</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(<span class="pl-k">Player</span> <span class="pl-smi">player</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(Player player)
     {
         _player = player;
     }
 
-    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-k">Factory</span>&lt;<span class="pl-k">Enemy</span>&gt;
+    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-en">Factory</span>&lt;<span class="pl-en">Enemy</span>&gt;
     {
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemySpawner</span> : <span class="pl-k">ITickable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemySpawner</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">readonly</span> Enemy.Factory _enemyFactory;
+    <span class="pl-en">readonly</span> Enemy.Factory _enemyFactory;
 
-    <span class="pl-k">public</span> <span class="pl-en">EnemySpawner</span>(<span class="pl-k">Enemy.Factory</span> <span class="pl-smi">enemyFactory</span>)
+    <span class="pl-k">public</span> <span class="pl-en">EnemySpawner</span>(Enemy.Factory enemyFactory)
     {
         _enemyFactory = enemyFactory;
     }
@@ -149,17 +149,17 @@
     {
         <span class="pl-k">if</span> (ShouldSpawnNewEnemy())
         {
-            <span class="pl-k">var</span> enemy = _enemyFactory.Create();
+            <span class="pl-k">var</span> <span class="pl-en">enemy </span>= _enemyFactory.Create();
             <span class="pl-c">// ...</span>
         }
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;EnemySpawner&gt;().To&lt;EnemySpawner&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;EnemySpawner&gt;().AsSingle();
         Container.Bind&lt;Player&gt;().AsSingle();
         Container.BindFactory&lt;Enemy, Enemy.Factory&gt;();
     }
@@ -169,25 +169,25 @@
 
 <div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Enemy</span>
 {
-    <span class="pl-k">readonly</span> Player _player;
-    <span class="pl-k">readonly</span> <span class="pl-k">float</span> _speed;
+    <span class="pl-k">readonly </span><span class="pl-en">Player</span> <span class="pl-en">_player</span>;
+    <span class="pl-k">readonly </span><span class="pl-k">float</span> <span class="pl-en">_speed</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(<span class="pl-k">float</span> <span class="pl-smi">speed</span>, <span class="pl-k">Player</span> <span class="pl-smi">player</span>)
+    <span class="pl-k">public</span> <span class="pl-en">Enemy</span>(float speed, Player player)
     {
         _player = player;
         _speed = speed;
     }
 
-    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-k">Factory</span>&lt;<span class="pl-k">float</span>, <span class="pl-k">Enemy</span>&gt;
+    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-en">Factory</span>&lt;<span class="pl-k">float</span>, <span class="pl-en">Enemy</span>&gt;
     {
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemySpawner</span> : <span class="pl-k">ITickable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemySpawner</span> : <span class="pl-en">ITickable</span>
 {
-    <span class="pl-k">readonly</span> Enemy.Factory _enemyFactory;
+    <span class="pl-en">readonly</span> Enemy.Factory _enemyFactory;
 
-    <span class="pl-k">public</span> <span class="pl-en">EnemySpawner</span>(<span class="pl-k">Enemy.Factory</span> <span class="pl-smi">enemyFactory</span>)
+    <span class="pl-k">public</span> <span class="pl-en">EnemySpawner</span>(Enemy.Factory enemyFactory)
     {
         _enemyFactory = enemyFactory;
     }
@@ -196,18 +196,18 @@
     {
         <span class="pl-k">if</span> (ShouldSpawnNewEnemy())
         {
-            <span class="pl-k">var</span> newSpeed = Random.Range(MIN_ENEMY_SPEED, MAX_ENEMY_SPEED);
-            <span class="pl-k">var</span> enemy = _enemyFactory.Create(newSpeed);
+            <span class="pl-k">var</span> <span class="pl-en">newSpeed </span>= Random.Range(MIN_ENEMY_SPEED, MAX_ENEMY_SPEED);
+            <span class="pl-k">var</span> <span class="pl-en">enemy </span>= _enemyFactory.Create(newSpeed);
             <span class="pl-c">// ...</span>
         }
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;EnemySpawner&gt;().To&lt;EnemySpawner&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;EnemySpawner&gt;().AsSingle();
         Container.Bind&lt;Player&gt;().AsSingle();
         Container.BindFactory&lt;<span class="pl-k">float</span>, Enemy, Enemy.Factory&gt;();
     }
@@ -225,31 +225,31 @@
 
 <p>These cases are handled very similar to how they are handled when not using a factory.  When you bind the factory to the container using <code>BindFactory</code>, you have access to the same bind methods that are given by the Bind method (see binding section for full details).  For example, if we wanted to instantiate the <code>Enemy</code> class from a prefab, our code would become:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Enemy</span> : <span class="pl-k">MonoBehaviour</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Enemy</span> : <span class="pl-en">MonoBehaviour</span>
 {
-    Player _player;
+    <span class="pl-en">Player</span> <span class="pl-en">_player</span>;
 
     <span class="pl-c">// Note that we can't use a constructor anymore since we are a MonoBehaviour now</span>
     [Inject]
-    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-k">Player</span> <span class="pl-smi">player</span>)
+    <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Construct</span>(<span class="pl-en">Player</span> <span class="pl-smi">player</span>)
     {
         _player = player;
     }
 
-    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-k">Factory</span>&lt;<span class="pl-k">Enemy</span>&gt;
+    <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Factory</span> : <span class="pl-en">Factory</span>&lt;<span class="pl-en">Enemy</span>&gt;
     {
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
-    <span class="pl-k">public</span> GameObject EnemyPrefab;
+    <span class="pl-k">public </span><span class="pl-en">GameObject</span> <span class="pl-en">EnemyPrefab</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;EnemySpawner&gt;().To&lt;EnemySpawner&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;EnemySpawner&gt;().AsSingle();
         Container.Bind&lt;Player&gt;().AsSingle();
-        Container.BindFactory&lt;Enemy, Enemy.Factory&gt;().FromPrefab(EnemyPrefab);
+        Container.BindFactory&lt;Enemy, Enemy.Factory&gt;().FromComponentInNewPrefab(EnemyPrefab);
     }
 }
 </pre></div>
@@ -271,12 +271,12 @@
     ...
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">AStarPathFindingStrategy</span> : <span class="pl-k">IPathFindingStrategy</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">AStarPathFindingStrategy</span> : <span class="pl-en">IPathFindingStrategy</span>
 {
     ...
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">RandomPathFindingStrategy</span> : <span class="pl-k">IPathFindingStrategy</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">RandomPathFindingStrategy</span> : <span class="pl-en">IPathFindingStrategy</span>
 {
     ...
 }</pre></div>
@@ -285,16 +285,16 @@
 
 <p>This is done in a very similar way that non-Abstract factories work.  One difference is that we can't include the factory as a nested class inside the interface (not allowed in C#) but otherwise it's no different:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">PathFindingStrategyFactory</span> : <span class="pl-k">Factory</span>&lt;<span class="pl-k">IPathFindingStrategy</span>&gt;
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">PathFindingStrategyFactory</span> : <span class="pl-en">Factory</span>&lt;<span class="pl-en">IPathFindingStrategy</span>&gt;
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameController</span> : <span class="pl-k">IInitializable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameController</span> : <span class="pl-en">IInitializable</span>
 {
-    PathFindingStrategyFactory _strategyFactory;
-    IPathFindingStrategy _strategy;
+    <span class="pl-en">PathFindingStrategyFactory</span> <span class="pl-en">_strategyFactory</span>;
+    <span class="pl-en">IPathFindingStrategy</span> <span class="pl-en">_strategy</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">GameController</span>(<span class="pl-k">PathFindingStrategyFactory</span> <span class="pl-smi">strategyFactory</span>)
+    <span class="pl-k">public</span> <span class="pl-en">GameController</span>(PathFindingStrategyFactory strategyFactory)
     {
         _strategyFactory = strategyFactory;
     }
@@ -306,15 +306,15 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
-    <span class="pl-k">public</span> <span class="pl-k">bool</span> UseAStar;
+    <span class="pl-k">public </span><span class="pl-k">bool</span> <span class="pl-en">UseAStar</span>;
 
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;GameController&gt;().To&lt;GameController&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;GameController&gt;().AsSingle();
 
-        <span class="pl-k">if</span> (UseAStar)
+        <span class="pl-k">if</span> (<span class="pl-en">UseAStar</span>)
         {
             Container.BindFactory&lt;IPathFindingStrategy, PathFindingStrategyFactory&gt;().To&lt;AStarPathFindingStrategy&gt;();
         }
@@ -330,51 +330,51 @@
 
 <p><em>Ok, but what if I don't know what type I want to create until after the application has started?  Or what if I have special requirements for constructing instances of the Enemy class that are not covered by any of the construction methods?</em> </p>
 
-<p>In these cases you can create a custom factory, and directly call <code>new Enemy</code> or directly use the <code>DiContainer</code> class to create your object.  For example, continuing the previous factory example, let's say that you wanted to be able to change a runtime value (difficulty) that determines what kinds of enemies get created.</p>
+<p>In these cases you can create a custom factory, and directly call <code>new Enemy</code> or directly use the <a href="../README.md#dicontainer-methods">methods on DiContainer</a> to create your object.  For example, continuing the previous factory example, let's say that you wanted to be able to change a runtime value (difficulty) that determines what kinds of enemies get created.</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">enum</span> <span class="pl-en">Difficulties</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">enum</span> Difficulties
 {
-    Easy,
-    Hard,
+    <span class="pl-en">Easy</span>,
+    <span class="pl-en">Hard</span>,
 }
 
 <span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-en">IEnemy</span>
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemyFactory</span> : <span class="pl-k">Factory</span>&lt;<span class="pl-k">IEnemy</span>&gt;
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">EnemyFactory</span> : <span class="pl-en">Factory</span>&lt;<span class="pl-en">IEnemy</span>&gt;
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Demon</span> : <span class="pl-k">IEnemy</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Demon</span> : <span class="pl-en">IEnemy</span>
 {
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Dog</span> : <span class="pl-k">IEnemy</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Dog</span> : <span class="pl-en">IEnemy</span>
 {
 }
 
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">DifficultyManager</span>
 {
-    <span class="pl-k">public</span> Difficulties Difficulty
+    <span class="pl-k">public </span><span class="pl-en">Difficulties</span> <span class="pl-en">Difficulty</span>
     {
         <span class="pl-k">get</span>;
         <span class="pl-k">set</span>;
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">CustomEnemyFactory</span> : <span class="pl-k">IFactory</span>&lt;<span class="pl-k">IEnemy</span>&gt;
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">CustomEnemyFactory</span> : <span class="pl-en">IFactory</span>&lt;<span class="pl-en">IEnemy</span>&gt;
 {
-    DiContainer _container;
-    DifficultyManager _difficultyManager;
+    <span class="pl-en">DiContainer</span> <span class="pl-en">_container</span>;
+    <span class="pl-en">DifficultyManager</span> <span class="pl-en">_difficultyManager</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">CustomEnemyFactory</span>(<span class="pl-k">DiContainer</span> <span class="pl-smi">container</span>, <span class="pl-k">DifficultyManager</span> <span class="pl-smi">difficultyManager</span>)
+    <span class="pl-k">public</span> <span class="pl-en">CustomEnemyFactory</span>(DiContainer container, DifficultyManager difficultyManager)
     {
         _container = container;
         _difficultyManager = difficultyManager;
     }
 
-    <span class="pl-k">public</span> IEnemy <span class="pl-en">Create</span>()
+    <span class="pl-k">public</span> <span class="pl-en">IEnemy</span> <span class="pl-en">Create</span>()
     {
         <span class="pl-k">if</span> (_difficultyManager.Difficulty == Difficulties.Hard)
         {
@@ -385,27 +385,27 @@
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameController</span> : <span class="pl-k">IInitializable</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">GameController</span> : <span class="pl-en">IInitializable</span>
 {
-    <span class="pl-k">readonly</span> EnemyFactory _enemyFactory;
+    <span class="pl-k">readonly </span><span class="pl-en">EnemyFactory</span> <span class="pl-en">_enemyFactory</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">GameController</span>(<span class="pl-k">EnemyFactory</span> <span class="pl-smi">enemyFactory</span>)
+    <span class="pl-k">public</span> <span class="pl-en">GameController</span>(EnemyFactory enemyFactory)
     {
         _enemyFactory = enemyFactory;
     }
 
     <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">Initialize</span>()
     {
-        <span class="pl-k">var</span> enemy = _enemyFactory.Create();
+        <span class="pl-k">var</span> <span class="pl-en">enemy </span>= _enemyFactory.Create();
         <span class="pl-c">// ...</span>
     }
 }
 
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-k">MonoInstaller</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">TestInstaller</span> : <span class="pl-en">MonoInstaller</span>
 {
     <span class="pl-k">public</span> <span class="pl-k">override</span> <span class="pl-k">void</span> <span class="pl-en">InstallBindings</span>()
     {
-        Container.BindAllInterfaces&lt;GameController&gt;().To&lt;GameController&gt;().AsSingle();
+        Container.BindInterfacesTo&lt;GameController&gt;().AsSingle();
         Container.Bind&lt;DifficultyManager&gt;().AsSingle();
         Container.BindFactory&lt;IEnemy, EnemyFactory&gt;().FromFactory&lt;CustomEnemyFactory&gt;();
     }
@@ -417,18 +417,18 @@
 
 <p>If you want to properly validate your custom factories, you can do that by just making a small modification to it:</p>
 
-<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">CustomEnemyFactory</span> : <span class="pl-k">IFactory</span>&lt;<span class="pl-k">IEnemy</span>&gt;, <span class="pl-k">IValidatable</span>
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">CustomEnemyFactory</span> : <span class="pl-en">IFactory</span>&lt;<span class="pl-en">IEnemy</span>&gt;, <span class="pl-en">IValidatable</span>
 {
-    DiContainer _container;
-    DifficultyManager _difficultyManager;
+    <span class="pl-en">DiContainer</span> <span class="pl-en">_container</span>;
+    <span class="pl-en">DifficultyManager</span> <span class="pl-en">_difficultyManager</span>;
 
-    <span class="pl-k">public</span> <span class="pl-en">CustomEnemyFactory</span>(<span class="pl-k">DiContainer</span> <span class="pl-smi">container</span>, <span class="pl-k">DifficultyManager</span> <span class="pl-smi">difficultyManager</span>)
+    <span class="pl-k">public</span> <span class="pl-en">CustomEnemyFactory</span>(DiContainer container, DifficultyManager difficultyManager)
     {
         _container = container;
         _difficultyManager = difficultyManager;
     }
 
-    <span class="pl-k">public</span> IEnemy <span class="pl-en">Create</span>()
+    <span class="pl-k">public</span> <span class="pl-en">IEnemy</span> <span class="pl-en">Create</span>()
     {
         <span class="pl-k">if</span> (_difficultyManager.Difficulty == Difficulties.Hard)
         {

@@ -91,10 +91,10 @@ namespace TicTacToe3D
             public float DistanceBetweenBadges;
         }
         
-        public class BoardFactory : Factory<GameObject>
+        public class BoardFactory : GameObjectFactory
         { }
         
-        public class StickFactory : Factory<GameObject>
+        public class StickFactory : GameObjectFactory
         { }
 
         public class StickPartitionFactory : Factory<BadgeSpawnPoint>

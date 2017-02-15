@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using ModestTree;
 using System.Linq;
-using ModestTree.Util;
 
 namespace Zenject
 {
@@ -12,7 +11,7 @@ namespace Zenject
         readonly DiContainer _container = null;
 
         [InjectOptional]
-        readonly List<ValuePair<TKey, Type>> _typePairs = null;
+        readonly List<ModestTree.Util.ValuePair<TKey, Type>> _typePairs = null;
 
         Dictionary<TKey, Type> _typeMap;
 
@@ -21,10 +20,7 @@ namespace Zenject
 
         protected DiContainer Container
         {
-            get
-            {
-                return _container;
-            }
+            get { return _container; }
         }
 
         protected abstract IEnumerable<Type> ProvidedTypes
@@ -87,11 +83,11 @@ namespace Zenject
             }
         }
 
-        protected static ConditionBinder AddBindingInternal<TDerived>(DiContainer container, TKey key)
+        protected static ConditionCopyNonLazyBinder AddBindingInternal<TDerived>(DiContainer container, TKey key)
             where TDerived : TBase
         {
-            return container.Bind<ValuePair<TKey, Type>>()
-                .FromInstance(ValuePair.New(key, typeof(TDerived)));
+            return container.Bind<ModestTree.Util.ValuePair<TKey, Type>>()
+                .FromInstance(ModestTree.Util.ValuePair.New(key, typeof(TDerived)));
         }
     }
 
@@ -100,10 +96,7 @@ namespace Zenject
     {
         protected override IEnumerable<Type> ProvidedTypes
         {
-            get
-            {
-                return new Type[0];
-            }
+            get { return new Type[0]; }
         }
 
         public virtual TBase Create(TKey key)
@@ -118,10 +111,7 @@ namespace Zenject
     {
         protected override IEnumerable<Type> ProvidedTypes
         {
-            get
-            {
-                return new Type[] { typeof(TParam1) };
-            }
+            get { return new Type[] { typeof(TParam1) }; }
         }
 
         public virtual TBase Create(TKey key, TParam1 param1)
@@ -140,10 +130,7 @@ namespace Zenject
     {
         protected override IEnumerable<Type> ProvidedTypes
         {
-            get
-            {
-                return new Type[] { typeof(TParam1), typeof(TParam2) };
-            }
+            get { return new Type[] { typeof(TParam1), typeof(TParam2) }; }
         }
 
         public virtual TBase Create(TKey key, TParam1 param1, TParam2 param2)
@@ -163,10 +150,7 @@ namespace Zenject
     {
         protected override IEnumerable<Type> ProvidedTypes
         {
-            get
-            {
-                return new Type[] { typeof(TParam1), typeof(TParam2), typeof(TParam3) };
-            }
+            get { return new Type[] { typeof(TParam1), typeof(TParam2), typeof(TParam3) }; }
         }
 
         public virtual TBase Create(TKey key, TParam1 param1, TParam2 param2, TParam3 param3)
@@ -187,10 +171,7 @@ namespace Zenject
     {
         protected override IEnumerable<Type> ProvidedTypes
         {
-            get
-            {
-                return new Type[] { typeof(TParam1), typeof(TParam2), typeof(TParam3), typeof(TParam4) };
-            }
+            get { return new Type[] { typeof(TParam1), typeof(TParam2), typeof(TParam3), typeof(TParam4) }; }
         }
 
         public virtual TBase Create(TKey key, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)

@@ -72,9 +72,9 @@ namespace TicTacToe3D
 
         private void OnGameInfoPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "CurrentState")
+            if (e.PropertyName == "GameState")
             {
-                OnGameStateChanged(Info.CurrentState);
+                OnGameStateChanged(Info.GameState);
             }
         }
 

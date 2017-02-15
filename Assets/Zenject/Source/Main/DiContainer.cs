@@ -17,14 +17,14 @@ namespace Zenject
     public class InjectArgs
     {
         public List<TypeValuePair> ExtraArgs;
-        public bool UseAllArgs;
         public InjectContext Context;
         public object ConcreteIdentifier;
     }
 
     // Responsibilities:
-    // - Expose methods to configure object graph via Bind() methods
-    // - Build object graphs via Resolve() method
+    // - Expose methods to configure object graph via BindX() methods
+    // - Look up bound values via Resolve() method
+    // - Instantiate new values via InstantiateX() methods
     public class DiContainer : IInstantiator
     {
         public const string DependencyRootIdentifier = "DependencyRoot";
@@ -38,8 +38,11 @@ namespace Zenject
         readonly LazyInstanceInjector _lazyInjector;
 
         readonly Queue<IBindingFinalizer> _currentBindings = new Queue<IBindingFinalizer>();
-        readonly List<IBindingFinalizer> _processedBindings = new List<IBindingFinalizer>();
+        readonly List<IBindingFinalizer> _childBindings = new List<IBindingFinalizer>();
 
+        readonly List<ILazy> _lateBindingsToValidate = new List<ILazy>();
+
+        bool _isFinalizingBinding;
         bool _isValidating;
         bool _isInstalling;
         bool _hasDisplayedInstallWarning;
@@ -52,22 +55,35 @@ namespace Zenject
             _lazyInjector = new LazyInstanceInjector(this);
             _singletonProviderCreator = new SingletonProviderCreator(this, _singletonMarkRegistry);
 
-            // We can't simply call Bind<DiContainer>().FromInstance(this) here because
-            // we don't want these bindings to be included in the Clone() below
-            // So just directly add to the provider map instead
-            var thisProvider = new InstanceProvider(this, typeof(DiContainer), this);
+            InstallDefaultBindings();
+            FlushBindings();
+            Assert.That(_currentBindings.IsEmpty());
+        }
 
-            foreach (var contractType in new Type[] { typeof(DiContainer), typeof(IInstantiator) })
+        void InstallDefaultBindings()
+        {
+            Bind(typeof(DiContainer), typeof(IInstantiator)).FromInstance(this);
+            Bind(typeof(Lazy<>)).FromMethodUntyped(CreateLazyBinding);
+        }
+
+        object CreateLazyBinding(InjectContext context)
+        {
+            // By cloning it this also means that Ids, optional, etc. are forwarded properly
+            var newContext = context.Clone();
+            newContext.MemberType = context.MemberType.GenericArguments().Single();
+
+            var result = Activator.CreateInstance(
+                typeof(Lazy<>).MakeGenericType(newContext.MemberType), new object[] { this, newContext });
+
+            if (_isValidating)
             {
-                var infoList = new List<ProviderInfo>()
-                {
-                    new ProviderInfo(thisProvider, null)
-                };
-
-                var bindingId = new BindingId(contractType, null);
-
-                _providers.Add(bindingId, infoList);
+                // Unfortunately we can't validate each lazy binding here
+                // because that could result in circular reference exceptions
+                // And that might be exactly why you're using lazy in the first place
+                _lateBindingsToValidate.Add(((ILazy)result));
             }
+
+            return result;
         }
 
         public DiContainer()
@@ -87,9 +103,9 @@ namespace Zenject
 #if !NOT_UNITY3D
                 DefaultParent = parentContainer.DefaultParent;
 #endif
-                foreach (var binding in parentContainer._processedBindings
-                        .Where(x => x.CopyIntoAllSubContainers))
+                foreach (var binding in parentContainer._childBindings)
                 {
+                    Assert.That(binding.CopyIntoAllSubContainers);
                     _currentBindings.Enqueue(binding);
                 }
 
@@ -102,14 +118,6 @@ namespace Zenject
         {
         }
 
-        public LazyInstanceInjector LazyInstanceInjector
-        {
-            get
-            {
-                return _lazyInjector;
-            }
-        }
-
         // When true, this will throw exceptions whenever we create new game objects
         // This is helpful when used in places like EditorWindowKernel where we can't
         // assume that there is a "scene" to place objects
@@ -119,20 +127,14 @@ namespace Zenject
             set;
         }
 
-        public SingletonMarkRegistry SingletonMarkRegistry
+        internal SingletonMarkRegistry SingletonMarkRegistry
         {
-            get
-            {
-                return _singletonMarkRegistry;
-            }
+            get { return _singletonMarkRegistry; }
         }
 
-        public SingletonProviderCreator SingletonProviderCreator
+        internal SingletonProviderCreator SingletonProviderCreator
         {
-            get
-            {
-                return _singletonProviderCreator;
-            }
+            get { return _singletonProviderCreator; }
         }
 
 #if !NOT_UNITY3D
@@ -146,10 +148,7 @@ namespace Zenject
 
         public DiContainer ParentContainer
         {
-            get
-            {
-                return _parentContainer;
-            }
+            get { return _parentContainer; }
         }
 
         public bool ChecksForCircularDependencies
@@ -168,10 +167,7 @@ namespace Zenject
 
         public bool IsValidating
         {
-            get
-            {
-                return _isValidating;
-            }
+            get { return _isValidating; }
         }
 
         // When this is true, it will log warnings when Resolve or Instantiate
@@ -182,14 +178,8 @@ namespace Zenject
         // unexpected behaviour can occur
         public bool IsInstalling
         {
-            get
-            {
-                return _isInstalling;
-            }
-            set
-            {
-                _isInstalling = value;
-            }
+            get { return _isInstalling; }
+            set { _isInstalling = value; }
         }
 
         public IEnumerable<BindingId> AllContracts
@@ -199,27 +189,6 @@ namespace Zenject
                 FlushBindings();
                 return _providers.Keys;
             }
-        }
-
-        // DO not run this within Unity!
-        // This is only really useful if you are not using any of the Unity bind methods such as
-        // FromGameObject, FromPrefab, etc.
-        // If you are using those, and you call this method, then it will have side effects like
-        // creating game objects
-        // Otherwise, it should be safe to call since all the fake instances will be limited to
-        // within a cloned copy of the DiContainer and should not have any side effects
-        public void Validate()
-        {
-            var container = CloneForValidate();
-
-            Assert.That(container.IsValidating);
-
-            // It's tempting here to iterate over all the BindingId's in _providers
-            // and make sure they can be resolved but that fails once we start
-            // using complex conditionals, so this is the best we can do
-            container.ResolveDependencyRoots();
-
-            container.ValidateIValidatables();
         }
 
         public List<object> ResolveDependencyRoots()
@@ -232,45 +201,25 @@ namespace Zenject
             return ResolveAll(context).Cast<object>().ToList();
         }
 
-        DiContainer CloneForValidate()
-        {
-            FlushBindings();
-
-            DiContainer container;
-
-            if (this.ParentContainer == null)
-            {
-                container = new DiContainer(null, true);
-            }
-            else
-            {
-                // Need to clone all parents too
-                container = new DiContainer(
-                    this.ParentContainer.CloneForValidate(), true);
-            }
-
-            // Validating shouldn't have side effects, so assert if this occurs
-            container.AssertOnNewGameObjects = true;
-
-            foreach (var binding in _processedBindings)
-            {
-                container._currentBindings.Enqueue(binding);
-            }
-
-            container.FlushBindings();
-            return container;
-        }
-
-        public void ValidateIValidatables()
+        // This will instantiate any binding that results in a type that derives from IValidatable
+        // Note that we are looking at both the contract type and the mapped derived type
+        // This means if you add the binding 'Container.Bind<IFoo>().To<Foo>()'
+        // and Foo derives from both IFoo and IValidatable, then Foo will be instantiated
+        // and then Validate() will be called on it.  Note that this will happen even if Foo is not
+        // referenced anywhere in the normally resolved object graph
+        public void ValidateValidatables()
         {
             Assert.That(IsValidating);
+
+#if !NOT_UNITY3D && !ZEN_TESTS_OUTSIDE_UNITY
+            Assert.That(Application.isEditor);
+#endif
 
             foreach (var pair in _providers.ToList())
             {
                 var bindingId = pair.Key;
                 var providers = pair.Value;
 
-                // Validate all IValidatable's
                 List<ProviderInfo> validatableProviders;
 
                 var injectContext = new InjectContext(
@@ -294,11 +243,32 @@ namespace Zenject
                     validatable.Validate();
                 }
             }
+
+            foreach (var lazy in _lateBindingsToValidate)
+            {
+                lazy.Validate();
+            }
         }
 
         public DiContainer CreateSubContainer()
         {
             return CreateSubContainer(_isValidating);
+        }
+
+        public void QueueForInject(object instance)
+        {
+            _lazyInjector.AddInstance(instance);
+        }
+
+        public void FlushInjectQueue()
+        {
+            _lazyInjector.LazyInjectAll();
+        }
+
+        // Do not use this
+        internal void OnInstanceResolved(object instance)
+        {
+            _lazyInjector.OnInstanceResolved(instance);
         }
 
         DiContainer CreateSubContainer(bool isValidating)
@@ -412,7 +382,7 @@ namespace Zenject
 
             if (matches.Any())
             {
-                var instances = matches.SelectMany(x => SafeGetInstances(x.ProviderInfo.Provider, context)).ToArray();
+                var instances = matches.SelectMany(x => SafeGetInstances(x, context)).ToArray();
 
                 if (IsValidating)
                 {
@@ -422,8 +392,11 @@ namespace Zenject
                 return ReflectionUtil.CreateGenericList(context.MemberType, instances);
             }
 
-            Assert.That(context.Optional,
-                "Could not find required dependency with type '{0}' \nObject graph:\n {1}", context.MemberType.Name(), context.GetObjectGraphString());
+            if (!context.Optional)
+            {
+                throw Assert.CreateException(
+                    "Could not find required dependency with type '{0}' \nObject graph:\n {1}", context.MemberType, context.GetObjectGraphString());
+            }
 
             return ReflectionUtil.CreateGenericList(context.MemberType, new object[] {});
         }
@@ -458,8 +431,69 @@ namespace Zenject
 
             _hasDisplayedInstallWarning = true;
             // Feel free to comment this out if you are comfortable with this practice
-            Log.Warn("Zenject Warning: It is bad practice to call Inject/Resolve/Instantiate before all the Installers have completed!  This is important to ensure that all bindings have properly been installed in case they are needed when injecting/instantiating/resolving.  Detected when operating on type '{0}'.  If you don't care about this, you can just remove this warning.", rootContext.MemberType.Name());
+            Log.Warn("Zenject Warning: It is bad practice to call Inject/Resolve/Instantiate before all the Installers have completed!  This is important to ensure that all bindings have properly been installed in case they are needed when injecting/instantiating/resolving.  Detected when operating on type '{0}'.  If you don't care about this, you can just remove this warning.", rootContext.MemberType);
 #endif
+        }
+
+        // Returns the concrete type that would be returned with Resolve<T>
+        // without actually instantiating it
+        // This is safe to use within installers
+        public Type ResolveType<T>()
+        {
+            return ResolveType(typeof(T));
+        }
+
+        // Returns the concrete type that would be returned with Resolve(type)
+        // without actually instantiating it
+        // This is safe to use within installers
+        public Type ResolveType(Type type)
+        {
+            return ResolveType(new InjectContext(this, type, null));
+        }
+
+        // Returns the concrete type that would be returned with Resolve(context)
+        // without actually instantiating it
+        // This is safe to use within installers
+        public Type ResolveType(InjectContext context)
+        {
+            Assert.IsNotNull(context);
+
+            ProviderPair provider;
+
+            FlushBindings();
+
+            var result = TryGetUniqueProvider(context, out provider);
+
+            if (result == ProviderLookupResult.Multiple)
+            {
+                throw Assert.CreateException(
+                    "Found multiple matches when only one was expected for type '{0}'{1}. \nObject graph:\n {2}",
+                    context.MemberType,
+                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType)),
+                    context.GetObjectGraphString());
+            }
+
+            if (result != ProviderLookupResult.Success)
+            {
+                throw Assert.CreateException(
+                    "Unable to resolve type '{0}'{1}. \nObject graph:\n{2}",
+                    context.MemberType.ToString() + (context.Identifier == null ? "" : " with ID '{0}'".Fmt(context.Identifier.ToString())),
+                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType)),
+                    context.GetObjectGraphString());
+            }
+
+            Assert.IsNotNull(provider);
+            return provider.ProviderInfo.Provider.GetInstanceType(context);
+        }
+
+        public List<Type> ResolveTypeAll(Type type)
+        {
+            return ResolveTypeAll(type, null);
+        }
+
+        public List<Type> ResolveTypeAll(Type type, object identifier)
+        {
+            return ResolveTypeAll(new InjectContext(this, type, identifier));
         }
 
         // Returns all the types that would be returned if ResolveAll was called with the given values
@@ -468,12 +502,13 @@ namespace Zenject
             Assert.IsNotNull(context);
 
             FlushBindings();
-            CheckForInstallWarning(context);
 
             var providers = GetProviderMatchesInternal(context).ToList();
             if (providers.Count > 0 )
             {
-                return providers.Select(x => x.ProviderInfo.Provider.GetInstanceType(context)).Where(x => x != null).ToList();
+                return providers.Select(
+                    x => x.ProviderInfo.Provider.GetInstanceType(context))
+                    .Where(x => x != null).ToList();
             }
 
             return new List<Type> {};
@@ -481,8 +516,8 @@ namespace Zenject
 
         // Try looking up a single provider for a given context
         // Note that this method should not throw zenject exceptions
-        internal ProviderLookupResult TryGetUniqueProvider(
-            InjectContext context, out IProvider provider)
+        ProviderLookupResult TryGetUniqueProvider(
+            InjectContext context, out ProviderPair providerPair)
         {
             Assert.IsNotNull(context);
 
@@ -491,7 +526,7 @@ namespace Zenject
 
             if (providers.IsEmpty())
             {
-                provider = null;
+                providerPair = null;
                 return ProviderLookupResult.None;
             }
 
@@ -511,15 +546,15 @@ namespace Zenject
                 if (sortedProviders.Count == 1)
                 {
                     // We have one match that is the closest
-                    provider = sortedProviders[0].Pair.ProviderInfo.Provider;
+                    providerPair = sortedProviders[0].Pair;
                 }
                 else
                 {
                     // Try choosing the one with a condition before giving up and throwing an exception
                     // This is nice because it allows us to bind a default and then override with conditions
-                    provider = sortedProviders.Where(x => x.Pair.ProviderInfo.Condition != null).Select(x => x.Pair.ProviderInfo.Provider).OnlyOrDefault();
+                    providerPair = sortedProviders.Where(x => x.Pair.ProviderInfo.Condition != null).Select(x => x.Pair).OnlyOrDefault();
 
-                    if (provider == null)
+                    if (providerPair == null)
                     {
                         return ProviderLookupResult.Multiple;
                     }
@@ -527,10 +562,10 @@ namespace Zenject
             }
             else
             {
-                provider = providers.Single().ProviderInfo.Provider;
+                providerPair = providers.Single();
             }
 
-            Assert.IsNotNull(provider);
+            Assert.IsNotNull(providerPair);
             return ProviderLookupResult.Success;
         }
 
@@ -538,18 +573,21 @@ namespace Zenject
         {
             Assert.IsNotNull(context);
 
-            IProvider provider;
+            ProviderPair providerPair;
 
             FlushBindings();
             CheckForInstallWarning(context);
 
-            var result = TryGetUniqueProvider(context, out provider);
+            var result = TryGetUniqueProvider(context, out providerPair);
 
-            Assert.That(result != ProviderLookupResult.Multiple,
-                "Found multiple matches when only one was expected for type '{0}'{1}. \nObject graph:\n {2}",
-                context.MemberType.Name(),
-                (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType.Name())),
-                context.GetObjectGraphString());
+            if (result == ProviderLookupResult.Multiple)
+            {
+                throw Assert.CreateException(
+                    "Found multiple matches when only one was expected for type '{0}'{1}. \nObject graph:\n {2}",
+                    context.MemberType,
+                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType)),
+                    context.GetObjectGraphString());
+            }
 
             if (result == ProviderLookupResult.None)
             {
@@ -560,6 +598,10 @@ namespace Zenject
 
                     var subContext = context.Clone();
                     subContext.MemberType = subType;
+                    // By making this optional this means that all injected fields of type List<>
+                    // will pass validation, which could be error prone, but I think this is better
+                    // than always requiring that they explicitly mark their list types as optional
+                    subContext.Optional = true;
 
                     return ResolveAll(subContext);
                 }
@@ -570,43 +612,72 @@ namespace Zenject
                 }
 
                 throw Assert.CreateException("Unable to resolve type '{0}'{1}. \nObject graph:\n{2}",
-                    context.MemberType.Name() + (context.Identifier == null ? "" : " with ID '{0}'".Fmt(context.Identifier.ToString())),
-                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType.Name())),
+                    context.MemberType.ToString() + (context.Identifier == null ? "" : " with ID '{0}'".Fmt(context.Identifier.ToString())),
+                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType)),
                     context.GetObjectGraphString());
             }
 
             Assert.That(result == ProviderLookupResult.Success);
-            Assert.IsNotNull(provider);
+            Assert.IsNotNull(providerPair);
 
-            var instances = SafeGetInstances(provider, context);
+            var instances = SafeGetInstances(providerPair, context);
 
-            Assert.That(!instances.IsEmpty(), "Provider returned zero instances when one was expected!");
-            Assert.That(instances.Count() == 1, "Provider returned multiple instances when one was expected!");
+            if (instances.IsEmpty())
+            {
+                throw Assert.CreateException("Provider returned zero instances when one was expected!  While resolving type '{0}'{1}. \nObject graph:\n{2}",
+                    context.MemberType.ToString() + (context.Identifier == null ? "" : " with ID '{0}'".Fmt(context.Identifier.ToString())),
+                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType)),
+                    context.GetObjectGraphString());
+            }
+
+            if (instances.Count() > 1)
+            {
+                throw Assert.CreateException("Provider returned multiple instances when only one was expected!  While resolving type '{0}'{1}. \nObject graph:\n{2}",
+                    context.MemberType.ToString() + (context.Identifier == null ? "" : " with ID '{0}'".Fmt(context.Identifier.ToString())),
+                    (context.ObjectType == null ? "" : " while building object with type '{0}'".Fmt(context.ObjectType)),
+                    context.GetObjectGraphString());
+            }
 
             return instances.First();
         }
 
-        IEnumerable<object> SafeGetInstances(IProvider provider, InjectContext context)
+        IEnumerable<object> SafeGetInstances(ProviderPair providerPair, InjectContext context)
         {
             Assert.IsNotNull(context);
+
+            var provider = providerPair.ProviderInfo.Provider;
 
             if (ChecksForCircularDependencies)
             {
                 var lookupId = new LookupId(provider, context.GetBindingId());
 
-                // Allow one before giving up so that you can do circular dependencies via postinject or fields
-                Assert.That(_resolvesInProgress.Where(x => x.Equals(lookupId)).Count() <= 1,
-                    "Circular dependency detected! \nObject graph:\n {0}", context.GetObjectGraphString());
+                // Use the container associated with the provider to address some rare cases
+                // which would otherwise result in an infinite loop.  Like this:
+                // Container.Bind<ICharacter>().FromComponentInNewPrefab(Prefab).AsTransient()
+                // With the prefab being a GameObjectContext containing a script that has a
+                // ICharacter dependency.  In this case, we would otherwise use the _resolvesInProgress
+                // associated with the GameObjectContext container, which will allow the recursive
+                // lookup, which will trigger another GameObjectContext and container (since it is
+                // transient) and the process continues indefinitely
 
-                _resolvesInProgress.Push(lookupId);
+                var providerContainer = providerPair.Container;
+
+                if (providerContainer._resolvesInProgress.Where(x => x.Equals(lookupId)).Count() > 1)
+                {
+                    // Allow one before giving up so that you can do circular dependencies via postinject or fields
+                    throw Assert.CreateException(
+                        "Circular dependency detected! \nObject graph:\n {0}", context.GetObjectGraphString());
+                }
+
+                providerContainer._resolvesInProgress.Push(lookupId);
                 try
                 {
                     return provider.GetAllInstances(context);
                 }
                 finally
                 {
-                    Assert.That(_resolvesInProgress.Peek().Equals(lookupId));
-                    _resolvesInProgress.Pop();
+                    Assert.That(providerContainer._resolvesInProgress.Peek().Equals(lookupId));
+                    providerContainer._resolvesInProgress.Pop();
                 }
             }
             else
@@ -646,38 +717,6 @@ namespace Zenject
             }
         }
 
-        public T InstantiateExplicit<T>(List<TypeValuePair> extraArgs)
-        {
-            return (T)InstantiateExplicit(typeof(T), extraArgs);
-        }
-
-        public object InstantiateExplicit(Type concreteType, List<TypeValuePair> extraArgs)
-        {
-            bool autoInject = true;
-
-            return InstantiateExplicit(
-                concreteType,
-                autoInject,
-                new InjectArgs()
-                {
-                    ExtraArgs = extraArgs,
-                    Context = new InjectContext(this, concreteType, null),
-                    ConcreteIdentifier = null,
-                    UseAllArgs = true,
-                });
-        }
-
-        // See comment in IInstantiator.cs for description of this method
-        public object InstantiateExplicit(Type concreteType, bool autoInject, InjectArgs args)
-        {
-#if PROFILING_ENABLED
-            using (ProfileBlock.Start("Zenject.Instantiate({0})", concreteType))
-#endif
-            {
-                return InstantiateInternal(concreteType, autoInject, args);
-            }
-        }
-
         public static bool CanCreateOrInjectDuringValidation(Type type)
         {
             // During validation, do not instantiate or inject anything except for
@@ -699,7 +738,7 @@ namespace Zenject
         {
 #if !NOT_UNITY3D
             Assert.That(!concreteType.DerivesFrom<UnityEngine.Component>(),
-                "Error occurred while instantiating object of type '{0}'. Instantiator should not be used to create new mono behaviours.  Must use InstantiatePrefabForComponent, InstantiatePrefab, or InstantiateComponent.", concreteType.Name());
+                "Error occurred while instantiating object of type '{0}'. Instantiator should not be used to create new mono behaviours.  Must use InstantiatePrefabForComponent, InstantiatePrefab, or InstantiateComponent.", concreteType);
 #endif
 
             Assert.That(!concreteType.IsAbstract(), "Expected type '{0}' to be non-abstract", concreteType);
@@ -759,11 +798,11 @@ namespace Zenject
 
                 if (!IsValidating || CanCreateOrInjectDuringValidation(concreteType))
                 {
-                    //Log.Debug("Zenject: Instantiating type '{0}'", concreteType.Name());
+                    //Log.Debug("Zenject: Instantiating type '{0}'", concreteType);
                     try
                     {
-#if PROFILING_ENABLED
-                        using (ProfileBlock.Start("{0}.{0}()", concreteType))
+#if UNITY_EDITOR
+                        using (ProfileBlock.Start("{0}.{1}()", concreteType, concreteType.Name))
 #endif
                         {
                             newObj = typeInfo.InjectConstructor.Invoke(paramValues.ToArray());
@@ -772,7 +811,7 @@ namespace Zenject
                     catch (Exception e)
                     {
                         throw Assert.CreateException(
-                            e, "Error occurred while instantiating object with type '{0}'", concreteType.Name());
+                            e, "Error occurred while instantiating object with type '{0}'", concreteType);
                     }
                 }
                 else
@@ -784,12 +823,13 @@ namespace Zenject
             if (autoInject)
             {
                 InjectExplicit(newObj, concreteType, args);
-            }
-            else if (args.UseAllArgs && !args.ExtraArgs.IsEmpty())
-            {
-                throw Assert.CreateException(
-                    "Passed unnecessary parameters when injecting into type '{0}'. \nExtra Parameters: {1}\nObject graph:\n{2}",
-                    newObj.GetType().Name(), String.Join(",", args.ExtraArgs.Select(x => x.Type.Name()).ToArray()), args.Context.GetObjectGraphString());
+
+                if (!args.ExtraArgs.IsEmpty())
+                {
+                    throw Assert.CreateException(
+                        "Passed unnecessary parameters when injecting into type '{0}'. \nExtra Parameters: {1}\nObject graph:\n{2}",
+                        newObj.GetType(), String.Join(",", args.ExtraArgs.Select(x => x.Type.Name()).ToArray()), args.Context.GetObjectGraphString());
+                }
             }
 
             return newObj;
@@ -817,7 +857,6 @@ namespace Zenject
                 new InjectArgs()
                 {
                     ExtraArgs = extraArgs,
-                    UseAllArgs = true,
                     Context = new InjectContext(this, injectableType, null),
                     ConcreteIdentifier = null,
                 });
@@ -894,7 +933,7 @@ namespace Zenject
 
             foreach (var method in typeInfo.PostInjectMethods)
             {
-#if PROFILING_ENABLED
+#if UNITY_EDITOR
                 using (ProfileBlock.Start("{0}.{1}()", injectableType, method.MethodInfo.Name))
 #endif
                 {
@@ -928,82 +967,15 @@ namespace Zenject
                 }
             }
 
-            if (args.UseAllArgs && !args.ExtraArgs.IsEmpty())
+            if (!args.ExtraArgs.IsEmpty())
             {
                 throw Assert.CreateException(
                     "Passed unnecessary parameters when injecting into type '{0}'. \nExtra Parameters: {1}\nObject graph:\n{2}",
-                    injectableType.Name(), String.Join(",", args.ExtraArgs.Select(x => x.Type.Name()).ToArray()), args.Context.GetObjectGraphString());
+                    injectableType, String.Join(",", args.ExtraArgs.Select(x => x.Type.Name()).ToArray()), args.Context.GetObjectGraphString());
             }
         }
 
 #if !NOT_UNITY3D
-
-        public GameObject InstantiatePrefabResourceExplicit(
-            string resourcePath, List<TypeValuePair> extraArgs)
-        {
-            return InstantiatePrefabResourceExplicit(
-                resourcePath, extraArgs, null);
-        }
-
-        public GameObject InstantiatePrefabResourceExplicit(
-            string resourcePath, List<TypeValuePair> extraArgs, string groupName)
-        {
-            return InstantiatePrefabResourceExplicit(
-                resourcePath, extraArgs, groupName, true);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefabResourceExplicit(
-            string resourcePath, List<TypeValuePair> extraArgs,
-            string groupName, bool useAllArgs)
-        {
-            var prefab = (GameObject)Resources.Load(resourcePath);
-            Assert.IsNotNull(prefab, "Could not find prefab at resource location '{0}'".Fmt(resourcePath));
-
-            return InstantiatePrefabExplicit(
-                prefab, extraArgs, groupName, useAllArgs);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefabExplicit(
-            UnityEngine.Object prefab, List<TypeValuePair> extraArgs)
-        {
-            return InstantiatePrefabExplicit(
-                prefab, extraArgs, null);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefabExplicit(
-            UnityEngine.Object prefab, List<TypeValuePair> extraArgs,
-            string groupName)
-        {
-            return InstantiatePrefabExplicit(
-                prefab, extraArgs, groupName, true);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefabExplicit(
-            UnityEngine.Object prefab, List<TypeValuePair> extraArgs,
-            string groupName, bool useAllArgs)
-        {
-            return InstantiatePrefabExplicit(
-                prefab, extraArgs, new GameObjectCreationParameters() { GroupName = groupName }, useAllArgs);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefabExplicit(
-            UnityEngine.Object prefab, List<TypeValuePair> extraArgs,
-            GameObjectCreationParameters gameObjectBindInfo, bool useAllArgs)
-        {
-            FlushBindings();
-
-            var gameObj = CreateAndParentPrefab(prefab, gameObjectBindInfo);
-
-            InjectGameObjectExplicit(
-                gameObj, true, extraArgs, useAllArgs);
-
-            return gameObj;
-        }
 
         // Don't use this unless you know what you're doing
         // You probably want to use InstantiatePrefab instead
@@ -1042,33 +1014,8 @@ namespace Zenject
 
             var prefabAsGameObject = GetPrefabAsGameObject(prefab);
 
-            GameObject gameObj;
-
-            if (IsValidating)
-            {
-                // We need to avoid triggering any Awake() method during validation
-                // so temporarily disable the prefab so that the object gets
-                // instantiated as disabled
-                bool wasActive = prefabAsGameObject.activeSelf;
-
-                prefabAsGameObject.SetActive(false);
-
-                try
-                {
-                    gameObj = (GameObject)GameObject.Instantiate(prefabAsGameObject);
-                }
-                finally
-                {
-                    prefabAsGameObject.SetActive(wasActive);
-                }
-            }
-            else
-            {
-                gameObj = (GameObject)GameObject.Instantiate(prefabAsGameObject);
-            }
-
-            gameObj.transform.SetParent(
-                GetTransformGroup(gameObjectBindInfo), false);
+            var gameObj = (GameObject)GameObject.Instantiate(
+                prefabAsGameObject, GetTransformGroup(gameObjectBindInfo));
 
             if (gameObjectBindInfo.Name != null)
             {
@@ -1093,68 +1040,6 @@ namespace Zenject
             var gameObj = new GameObject(gameObjectBindInfo.Name ?? "GameObject");
             gameObj.transform.SetParent(GetTransformGroup(gameObjectBindInfo), false);
             return gameObj;
-        }
-
-        public T InstantiatePrefabForComponentExplicit<T>(
-            UnityEngine.Object prefab, List<TypeValuePair> extraArgs)
-        {
-            return (T)InstantiatePrefabForComponentExplicit(
-                typeof(T), prefab, extraArgs);
-        }
-
-        // Note: Any arguments that are used will be removed from extraArgs
-        public object InstantiatePrefabForComponentExplicit(
-            Type componentType, UnityEngine.Object prefab, List<TypeValuePair> extraArgs)
-        {
-            return InstantiatePrefabForComponentExplicit(
-                componentType, prefab, extraArgs, null);
-        }
-
-        public object InstantiatePrefabForComponentExplicit(
-            Type componentType, UnityEngine.Object prefab, List<TypeValuePair> extraArgs,
-            string groupName)
-        {
-            return InstantiatePrefabForComponentExplicit(
-                componentType, prefab, groupName,
-                new InjectArgs()
-                {
-                    ExtraArgs = extraArgs,
-                    Context = new InjectContext(this, componentType, null),
-                    ConcreteIdentifier = null,
-                    UseAllArgs = true,
-                });
-        }
-
-        // Note: Any arguments that are used will be removed from extraArgs
-        public object InstantiatePrefabForComponentExplicit(
-            Type componentType, UnityEngine.Object prefab, string groupName, InjectArgs args)
-        {
-            return InstantiatePrefabForComponentExplicit(
-                componentType, prefab, new GameObjectCreationParameters() { GroupName = groupName }, args);
-        }
-
-        // Note: Any arguments that are used will be removed from extraArgs
-        public object InstantiatePrefabForComponentExplicit(
-            Type componentType, UnityEngine.Object prefab,
-            GameObjectCreationParameters gameObjectBindInfo, InjectArgs args)
-        {
-            Assert.That(!AssertOnNewGameObjects,
-                "Given DiContainer does not support creating new game objects");
-
-            FlushBindings();
-
-            Assert.That(prefab != null, "Null prefab found when instantiating game object");
-
-            Assert.That(componentType.IsInterface() || componentType.DerivesFrom<Component>(),
-                "Expected type '{0}' to derive from UnityEngine.Component", componentType.Name());
-
-            var gameObj = (GameObject)GameObject.Instantiate(GetPrefabAsGameObject(prefab));
-
-            gameObj.transform.SetParent(GetTransformGroup(gameObjectBindInfo), false);
-            gameObj.SetActive(true);
-
-            return InjectGameObjectForComponentExplicit(
-                gameObj, componentType, args);
         }
 
         Transform GetTransformGroup(GameObjectCreationParameters gameObjectBindInfo)
@@ -1216,7 +1101,6 @@ namespace Zenject
             return Instantiate<T>(new object[0]);
         }
 
-        // See comment in IInstantiator.cs for description of this method
         public T Instantiate<T>(IEnumerable<object> extraArgs)
         {
             var result = Instantiate(typeof(T), extraArgs);
@@ -1235,7 +1119,6 @@ namespace Zenject
             return Instantiate(concreteType, new object[0]);
         }
 
-        // See comment in IInstantiator.cs for description of this method
         public object Instantiate(
             Type concreteType, IEnumerable<object> extraArgs)
         {
@@ -1247,14 +1130,18 @@ namespace Zenject
         }
 
 #if !NOT_UNITY3D
-        // See comment in IInstantiator.cs for description of this method
+        // Add new component to existing game object and fill in its dependencies
+        // This is the same as AddComponent except the [Inject] fields will be filled in
+        // NOTE: Gameobject here is not a prefab prototype, it is an instance
         public TContract InstantiateComponent<TContract>(GameObject gameObject)
             where TContract : Component
         {
             return InstantiateComponent<TContract>(gameObject, new object[0]);
         }
 
-        // See comment in IInstantiator.cs for description of this method
+        // Add new component to existing game object and fill in its dependencies
+        // This is the same as AddComponent except the [Inject] fields will be filled in
+        // NOTE: Gameobject here is not a prefab prototype, it is an instance
         public TContract InstantiateComponent<TContract>(
             GameObject gameObject, IEnumerable<object> extraArgs)
             where TContract : Component
@@ -1262,13 +1149,18 @@ namespace Zenject
             return (TContract)InstantiateComponent(typeof(TContract), gameObject, extraArgs);
         }
 
+        // Add new component to existing game object and fill in its dependencies
+        // This is the same as AddComponent except the [Inject] fields will be filled in
+        // NOTE: Gameobject here is not a prefab prototype, it is an instance
         public Component InstantiateComponent(
             Type componentType, GameObject gameObject)
         {
             return InstantiateComponent(componentType, gameObject, new object[0]);
         }
 
-        // See comment in IInstantiator.cs for description of this method
+        // Add new component to existing game object and fill in its dependencies
+        // This is the same as AddComponent except the [Inject] fields will be filled in
+        // NOTE: Gameobject here is not a prefab prototype, it is an instance
         public Component InstantiateComponent(
             Type componentType, GameObject gameObject, IEnumerable<object> extraArgs)
         {
@@ -1276,282 +1168,288 @@ namespace Zenject
                 componentType, gameObject, InjectUtil.CreateArgList(extraArgs));
         }
 
-        public Component InstantiateComponentExplicit(
-            Type componentType, GameObject gameObject, List<TypeValuePair> extraArgs)
-        {
-            Assert.That(componentType.DerivesFrom<Component>());
-
-            FlushBindings();
-
-            var monoBehaviour = (Component)gameObject.AddComponent(componentType);
-            InjectExplicit(monoBehaviour, extraArgs);
-            return monoBehaviour;
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefab(UnityEngine.Object prefab)
-        {
-            return InstantiatePrefab(prefab, new object[0]);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefab(
-            UnityEngine.Object prefab, IEnumerable<object> extraArgs)
-        {
-            return InstantiatePrefab(prefab, extraArgs, (string)null);
-        }
-
-        // Note: extraArgs must be non null
-        public GameObject InstantiatePrefab(
-            UnityEngine.Object prefab, IEnumerable<object> extraArgs, string groupName)
-        {
-            return InstantiatePrefab(prefab, extraArgs,
-                new GameObjectCreationParameters() { GroupName = groupName });
-        }
-
-        // Note: extraArgs must be non null
-        internal GameObject InstantiatePrefab(
-            UnityEngine.Object prefab, IEnumerable<object> extraArgs,
-            GameObjectCreationParameters gameObjectBindInfo)
-        {
-            return InstantiatePrefabExplicit(
-                prefab, InjectUtil.CreateArgList(extraArgs), gameObjectBindInfo, true);
-        }
-
-        // See comment in IInstantiator.cs for description of this method
-        public GameObject InstantiatePrefabResource(string resourcePath)
-        {
-            return InstantiatePrefabResource(resourcePath, new object[0]);
-        }
-
-        // See comment in IInstantiator.cs for description of this method
-        public GameObject InstantiatePrefabResource(
-            string resourcePath, IEnumerable<object> extraArgs)
-        {
-            return InstantiatePrefabResource(
-                resourcePath, extraArgs, null);
-        }
-
-        // See comment in IInstantiator.cs for description of this method
-        public GameObject InstantiatePrefabResource(
-            string resourcePath, IEnumerable<object> extraArgs, string groupName)
-        {
-            return InstantiatePrefabResourceExplicit(
-                resourcePath, InjectUtil.CreateArgList(extraArgs),
-                groupName);
-        }
-
-        /////////////// InstantiatePrefabForComponent
-
         public T InstantiateComponentOnNewGameObject<T>()
             where T : Component
         {
             return InstantiateComponentOnNewGameObject<T>(typeof(T).Name);
         }
 
+        public T InstantiateComponentOnNewGameObject<T>(IEnumerable<object> extraArgs)
+            where T : Component
+        {
+            return InstantiateComponentOnNewGameObject<T>(typeof(T).Name, extraArgs);
+        }
+
         public T InstantiateComponentOnNewGameObject<T>(string gameObjectName)
             where T : Component
         {
-            return InstantiateComponent<T>(
-                CreateEmptyGameObject(new GameObjectCreationParameters() { Name = gameObjectName }));
+            return InstantiateComponentOnNewGameObject<T>(gameObjectName, new object[0]);
         }
 
+        public T InstantiateComponentOnNewGameObject<T>(
+            string gameObjectName, IEnumerable<object> extraArgs)
+            where T : Component
+        {
+            return InstantiateComponent<T>(
+                CreateEmptyGameObject(new GameObjectCreationParameters() { Name = gameObjectName }),
+                extraArgs);
+        }
+
+        // Create a new game object from a prefab and fill in dependencies for all children
+        public GameObject InstantiatePrefab(UnityEngine.Object prefab)
+        {
+            return InstantiatePrefab(
+                prefab, GameObjectCreationParameters.Default);
+        }
+
+        // Create a new game object from a prefab and fill in dependencies for all children
+        public GameObject InstantiatePrefab(UnityEngine.Object prefab, Transform parentTransform)
+        {
+            return InstantiatePrefab(
+                prefab, new GameObjectCreationParameters() { ParentTransform = parentTransform });
+        }
+
+        // Create a new game object from a prefab and fill in dependencies for all children
+        public GameObject InstantiatePrefab(
+            UnityEngine.Object prefab, GameObjectCreationParameters gameObjectBindInfo)
+        {
+            FlushBindings();
+
+            var gameObj = CreateAndParentPrefab(prefab, gameObjectBindInfo);
+
+            InjectGameObject(gameObj);
+
+            return gameObj;
+        }
+
+        // Create a new game object from a resource path and fill in dependencies for all children
+        public GameObject InstantiatePrefabResource(string resourcePath)
+        {
+            return InstantiatePrefabResource(resourcePath, GameObjectCreationParameters.Default);
+        }
+
+        // Create a new game object from a resource path and fill in dependencies for all children
+        public GameObject InstantiatePrefabResource(string resourcePath, Transform parentTransform)
+        {
+            return InstantiatePrefabResource(resourcePath, new GameObjectCreationParameters() { ParentTransform = parentTransform });
+        }
+
+        // Create a new game object from a resource path and fill in dependencies for all children
+        public GameObject InstantiatePrefabResource(
+            string resourcePath, GameObjectCreationParameters creationInfo)
+        {
+            var prefab = (GameObject)Resources.Load(resourcePath);
+
+            Assert.IsNotNull(prefab,
+                "Could not find prefab at resource location '{0}'".Fmt(resourcePath));
+
+            return InstantiatePrefab(prefab, creationInfo);
+        }
+
+        // Same as InstantiatePrefab but returns a component after it's initialized
+        // and optionally allows extra arguments for the given component type
         public T InstantiatePrefabForComponent<T>(UnityEngine.Object prefab)
         {
-            return InstantiatePrefabForComponent<T>(prefab, new object[0]);
+            return (T)InstantiatePrefabForComponent(
+                typeof(T), prefab, null, new object[0]);
         }
 
+        // Same as InstantiatePrefab but returns a component after it's initialized
+        // and optionally allows extra arguments for the given component type
         public T InstantiatePrefabForComponent<T>(
             UnityEngine.Object prefab, IEnumerable<object> extraArgs)
         {
             return (T)InstantiatePrefabForComponent(
-                typeof(T), prefab, extraArgs);
+                typeof(T), prefab, null, extraArgs);
+        }
+
+        public T InstantiatePrefabForComponent<T>(
+            UnityEngine.Object prefab, Transform parentTransform)
+        {
+            return (T)InstantiatePrefabForComponent(
+                typeof(T), prefab, parentTransform, new object[0]);
+        }
+
+        public T InstantiatePrefabForComponent<T>(
+            UnityEngine.Object prefab, Transform parentTransform, IEnumerable<object> extraArgs)
+        {
+            return (T)InstantiatePrefabForComponent(
+                typeof(T), prefab, parentTransform, extraArgs);
+        }
+
+        // Same as InstantiatePrefab but returns a component after it's initialized
+        // and optionally allows extra arguments for the given component type
+        public object InstantiatePrefabForComponent(
+            Type concreteType, UnityEngine.Object prefab,
+            Transform parentTransform, IEnumerable<object> extraArgs)
+        {
+            return InstantiatePrefabForComponent(
+                concreteType, prefab, extraArgs,
+                new GameObjectCreationParameters() { ParentTransform = parentTransform });
         }
 
         public object InstantiatePrefabForComponent(
-            Type concreteType, UnityEngine.Object prefab, IEnumerable<object> extraArgs)
+            Type concreteType, UnityEngine.Object prefab,
+            IEnumerable<object> extraArgs, GameObjectCreationParameters creationInfo)
         {
             return InstantiatePrefabForComponentExplicit(
                 concreteType, prefab,
-                InjectUtil.CreateArgList(extraArgs));
+                InjectUtil.CreateArgList(extraArgs), creationInfo);
         }
 
-        /////////////// InstantiatePrefabForComponent
-
-        // See comment in IInstantiator.cs for description of this method
+        // Same as InstantiatePrefabResource but returns a component after it's initialized
+        // and optionally allows extra arguments for the given component type
         public T InstantiatePrefabResourceForComponent<T>(string resourcePath)
         {
-            return InstantiatePrefabResourceForComponent<T>(resourcePath, new object[0]);
+            return (T)InstantiatePrefabResourceForComponent(
+                typeof(T), resourcePath, null, new object[0]);
         }
 
-        // See comment in IInstantiator.cs for description of this method
+        // Same as InstantiatePrefabResource but returns a component after it's initialized
+        // and optionally allows extra arguments for the given component type
         public T InstantiatePrefabResourceForComponent<T>(
             string resourcePath, IEnumerable<object> extraArgs)
         {
-            return (T)InstantiatePrefabResourceForComponent(typeof(T), resourcePath, extraArgs);
+            return (T)InstantiatePrefabResourceForComponent(
+                typeof(T), resourcePath, null, extraArgs);
         }
 
-        // See comment in IInstantiator.cs for description of this method
+        public T InstantiatePrefabResourceForComponent<T>(
+            string resourcePath, Transform parentTransform)
+        {
+            return (T)InstantiatePrefabResourceForComponent(
+                typeof(T), resourcePath, parentTransform, new object[0]);
+        }
+
+        public T InstantiatePrefabResourceForComponent<T>(
+            string resourcePath, Transform parentTransform, IEnumerable<object> extraArgs)
+        {
+            return (T)InstantiatePrefabResourceForComponent(
+                typeof(T), resourcePath, parentTransform, extraArgs);
+        }
+
+        // Same as InstantiatePrefabResource but returns a component after it's initialized
+        // and optionally allows extra arguments for the given component type
         public object InstantiatePrefabResourceForComponent(
-            Type concreteType, string resourcePath, IEnumerable<object> extraArgs)
+            Type concreteType, string resourcePath, Transform parentTransform,
+            IEnumerable<object> extraArgs)
         {
             Assert.That(!extraArgs.ContainsItem(null),
-            "Null value given to factory constructor arguments when instantiating object with type '{0}'. In order to use null use InstantiatePrefabForComponentExplicit", concreteType);
+                "Null value given to factory constructor arguments when instantiating object with type '{0}'. In order to use null use InstantiatePrefabForComponentExplicit", concreteType);
 
             return InstantiatePrefabResourceForComponentExplicit(
-                concreteType, resourcePath, InjectUtil.CreateArgList(extraArgs));
+                concreteType, resourcePath,
+                InjectUtil.CreateArgList(extraArgs),
+                new GameObjectCreationParameters() { ParentTransform = parentTransform });
         }
 
-        public T InstantiatePrefabResourceForComponentExplicit<T>(
-            string resourcePath, List<TypeValuePair> extraArgs)
+        public T InstantiateScriptableObjectResource<T>(string resourcePath)
+            where T : ScriptableObject
         {
-            return (T)InstantiatePrefabResourceForComponentExplicit(
+            return InstantiateScriptableObjectResource<T>(resourcePath, new object[0]);
+        }
+
+        public T InstantiateScriptableObjectResource<T>(
+            string resourcePath, IEnumerable<object> extraArgs)
+            where T : ScriptableObject
+        {
+            return (T)InstantiateScriptableObjectResource(
                 typeof(T), resourcePath, extraArgs);
         }
 
-        // Note: Any arguments that are used will be removed from extraArgs
-        public object InstantiatePrefabResourceForComponentExplicit(
-            Type componentType, string resourcePath, List<TypeValuePair> extraArgs)
+        public object InstantiateScriptableObjectResource(
+            Type scriptableObjectType, string resourcePath)
         {
-            return InstantiatePrefabResourceForComponentExplicit(
-                componentType, resourcePath, null,
-                new InjectArgs()
-                {
-                    ExtraArgs = extraArgs,
-                    Context = new InjectContext(this, componentType, null),
-                    ConcreteIdentifier = null,
-                    UseAllArgs = true,
-                });
+            return InstantiateScriptableObjectResource(
+                scriptableObjectType, resourcePath, new object[0]);
         }
 
-        // Note: Any arguments that are used will be removed from extraArgs
-        public object InstantiatePrefabResourceForComponentExplicit(
-            Type componentType, string resourcePath, string groupName, InjectArgs args)
+        public object InstantiateScriptableObjectResource(
+            Type scriptableObjectType, string resourcePath, IEnumerable<object> extraArgs)
         {
-            var prefab = (GameObject)Resources.Load(resourcePath);
-            Assert.IsNotNull(prefab,
-                "Could not find prefab at resource location '{0}'".Fmt(resourcePath));
-            return InstantiatePrefabForComponentExplicit(
-                componentType, prefab, groupName, args);
+            Assert.DerivesFromOrEqual<ScriptableObject>(scriptableObjectType);
+            return InstantiateScriptableObjectResourceExplicit(
+                scriptableObjectType, resourcePath, InjectUtil.CreateArgList(extraArgs));
         }
 
-#endif
-
-#if !NOT_UNITY3D
         // Inject dependencies into any and all child components on the given game object
-        public void InjectGameObject(
-            GameObject gameObject)
-        {
-            InjectGameObject(gameObject, true);
-        }
-
-        public void InjectGameObject(
-            GameObject gameObject, bool recursive)
-        {
-            InjectGameObject(gameObject, recursive, new object[0]);
-        }
-
-        public void InjectGameObject(
-            GameObject gameObject, bool recursive, IEnumerable<object> extraArgs)
-        {
-            InjectGameObjectExplicit(
-                gameObject, recursive,
-                InjectUtil.CreateArgList(extraArgs));
-        }
-
-        public void InjectGameObjectExplicit(
-            GameObject gameObject, bool recursive,
-            List<TypeValuePair> extraArgs)
-        {
-            // We have to pass in a null InjectContext here because we aren't
-            // asking for any particular type
-            InjectGameObjectExplicit(
-                gameObject, recursive, extraArgs, true);
-        }
-
-        public void InjectGameObjectExplicit(
-            GameObject gameObject, bool recursive,
-            List<TypeValuePair> extraArgs, bool useAllArgs)
+        public void InjectGameObject(GameObject gameObject)
         {
             FlushBindings();
 
-            // Inject on the children first since the parent objects are more likely to use them in their post inject methods
-            foreach (var component in ZenUtilInternal.GetInjectableComponentsBottomUp(
-                gameObject, recursive).ToList())
+            foreach (var monoBehaviour in ZenUtilInternal.GetInjectableMonoBehaviours(gameObject))
             {
-                if (component == null)
-                {
-                    Log.Warn("Found null component while injecting game object '{0}'.  Possible missing script.", gameObject.name);
-                    continue;
-                }
-
-                if (component.GetType().DerivesFrom<MonoInstaller>())
-                {
-                    // Do not inject on installers since these are always injected before they are installed
-                    continue;
-                }
-
-                InjectExplicit(component, component.GetType(),
-                    new InjectArgs()
-                    {
-                        ExtraArgs = extraArgs,
-                        Context = new InjectContext(this, component.GetType()),
-                        ConcreteIdentifier = null,
-                        UseAllArgs = false,
-                    });
-            }
-
-            if (useAllArgs && !extraArgs.IsEmpty())
-            {
-                throw Assert.CreateException(
-                    "Passed unnecessary parameters when injecting into game object '{0}'. \nExtra Parameters: {1}",
-                    gameObject.name, string.Join(",", extraArgs.Select(x => x.Type.Name()).ToArray()));
+                Inject(monoBehaviour);
             }
         }
 
-        public Component InjectGameObjectForComponentExplicit(
-            GameObject gameObject, Type componentType,
-            InjectArgs args)
+        // Same as InjectGameObject except it will also search the game object for the
+        // given component, and also optionally allow passing extra inject arguments into the
+        // given component
+        public T InjectGameObjectForComponent<T>(GameObject gameObject)
+            where T : Component
         {
-            Component requestedScript = null;
+            return InjectGameObjectForComponent<T>(gameObject, new object[0]);
+        }
 
-            // Inject on the children first since the parent objects are more likely to use them in their post inject methods
-            foreach (var component in ZenUtilInternal.GetInjectableComponentsBottomUp(
-                gameObject, true).ToList())
+        // Same as InjectGameObject except it will also search the game object for the
+        // given component, and also optionally allow passing extra inject arguments into the
+        // given component
+        public T InjectGameObjectForComponent<T>(
+            GameObject gameObject, IEnumerable<object> extraArgs)
+            where T : Component
+        {
+            return (T)InjectGameObjectForComponent(gameObject, typeof(T), extraArgs);
+        }
+
+        // Same as InjectGameObject except it will also search the game object for the
+        // given component, and also optionally allow passing extra inject arguments into the
+        // given component
+        public object InjectGameObjectForComponent(
+            GameObject gameObject, Type componentType, IEnumerable<object> extraArgs)
+        {
+            return InjectGameObjectForComponentExplicit(
+                gameObject, componentType,
+                new InjectArgs()
+                {
+                    ExtraArgs = InjectUtil.CreateArgList(extraArgs),
+                    Context = new InjectContext(this, componentType, null),
+                    ConcreteIdentifier = null,
+                });
+        }
+
+        // Same as InjectGameObjectForComponent except allows null values
+        // to be included in the argument list.  Also see InjectUtil.CreateArgList
+        public Component InjectGameObjectForComponentExplicit(
+            GameObject gameObject, Type componentType, InjectArgs args)
+        {
+            if (!componentType.DerivesFrom<MonoBehaviour>() && !args.ExtraArgs.IsEmpty())
             {
-                if (component == null)
-                {
-                    Log.Warn("Found null component while injecting into game object '{0}'.  Possible missing script.", gameObject.name);
-                    continue;
-                }
+                throw Assert.CreateException(
+                    "Cannot inject into non-monobehaviours!  Argument list must be zero length");
+            }
 
-                if (component.GetType().DerivesFrom<MonoInstaller>())
+            foreach (var monoBehaviour in ZenUtilInternal.GetInjectableMonoBehaviours(gameObject))
+            {
+                if (monoBehaviour.GetType().DerivesFromOrEqual(componentType))
                 {
-                    // Do not inject on installers since these are always injected before they are installed
-                    continue;
-                }
-
-                if (component.GetType().DerivesFromOrEqual(componentType))
-                {
-                    Assert.IsNull(requestedScript,
-                        "Found multiple matches with type '{0}' when injecting into game object '{1}'", componentType, gameObject.name);
-                    requestedScript = component;
-
-                    InjectExplicit(component, component.GetType(), args);
+                    InjectExplicit(monoBehaviour, monoBehaviour.GetType(), args);
                 }
                 else
                 {
-                    Inject(component);
+                    Inject(monoBehaviour);
                 }
             }
 
-            if (requestedScript == null)
-            {
-                throw Assert.CreateException(
-                    "Could not find component with type '{0}' when instantiating new game object", componentType);
-            }
+            var matches = gameObject.GetComponentsInChildren(componentType);
 
-            return requestedScript;
+            Assert.That(!matches.IsEmpty(),
+                "Expected to find component with type '{0}' when injecting into game object '{1}'", componentType, gameObject.name);
+
+            Assert.That(matches.Length == 1,
+                "Found multiple component with type '{0}' when injecting into game object '{1}'", componentType, gameObject.name);
+
+            return matches[0];
         }
 #endif
 
@@ -1564,15 +1462,11 @@ namespace Zenject
             Inject(injectable, new object[0]);
         }
 
+        // Same as Inject(injectable) except allows adding extra values to be injected
         public void Inject(object injectable, IEnumerable<object> extraArgs)
         {
             InjectExplicit(
                 injectable, InjectUtil.CreateArgList(extraArgs));
-        }
-
-        public List<Type> ResolveTypeAll(Type type)
-        {
-            return ResolveTypeAll(new InjectContext(this, type, null));
         }
 
         // Resolve<> - Lookup a value in the container.
@@ -1584,12 +1478,23 @@ namespace Zenject
         //
         public TContract Resolve<TContract>()
         {
-            return Resolve<TContract>((string)null);
+            return (TContract)Resolve(typeof(TContract));
         }
 
-        public TContract Resolve<TContract>(object identifier)
+        public object Resolve(Type contractType)
         {
-            return Resolve<TContract>(new InjectContext(this, typeof(TContract), identifier));
+            return ResolveId(contractType, null);
+        }
+
+        public TContract ResolveId<TContract>(object identifier)
+        {
+            return (TContract)ResolveId(typeof(TContract), identifier);
+        }
+
+        public object ResolveId(Type contractType, object identifier)
+        {
+            return Resolve(
+                new InjectContext(this, contractType, identifier));
         }
 
         // Same as Resolve<> except it will return null if a value for the given type cannot
@@ -1597,110 +1502,77 @@ namespace Zenject
         public TContract TryResolve<TContract>()
             where TContract : class
         {
-            return TryResolve<TContract>((string)null);
-        }
-
-        public TContract TryResolve<TContract>(object identifier)
-            where TContract : class
-        {
-            return (TContract)TryResolve(typeof(TContract), identifier);
+            return (TContract)TryResolve(typeof(TContract));
         }
 
         public object TryResolve(Type contractType)
         {
-            return TryResolve(contractType, null);
+            return TryResolveId(contractType, null);
         }
 
-        public object TryResolve(Type contractType, object identifier)
+        public TContract TryResolveId<TContract>(object identifier)
+            where TContract : class
         {
-            return Resolve(new InjectContext(this, contractType, identifier, true));
+            return (TContract)TryResolveId(
+                typeof(TContract), identifier);
         }
 
-        public object Resolve(Type contractType)
+        public object TryResolveId(Type contractType, object identifier)
         {
-            return Resolve(new InjectContext(this, contractType, null));
-        }
-
-        public object Resolve(Type contractType, object identifier)
-        {
-            return Resolve(new InjectContext(this, contractType, identifier));
-        }
-
-        // InjectContext can be used to add more constraints to the object that you want to retrieve
-        public TContract Resolve<TContract>(InjectContext context)
-        {
-            Assert.IsNotNull(context);
-
-            Assert.IsEqual(context.MemberType, typeof(TContract));
-            return (TContract) Resolve(context);
+            return Resolve(
+                new InjectContext(this, contractType, identifier, true));
         }
 
         // Same as Resolve<> except it will return all bindings that are associated with the given type
         public List<TContract> ResolveAll<TContract>()
         {
-            return ResolveAll<TContract>((string)null);
-        }
-
-        public List<TContract> ResolveAll<TContract>(bool optional)
-        {
-            return ResolveAll<TContract>(null, optional);
-        }
-
-        public List<TContract> ResolveAll<TContract>(object identifier)
-        {
-            return ResolveAll<TContract>(identifier, true);
-        }
-
-        public List<TContract> ResolveAll<TContract>(object identifier, bool optional)
-        {
-            var context = new InjectContext(this, typeof(TContract), identifier, optional);
-            return ResolveAll<TContract>(context);
-        }
-
-        public List<TContract> ResolveAll<TContract>(InjectContext context)
-        {
-            Assert.IsNotNull(context);
-            Assert.IsEqual(context.MemberType, typeof(TContract));
-            return (List<TContract>) ResolveAll(context);
+            return (List<TContract>)ResolveAll(typeof(TContract));
         }
 
         public IList ResolveAll(Type contractType)
         {
-            return ResolveAll(contractType, null);
+            return ResolveIdAll(contractType, null);
         }
 
-        public IList ResolveAll(Type contractType, object identifier)
+        public List<TContract> ResolveIdAll<TContract>(object identifier)
         {
-            return ResolveAll(contractType, identifier, true);
+            return (List<TContract>)ResolveIdAll(typeof(TContract), identifier);
         }
 
-        public IList ResolveAll(Type contractType, bool optional)
+        public IList ResolveIdAll(Type contractType, object identifier)
         {
-            return ResolveAll(contractType, null, optional);
+            return ResolveAll(
+                new InjectContext(this, contractType, identifier, true));
         }
 
-        public IList ResolveAll(Type contractType, object identifier, bool optional)
-        {
-            var context = new InjectContext(this, contractType, identifier, optional);
-            return ResolveAll(context);
-        }
-
+        // Removes all bindings
         public void UnbindAll()
         {
             FlushBindings();
             _providers.Clear();
         }
 
+        // Remove all bindings bound to the given contract type
         public bool Unbind<TContract>()
         {
-            return Unbind<TContract>(null);
+            return Unbind(typeof(TContract));
         }
 
-        public bool Unbind<TContract>(object identifier)
+        public bool Unbind(Type contractType)
+        {
+            return UnbindId(contractType, null);
+        }
+
+        public bool UnbindId<TContract>(object identifier)
+        {
+            return UnbindId(typeof(TContract), identifier);
+        }
+
+        public bool UnbindId(Type contractType, object identifier)
         {
             FlushBindings();
 
-            var bindingId = new BindingId(typeof(TContract), identifier);
+            var bindingId = new BindingId(contractType, identifier);
 
             return _providers.Remove(bindingId);
         }
@@ -1712,25 +1584,28 @@ namespace Zenject
 
             FlushBindings();
 
-            List<ProviderInfo> providers;
-
-            if (!_providers.TryGetValue(context.GetBindingId(), out providers))
-            {
-                return false;
-            }
-
-            return providers.Where(x => x.Condition == null || x.Condition(context)).HasAtLeast(1);
+            return GetProviderMatchesInternal(context).HasAtLeast(1);
         }
 
         public bool HasBinding<TContract>()
         {
-            return HasBinding<TContract>(null);
+            return HasBinding(typeof(TContract));
         }
 
-        public bool HasBinding<TContract>(object identifier)
+        public bool HasBinding(Type contractType)
+        {
+            return HasBindingId(contractType, null);
+        }
+
+        public bool HasBindingId<TContract>(object identifier)
+        {
+            return HasBindingId(typeof(TContract), identifier);
+        }
+
+        public bool HasBindingId(Type contractType, object identifier)
         {
             return HasBinding(
-                new InjectContext(this, typeof(TContract), identifier));
+                new InjectContext(this, contractType, identifier));
         }
 
         // Do not use this - it is for internal use only
@@ -1740,14 +1615,29 @@ namespace Zenject
             {
                 var binding = _currentBindings.Dequeue();
 
-                binding.FinalizeBinding(this);
+                _isFinalizingBinding = true;
 
-                _processedBindings.Add(binding);
+                try
+                {
+                    binding.FinalizeBinding(this);
+                }
+                finally
+                {
+                    _isFinalizingBinding = false;
+                }
+
+                if (binding.CopyIntoAllSubContainers)
+                {
+                    _childBindings.Add(binding);
+                }
             }
         }
 
         public BindFinalizerWrapper StartBinding()
         {
+            Assert.That(!_isFinalizingBinding,
+                "Attempted to start a binding during a binding finalizer.  This is not allowed, since binding finalizers should directly use AddProvider instead, to allow for bindings to be inherited properly without duplicates");
+
             FlushBindings();
 
             var bindingFinalizer = new BindFinalizerWrapper();
@@ -1757,23 +1647,39 @@ namespace Zenject
 
         public ConcreteBinderGeneric<TContract> Rebind<TContract>()
         {
-            return Rebind<TContract>(null);
+            return RebindId<TContract>(null);
         }
 
-        public ConcreteBinderGeneric<TContract> Rebind<TContract>(object identifier)
+        public ConcreteBinderGeneric<TContract> RebindId<TContract>(object identifier)
         {
-            Unbind<TContract>(identifier);
+            UnbindId<TContract>(identifier);
             return Bind<TContract>().WithId(identifier);
+        }
+
+        public ConcreteBinderNonGeneric Rebind(Type contractType)
+        {
+            return RebindId(contractType, null);
+        }
+
+        public ConcreteBinderNonGeneric RebindId(Type contractType, object identifier)
+        {
+            UnbindId(contractType, identifier);
+            return Bind(contractType).WithId(identifier);
         }
 
         // Map the given type to a way of obtaining it
         // Note that this can include open generic types as well such as List<>
         public ConcreteIdBinderGeneric<TContract> Bind<TContract>()
         {
-            Assert.That(!typeof(TContract).DerivesFrom<IDynamicFactory>(),
-                "You should not use Container.Bind for factory classes.  Use Container.BindFactory instead.");
+            return Bind<TContract>(
+                new BindInfo(typeof(TContract)));
+        }
 
-            var bindInfo = new BindInfo(typeof(TContract));
+        public ConcreteIdBinderGeneric<TContract> Bind<TContract>(BindInfo bindInfo)
+        {
+            Assert.That(!typeof(TContract).DerivesFrom<IPlaceholderFactory>(),
+                "You should not use Container.Bind for factory classes.  Use Container.BindFactory instead.");
+            Assert.That(bindInfo.ContractTypes.Contains(typeof(TContract)));
 
             return new ConcreteIdBinderGeneric<TContract>(
                 bindInfo, StartBinding());
@@ -1788,11 +1694,21 @@ namespace Zenject
 
         public ConcreteIdBinderNonGeneric Bind(IEnumerable<Type> contractTypes)
         {
-            var contractTypesList = contractTypes.ToList();
-            Assert.That(contractTypesList.All(x => !x.DerivesFrom<IDynamicFactory>()),
+            return BindInternal(contractTypes, null);
+        }
+
+        ConcreteIdBinderNonGeneric BindInternal(
+            IEnumerable<Type> contractTypes, string contextInfo)
+        {
+            return BindInternal(
+                new BindInfo(contractTypes.ToList(), contextInfo));
+        }
+
+        ConcreteIdBinderNonGeneric BindInternal(BindInfo bindInfo)
+        {
+            Assert.That(bindInfo.ContractTypes.All(x => !x.DerivesFrom<IPlaceholderFactory>()),
                 "You should not use Container.Bind for factory classes.  Use Container.BindFactory instead.");
 
-            var bindInfo = new BindInfo(contractTypesList);
             return new ConcreteIdBinderNonGeneric(bindInfo, StartBinding());
         }
 
@@ -1805,13 +1721,13 @@ namespace Zenject
 
             var contractTypesList = conventionBindInfo.ResolveTypes();
 
-            Assert.That(contractTypesList.All(x => !x.DerivesFrom<IDynamicFactory>()),
+            Assert.That(contractTypesList.All(x => !x.DerivesFrom<IPlaceholderFactory>()),
                 "You should not use Container.Bind for factory classes.  Use Container.BindFactory instead.");
 
             var bindInfo = new BindInfo(contractTypesList);
 
             // This is nice because it allows us to do things like Bind(all interfaces).To<Foo>()
-            // (though of course it would be more efficient to use BindAllInterfaces in this case)
+            // (though of course it would be more efficient to use BindInterfacesTo in this case)
             bindInfo.InvalidBindResponse = InvalidBindResponses.Skip;
 
             return new ConcreteIdBinderNonGeneric(bindInfo, StartBinding());
@@ -1822,20 +1738,20 @@ namespace Zenject
         // It's only in rare cases where you need to call this instead of NonLazy()
         public void BindRootResolve<TContract>()
         {
-            BindRootResolve<TContract>(null);
-        }
-
-        public void BindRootResolve<TContract>(object identifier)
-        {
-            BindRootResolve(identifier, new Type[] { typeof(TContract) });
+            BindRootResolveId<TContract>(null);
         }
 
         public void BindRootResolve(IEnumerable<Type> rootTypes)
         {
-            BindRootResolve(null, rootTypes);
+            BindRootResolveId(rootTypes, null);
         }
 
-        public void BindRootResolve(object identifier, IEnumerable<Type> rootTypes)
+        public void BindRootResolveId<TContract>(object identifier)
+        {
+            BindRootResolveId(new Type[] { typeof(TContract) }, identifier);
+        }
+
+        public void BindRootResolveId(IEnumerable<Type> rootTypes, object identifier)
         {
             Bind<object>().WithId(DependencyRootIdentifier).To(rootTypes).FromResolve(identifier);
         }
@@ -1848,38 +1764,43 @@ namespace Zenject
         //    {
         //    }
         //
-        //    Container.BindAllInterfaces<Foo>().To<Foo>().AsSingle();
+        //    Container.BindInterfacesTo<Foo>().AsSingle();
         //
         //  This line above is equivalent to the following:
         //
         //    Container.Bind<ITickable>().ToSingle<Foo>();
         //    Container.Bind<IInitializable>().ToSingle<Foo>();
         //
-        // Note here that we do not bind Foo to itself.  For that, use BindAllInterfacesAndSelf
-        public ConcreteIdBinderNonGeneric BindAllInterfaces<T>()
+        // Note here that we do not bind Foo to itself.  For that, use BindInterfacesAndSelfTo
+        public FromBinderNonGeneric BindInterfacesTo<T>()
         {
-            return BindAllInterfaces(typeof(T));
+            return BindInterfacesTo(typeof(T));
         }
 
-        public ConcreteIdBinderNonGeneric BindAllInterfaces(Type type)
+        public FromBinderNonGeneric BindInterfacesTo(Type type)
         {
-            // We must only have one dependency root per container
-            // We need this when calling this with a GameObjectContext
-            return Bind(type.Interfaces().ToArray());
+            var bindInfo = new BindInfo(
+                type.Interfaces().ToList(), "BindInterfacesTo({0})".Fmt(type));
+
+            // Almost always, you don't want to use the default AsTransient so make them type it
+            bindInfo.RequireExplicitScope = true;
+            return BindInternal(bindInfo).To(type);
         }
 
-        // Same as BindAllInterfaces except also binds to self
-        public ConcreteIdBinderNonGeneric BindAllInterfacesAndSelf<T>()
+        // Same as BindInterfaces except also binds to self
+        public FromBinderNonGeneric BindInterfacesAndSelfTo<T>()
         {
-            return BindAllInterfacesAndSelf(typeof(T));
+            return BindInterfacesAndSelfTo(typeof(T));
         }
 
-        public ConcreteIdBinderNonGeneric BindAllInterfacesAndSelf(Type type)
+        public FromBinderNonGeneric BindInterfacesAndSelfTo(Type type)
         {
-            // We must only have one dependency root per container
-            // We need this when calling this with a GameObjectContext
-            return Bind(
-                type.Interfaces().Append(type).ToArray());
+            var bindInfo = new BindInfo(
+                type.Interfaces().Append(type).ToList(), "BindInterfacesAndSelfTo({0})".Fmt(type));
+
+            // Almost always, you don't want to use the default AsTransient so make them type it
+            bindInfo.RequireExplicitScope = true;
+            return BindInternal(bindInfo).To(type);
         }
 
         //  This is simply a shortcut to using the FromInstance method.
@@ -1891,118 +1812,362 @@ namespace Zenject
         //
         //      Container.Bind<Foo>().FromInstance(new Foo());
         //
-        public IdScopeBinder BindInstance<TContract>(TContract instance)
+        public IdScopeConditionCopyNonLazyBinder BindInstance<TContract>(TContract instance)
         {
             return BindInstance<TContract>(instance, false);
         }
 
-        public IdScopeBinder BindInstance<TContract>(TContract instance, bool allowNull)
+        public IdScopeConditionCopyNonLazyBinder BindInstance<TContract>(TContract instance, bool allowNull)
         {
             if (!allowNull)
             {
                 Assert.That(!ZenUtilInternal.IsNull(instance),
-                    "Found null instance with type '{0}' in BindInstance method", typeof(TContract).Name());
+                    "Found null instance with type '{0}' in BindInstance method", typeof(TContract));
             }
 
             var bindInfo = new BindInfo(typeof(TContract));
             var binding = StartBinding();
 
             binding.SubFinalizer = new ScopableBindingFinalizer(
-                bindInfo, SingletonTypes.ToInstance, instance,
-                (container, type) => new InstanceProvider(container, type, instance));
+                bindInfo, SingletonTypes.FromInstance, instance,
+                (container, type) => new InstanceProvider(type, instance, container));
 
-            return new IdScopeBinder(bindInfo);
+            return new IdScopeConditionCopyNonLazyBinder(bindInfo);
+        }
+
+        // Unfortunately we can't support setting scope / condition / etc. here since all the
+        // bindings are finalized one at a time
+        public void BindInstances(params object[] instances)
+        {
+            foreach (var instance in instances)
+            {
+                Assert.That(!ZenUtilInternal.IsNull(instance),
+                    "Found null instance provided to BindInstances method");
+
+                Bind(instance.GetType()).FromInstance(instance);
+            }
+        }
+
+        FactoryToChoiceIdBinder<TContract> BindFactoryInternal<TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IFactory
+            where TFactoryContract : IFactory
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+
+            StartBinding().SubFinalizer = new PlaceholderFactoryBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo);
+
+            return new FactoryToChoiceIdBinder<TContract>(
+                bindInfo, factoryBindInfo);
         }
 
         public FactoryToChoiceIdBinder<TContract> BindIFactory<TContract>()
         {
-            var bindInfo = new BindInfo(typeof(IFactory<TContract>));
-            return new FactoryToChoiceIdBinder<TContract>(
-                bindInfo, typeof(Factory<TContract>), StartBinding());
+            return BindFactoryInternal<TContract, IFactory<TContract>, Factory<TContract>>();
         }
 
         public FactoryToChoiceIdBinder<TContract> BindFactory<TContract, TFactory>()
             where TFactory : Factory<TContract>
         {
-            var bindInfo = new BindInfo(typeof(TFactory));
-            return new FactoryToChoiceIdBinder<TContract>(
-                bindInfo, typeof(TFactory), StartBinding());
+            return BindFactoryInternal<TContract, TFactory, TFactory>();
+        }
+
+        MemoryPoolInitialSizeBinder<TContract> BindMemoryPoolInternal<TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IMemoryPool
+            where TFactoryContract : IMemoryPool
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+
+            // This interface is used in the optional class PoolCleanupChecker
+            // And also allow people to manually call DespawnAll() for all IMemoryPool
+            // if they want
+            bindInfo.ContractTypes.Add(typeof(IMemoryPool));
+
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+            var poolBindInfo = new MemoryPoolBindInfo();
+
+            StartBinding().SubFinalizer = new MemoryPoolBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo, poolBindInfo);
+
+            return new MemoryPoolInitialSizeBinder<TContract>(
+                bindInfo, factoryBindInfo, poolBindInfo);
+        }
+
+        public MemoryPoolInitialSizeBinder<TContract> BindMemoryPool<TContract, TFactory>()
+            where TFactory : IMemoryPool
+        {
+            return BindMemoryPoolInternal<TContract, TFactory, TFactory>();
+        }
+
+        FactoryToChoiceIdBinder<TParam1, TContract> BindFactoryInternal<TParam1, TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IFactory
+            where TFactoryContract : IFactory
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+
+            StartBinding().SubFinalizer = new PlaceholderFactoryBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo);
+
+            return new FactoryToChoiceIdBinder<TParam1, TContract>(
+                bindInfo, factoryBindInfo);
         }
 
         public FactoryToChoiceIdBinder<TParam1, TContract> BindIFactory<TParam1, TContract>()
         {
-            var bindInfo = new BindInfo(typeof(IFactory<TParam1, TContract>));
-            return new FactoryToChoiceIdBinder<TParam1, TContract>(
-                bindInfo, typeof(Factory<TParam1, TContract>), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TContract, IFactory<TParam1, TContract>, Factory<TParam1, TContract>>();
         }
 
         public FactoryToChoiceIdBinder<TParam1, TContract> BindFactory<TParam1, TContract, TFactory>()
             where TFactory : Factory<TParam1, TContract>
         {
-            var bindInfo = new BindInfo(typeof(TFactory));
-            return new FactoryToChoiceIdBinder<TParam1, TContract>(
-                bindInfo, typeof(TFactory), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TContract, TFactory, TFactory>();
+        }
+
+        FactoryToChoiceIdBinder<TParam1, TParam2, TContract> BindFactoryInternal<TParam1, TParam2, TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IFactory
+            where TFactoryContract : IFactory
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+
+            StartBinding().SubFinalizer = new PlaceholderFactoryBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo);
+
+            return new FactoryToChoiceIdBinder<TParam1, TParam2, TContract>(
+                bindInfo, factoryBindInfo);
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TContract> BindIFactory<TParam1, TParam2, TContract>()
         {
-            var bindInfo = new BindInfo(typeof(IFactory<TParam1, TParam2, TContract>));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TContract>(
-                bindInfo, typeof(Factory<TParam1, TParam2, TContract>), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TContract, IFactory<TParam1, TParam2, TContract>, Factory<TParam1, TParam2, TContract>>();
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TContract> BindFactory<TParam1, TParam2, TContract, TFactory>()
             where TFactory : Factory<TParam1, TParam2, TContract>
         {
-            var bindInfo = new BindInfo(typeof(TFactory));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TContract>(
-                bindInfo, typeof(TFactory), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TContract, TFactory, TFactory>();
+        }
+
+        FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TContract> BindFactoryInternal<TParam1, TParam2, TParam3, TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IFactory
+            where TFactoryContract : IFactory
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+
+            StartBinding().SubFinalizer = new PlaceholderFactoryBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo);
+
+            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TContract>(
+                bindInfo, factoryBindInfo);
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TContract> BindIFactory<TParam1, TParam2, TParam3, TContract>()
         {
-            var bindInfo = new BindInfo(typeof(IFactory<TParam1, TParam2, TParam3, TContract>));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TContract>(
-                bindInfo, typeof(Factory<TParam1, TParam2, TParam3, TContract>), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TParam3, TContract, IFactory<TParam1, TParam2, TParam3, TContract>, Factory<TParam1, TParam2, TParam3, TContract>>();
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TContract> BindFactory<TParam1, TParam2, TParam3, TContract, TFactory>()
             where TFactory : Factory<TParam1, TParam2, TParam3, TContract>
         {
-            var bindInfo = new BindInfo(typeof(TFactory));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TContract>(
-                bindInfo, typeof(TFactory), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TParam3, TContract, TFactory, TFactory>();
+        }
+
+        FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TContract> BindFactoryInternal<TParam1, TParam2, TParam3, TParam4, TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IFactory
+            where TFactoryContract : IFactory
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+
+            StartBinding().SubFinalizer = new PlaceholderFactoryBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo);
+
+            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TContract>(
+                bindInfo, factoryBindInfo);
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TContract> BindIFactory<TParam1, TParam2, TParam3, TParam4, TContract>()
         {
-            var bindInfo = new BindInfo(typeof(IFactory<TParam1, TParam2, TParam3, TParam4, TContract>));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TContract>(
-                bindInfo, typeof(Factory<TParam1, TParam2, TParam3, TParam4, TContract>), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TParam3, TParam4, TContract, IFactory<TParam1, TParam2, TParam3, TParam4, TContract>, Factory<TParam1, TParam2, TParam3, TParam4, TContract>>();
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TContract> BindFactory<TParam1, TParam2, TParam3, TParam4, TContract, TFactory>()
             where TFactory : Factory<TParam1, TParam2, TParam3, TParam4, TContract>
         {
-            var bindInfo = new BindInfo(typeof(TFactory));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TContract>(
-                bindInfo, typeof(TFactory), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TParam3, TParam4, TContract, TFactory, TFactory>();
+        }
+
+        FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TParam5, TContract> BindFactoryInternal<TParam1, TParam2, TParam3, TParam4, TParam5, TContract, TFactoryContract, TFactoryConcrete>()
+            where TFactoryConcrete : TFactoryContract, IFactory
+            where TFactoryContract : IFactory
+        {
+            var bindInfo = new BindInfo(typeof(TFactoryContract));
+            var factoryBindInfo = new FactoryBindInfo(typeof(TFactoryConcrete));
+
+            StartBinding().SubFinalizer = new PlaceholderFactoryBindingFinalizer<TContract>(
+                bindInfo, factoryBindInfo);
+
+            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>(
+                bindInfo, factoryBindInfo);
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TParam5, TContract> BindIFactory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>()
         {
-            var bindInfo = new BindInfo(typeof(IFactory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>(
-                bindInfo, typeof(Factory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TParam3, TParam4, TParam5, TContract, IFactory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>, Factory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>>();
         }
 
         public FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TParam5, TContract> BindFactory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract, TFactory>()
             where TFactory : Factory<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>
         {
-            var bindInfo = new BindInfo(typeof(TFactory));
-            return new FactoryToChoiceIdBinder<TParam1, TParam2, TParam3, TParam4, TParam5, TContract>(
-                bindInfo, typeof(TFactory), StartBinding());
+            return BindFactoryInternal<
+                TParam1, TParam2, TParam3, TParam4, TParam5, TContract, TFactory, TFactory>();
         }
+
+        public T InstantiateExplicit<T>(List<TypeValuePair> extraArgs)
+        {
+            return (T)InstantiateExplicit(typeof(T), extraArgs);
+        }
+
+        public object InstantiateExplicit(Type concreteType, List<TypeValuePair> extraArgs)
+        {
+            bool autoInject = true;
+
+            return InstantiateExplicit(
+                concreteType,
+                autoInject,
+                new InjectArgs()
+                {
+                    ExtraArgs = extraArgs,
+                    Context = new InjectContext(this, concreteType, null),
+                    ConcreteIdentifier = null,
+                });
+        }
+
+        public object InstantiateExplicit(Type concreteType, bool autoInject, InjectArgs args)
+        {
+#if UNITY_EDITOR
+            using (ProfileBlock.Start("Zenject.Instantiate({0})", concreteType))
+#endif
+            {
+                return InstantiateInternal(concreteType, autoInject, args);
+            }
+        }
+
+#if !NOT_UNITY3D
+        public Component InstantiateComponentExplicit(
+            Type componentType, GameObject gameObject, List<TypeValuePair> extraArgs)
+        {
+            Assert.That(componentType.DerivesFrom<Component>());
+
+            FlushBindings();
+
+            var monoBehaviour = (Component)gameObject.AddComponent(componentType);
+            InjectExplicit(monoBehaviour, extraArgs);
+            return monoBehaviour;
+        }
+
+        public object InstantiateScriptableObjectResourceExplicit(
+            Type scriptableObjectType, string resourcePath, List<TypeValuePair> extraArgs)
+        {
+            var objects = Resources.LoadAll(resourcePath, scriptableObjectType);
+
+            Assert.That(!objects.IsEmpty(),
+                "Could not find resource at path '{0}' with type '{1}'", resourcePath, scriptableObjectType);
+
+            Assert.That(objects.Length == 1,
+                "Found multiple scriptable objects at path '{0}' when only 1 was expected with type '{1}'", resourcePath, scriptableObjectType);
+
+            var newObj = ScriptableObject.Instantiate(objects.Single());
+
+            InjectExplicit(newObj, extraArgs);
+
+            return newObj;
+        }
+
+        // Same as InstantiatePrefabResourceForComponent except allows null values
+        // to be included in the argument list.  Also see InjectUtil.CreateArgList
+        public object InstantiatePrefabResourceForComponentExplicit(
+            Type componentType, string resourcePath, List<TypeValuePair> extraArgs,
+            GameObjectCreationParameters creationInfo)
+        {
+            return InstantiatePrefabResourceForComponentExplicit(
+                componentType, resourcePath,
+                new InjectArgs()
+                {
+                    ExtraArgs = extraArgs,
+                    Context = new InjectContext(this, componentType, null),
+                }, creationInfo);
+        }
+
+        public object InstantiatePrefabResourceForComponentExplicit(
+            Type componentType, string resourcePath, InjectArgs args,
+            GameObjectCreationParameters creationInfo)
+        {
+            var prefab = (GameObject)Resources.Load(resourcePath);
+            Assert.IsNotNull(prefab,
+                "Could not find prefab at resource location '{0}'".Fmt(resourcePath));
+            return InstantiatePrefabForComponentExplicit(
+                componentType, prefab, args, creationInfo);
+        }
+
+        public object InstantiatePrefabForComponentExplicit(
+            Type componentType, UnityEngine.Object prefab,
+            List<TypeValuePair> extraArgs)
+        {
+            return InstantiatePrefabForComponentExplicit(
+                componentType, prefab, extraArgs, GameObjectCreationParameters.Default);
+        }
+
+        public object InstantiatePrefabForComponentExplicit(
+            Type componentType, UnityEngine.Object prefab,
+            List<TypeValuePair> extraArgs, GameObjectCreationParameters gameObjectBindInfo)
+        {
+            return InstantiatePrefabForComponentExplicit(
+                componentType, prefab,
+                new InjectArgs()
+                {
+                    ExtraArgs = extraArgs,
+                    Context = new InjectContext(this, componentType, null),
+                }, gameObjectBindInfo);
+        }
+
+        // Same as InstantiatePrefabForComponent except allows null values
+        // to be included in the argument list.  Also see InjectUtil.CreateArgList
+        public object InstantiatePrefabForComponentExplicit(
+            Type componentType, UnityEngine.Object prefab,
+            InjectArgs args, GameObjectCreationParameters gameObjectBindInfo)
+        {
+            Assert.That(!AssertOnNewGameObjects,
+                "Given DiContainer does not support creating new game objects");
+
+            FlushBindings();
+
+            Assert.That(prefab != null, "Null prefab found when instantiating game object");
+
+            Assert.That(componentType.IsInterface() || componentType.DerivesFrom<Component>(),
+                "Expected type '{0}' to derive from UnityEngine.Component", componentType);
+
+            GameObject prefabAsGameObject = GetPrefabAsGameObject(prefab);
+
+            var gameObj = (GameObject)GameObject.Instantiate(
+                prefabAsGameObject, GetTransformGroup(gameObjectBindInfo));
+
+            return InjectGameObjectForComponentExplicit(
+                gameObj, componentType, args);
+        }
+#endif
 
         ////////////// Types ////////////////
 

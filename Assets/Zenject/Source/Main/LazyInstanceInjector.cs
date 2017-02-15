@@ -27,10 +27,12 @@ namespace Zenject
 
         public IEnumerable<object> Instances
         {
-            get
-            {
-                return _instancesToInject;
-            }
+            get { return _instancesToInject; }
+        }
+
+        public void AddInstance(object instance)
+        {
+            _instancesToInject.Add(instance);
         }
 
         public void AddInstances(IEnumerable<object> instances)

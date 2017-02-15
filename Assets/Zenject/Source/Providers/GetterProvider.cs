@@ -52,7 +52,7 @@ namespace Zenject
             else
             {
                 yield return new List<object>() { _method(
-                    _container.Resolve<TObj>(GetSubContext(context))) };
+                    (TObj)_container.Resolve(GetSubContext(context))) };
             }
         }
     }

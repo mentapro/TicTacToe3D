@@ -10,19 +10,22 @@ namespace TicTacToe3D
         private BadgeFacade.Factory BadgeFactory { get; set; }
         private BadgeFacade.Settings BadgeSettings { get; set; }
         private BadgeSpawnPoint.Registry SpawnPointRegistry { get; set; }
-        private BadgeSpawned BadgeSpawned { get; set; }
+        private BadgeModel.Registry BadgeRegistry { get; set; }
+        private GameEvents GameEvents { get; set; }
 
         public BadgeSpawner(GameInfo info,
             BadgeFacade.Factory badgeFactory,
             BadgeFacade.Settings badgeSettings,
             BadgeSpawnPoint.Registry spawnPointRegistry,
-            BadgeSpawned badgeSpawned)
+            BadgeModel.Registry badgeRegistry,
+            GameEvents gameEvents)
         {
             Info = info;
             BadgeFactory = badgeFactory;
             BadgeSettings = badgeSettings;
             SpawnPointRegistry = spawnPointRegistry;
-            BadgeSpawned = badgeSpawned;
+            BadgeRegistry = badgeRegistry;
+            GameEvents = gameEvents;
         }
 
         public void MakeStep(Point coordinates)
@@ -33,12 +36,24 @@ namespace TicTacToe3D
             badge.transform.localPosition = Vector3.zero;
             CreateAndPlayBadgeSpawnAnimation(badge);
             
-            var activePlayer = Info.Players.First(x => x.IsActive);
-            badge.Owner = activePlayer;
+            badge.Owner = Info.ActivePlayer;
             badge.Coordinates = coordinates;
-            badge.SetColor(activePlayer.Color);
+            badge.SetColor(Info.ActivePlayer.Color);
+            Info.ActivePlayerMadeSteps++;
 
-            BadgeSpawned.Fire(badge.Model);
+            GameEvents.BadgeSpawned(badge.Model, CheckBadgeForVictory(badge.Model));
+        }
+
+        private bool CheckBadgeForVictory(BadgeModel badge)
+        {
+            foreach (var line in Info.Lines.Where(x => x.Contains(badge.Coordinates)))
+            {
+                if (line.All(point => BadgeRegistry.Badges.Any(x => x.Coordinates == point && x.Owner == badge.Owner)))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void CreateAndPlayBadgeSpawnAnimation(BadgeFacade badge)
