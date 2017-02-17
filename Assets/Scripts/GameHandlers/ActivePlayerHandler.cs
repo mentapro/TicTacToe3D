@@ -48,22 +48,6 @@ namespace TicTacToe3D
             }
         }
 
-        private void OnUndo(List<HistoryItem> canceledSteps)
-        {
-            if (History.Peek() == null)
-            {
-                Info.GlobalStep = 1;
-                Info.ActivePlayerMadeSteps = 0;
-                Info.ActivePlayer = Info.Players.First();
-                return;
-            }
-
-            var last = canceledSteps[canceledSteps.Count - 1];
-            Info.GlobalStep = last.GlobalStep;
-            Info.ActivePlayerMadeSteps = last.PlayerMadeSteps - 1;
-            Info.ActivePlayer = Info.Players.First(x => x.Name == last.PlayerName);
-        }
-
         private void OnStepConfirmed()
         {
             if (_playerCanWin)
@@ -80,6 +64,22 @@ namespace TicTacToe3D
             {
                 NextActivePlayer();
             }
+        }
+
+        private void OnUndo(List<HistoryItem> canceledSteps)
+        {
+            if (History.Peek() == null)
+            {
+                Info.GlobalStep = 1;
+                Info.ActivePlayerMadeSteps = 0;
+                Info.ActivePlayer = Info.Players.First();
+                return;
+            }
+
+            var last = canceledSteps[canceledSteps.Count - 1];
+            Info.GlobalStep = last.GlobalStep;
+            Info.ActivePlayerMadeSteps = last.PlayerMadeSteps - 1;
+            Info.ActivePlayer = Info.Players.First(x => x.Name == last.PlayerName);
         }
 
         private void NextActivePlayer()

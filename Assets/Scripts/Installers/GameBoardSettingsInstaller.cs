@@ -1,4 +1,5 @@
-﻿using Zenject;
+﻿using System;
+using Zenject;
 
 namespace TicTacToe3D
 {
@@ -20,5 +21,13 @@ namespace TicTacToe3D
             Container.BindInstance(GameSettings);
             Container.BindInstance(GameBoardInstallerSettings);
         }
+    }
+
+    [Serializable]
+    public class GameSettings
+    {
+        public bool GameOverAfterFirstWinner;
+        public bool ConfirmStep;
+        public TimerTypes TimerType;
     }
 }

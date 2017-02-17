@@ -8,6 +8,7 @@ namespace TicTacToe3D
         public Action<BadgeModel, bool> BadgeSpawned = delegate { };
         public Action StepConfirmed = delegate { };
         public Action PlayerWonSignal = delegate { };
+        public Action TimePassed = delegate { };
         public Action<List<HistoryItem>> UndoSignal = delegate { };
     }
 }

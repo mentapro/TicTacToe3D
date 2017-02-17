@@ -30,11 +30,12 @@ namespace TicTacToe3D
             Container.BindInterfacesTo<CameraHandler>().AsSingle();
             Container.BindInterfacesTo<PlayerInputHandler>().AsSingle();
             Container.BindInterfacesTo<ActivePlayerHandler>().AsSingle();
-            Container.BindInterfacesTo<GameControlHandler>().AsSingle();
+            Container.BindInterfacesTo<GameRestartHandler>().AsSingle();
             Container.BindInterfacesTo<VictoryHandler>().AsSingle();
+            Container.BindInterfacesTo<TimerHandler>().AsSingle();
             Container.BindInterfacesTo<GameBoardSpawner>().AsSingle();
             
-            Container.BindInitializableExecutionOrder<GameControlHandler>(1000);
+            Container.BindInitializableExecutionOrder<GameRestartHandler>(1000);
 
             InstallFactories();
             InstallPresenters();

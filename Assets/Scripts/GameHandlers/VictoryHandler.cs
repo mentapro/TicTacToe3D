@@ -57,7 +57,7 @@ namespace TicTacToe3D
 
         private List<BadgeModel> FindVictoryLine()
         {
-            foreach (var line in Info.Lines)
+            foreach (var line in Info.GameGeometry.Lines)
             {
                 if (line.All(point => BadgeRegistry.Badges.Any(x => x.Coordinates == point && x.Owner == Info.ActivePlayer)))
                 {

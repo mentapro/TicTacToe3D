@@ -46,7 +46,7 @@ namespace TicTacToe3D
 
         private bool CheckBadgeForVictory(BadgeModel badge)
         {
-            foreach (var line in Info.Lines.Where(x => x.Contains(badge.Coordinates)))
+            foreach (var line in Info.GameGeometry.Lines.Where(x => x.Contains(badge.Coordinates)))
             {
                 if (line.All(point => BadgeRegistry.Badges.Any(x => x.Coordinates == point && x.Owner == badge.Owner)))
                 {

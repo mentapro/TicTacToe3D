@@ -23,13 +23,13 @@ namespace TicTacToe3D
         public string Name { get; private set; }
         public Color Color { get; private set; }
         public PlayerStates State { get; set; }
+        public float TimeLeft { get; set; }
 
         public Player(PlayerTypes type, string name, Color color)
         {
             Type = type;
             Name = name;
             Color = color;
-            State = PlayerStates.Plays;
         }
 
         public override bool Equals(object obj)
