@@ -13,12 +13,6 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
-            Reset();
-            Info.GameState = GameStates.Started;
-        }
-        
-        private void Reset()
-        {
             foreach (var player in Info.Players)
             {
                 player.State = PlayerStates.Plays;
@@ -28,6 +22,8 @@ namespace TicTacToe3D
                     player.TimeLeft = Info.TimerTime;
                 }
             }
+
+            Info.GameState = GameStates.Started;
         }
     }
 }

@@ -24,19 +24,39 @@ namespace TicTacToe3D
         public void Initialize()
         {
             GameEvents.PlayerWonSignal += OnPlayerWon;
+            GameEvents.PlayerLostSignal += OnPlayerLost;
+            GameEvents.TimePassed += OnTimePassed;
         }
-        
+
         public void Dispose()
         {
             GameEvents.PlayerWonSignal -= OnPlayerWon;
+            GameEvents.PlayerLostSignal -= OnPlayerLost;
+            GameEvents.TimePassed -= OnTimePassed;
         }
-        
-        private void OnPlayerWon()
+
+        private void OnTimePassed()
+        {
+            Info.ActivePlayer.State = PlayerStates.Loser;
+            GameEvents.PlayerLostSignal(Info.ActivePlayer);
+        }
+
+        private void OnPlayerLost(Player loser)
+        {
+            throw new NotImplementedException("Потрібно перевірити кількість залишившихся гравців. " +
+                "Якщо такий один - він виграв, закінчити гру правильно(!) (victoryLine не буде, тому що перемога по причині таймера) " +
+                "Якщо декілька - грати далі.");
+        }
+
+        private void OnPlayerWon(Player winner)
         {
             Info.ActivePlayer.State = PlayerStates.Winner;
 
             var victoryLine = FindVictoryLine();
-            _winnersCatalog.Add(Info.ActivePlayer, victoryLine);
+            if (victoryLine != null)
+            {
+                _winnersCatalog.Add(Info.ActivePlayer, victoryLine);
+            }
             
             if (Info.GameSettings.GameOverAfterFirstWinner)
             {
@@ -64,8 +84,7 @@ namespace TicTacToe3D
                     return BadgeRegistry.Badges.Where(badge => line.Contains(badge.Coordinates)).ToList();
                 }
             }
-
-            throw new InvalidOperationException("Player \"" + Info.ActivePlayer.Name + "\" does not have victory line.");
+            return null;
         }
 
         private void GameOver()

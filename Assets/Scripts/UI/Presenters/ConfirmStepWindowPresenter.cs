@@ -40,6 +40,7 @@ namespace TicTacToe3D
             View.UndoStepButton.onClick.AddListener(OnUndoClicked);
 
             GameEvents.BadgeSpawned += OnBadgeSpawned;
+            GameEvents.TimePassed += OnTimePassed;
         }
 
         public void Dispose()
@@ -48,6 +49,7 @@ namespace TicTacToe3D
             View.UndoStepButton.onClick.RemoveAllListeners();
 
             GameEvents.BadgeSpawned -= OnBadgeSpawned;
+            GameEvents.TimePassed += OnTimePassed;
         }
 
         public void Open()
@@ -71,6 +73,11 @@ namespace TicTacToe3D
         private void OnConfirmStepClicked()
         {
             GameEvents.StepConfirmed();
+            MenuManager.CloseMenu(Menus.ConfirmStepWindow);
+        }
+
+        private void OnTimePassed()
+        {
             MenuManager.CloseMenu(Menus.ConfirmStepWindow);
         }
 

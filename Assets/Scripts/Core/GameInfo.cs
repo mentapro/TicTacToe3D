@@ -130,7 +130,7 @@ namespace TicTacToe3D
             Dimension = 4;
             BadgesToWin = 4;
             StepSize = 2;
-            TimerTime = 60;
+            TimerTime = 10;
             Players = new List<Player>
             {
                 new Player(PlayerTypes.Human, "Player 1", UnityEngine.Color.red),

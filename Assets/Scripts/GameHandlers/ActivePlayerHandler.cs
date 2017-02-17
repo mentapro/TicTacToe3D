@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ModestTree;
 using Zenject;
 
 namespace TicTacToe3D
@@ -29,6 +28,7 @@ namespace TicTacToe3D
             GameEvents.BadgeSpawned += OnBadgeSpawned;
             GameEvents.StepConfirmed += OnStepConfirmed;
             GameEvents.UndoSignal += OnUndo;
+            GameEvents.PlayerLostSignal += OnPlayerLost;
         }
 
         public void Dispose()
@@ -36,6 +36,7 @@ namespace TicTacToe3D
             GameEvents.BadgeSpawned -= OnBadgeSpawned;
             GameEvents.StepConfirmed -= OnStepConfirmed;
             GameEvents.UndoSignal -= OnUndo;
+            GameEvents.PlayerLostSignal += OnPlayerLost;
         }
 
         private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
@@ -52,7 +53,7 @@ namespace TicTacToe3D
         {
             if (_playerCanWin)
             {
-                GameEvents.PlayerWonSignal();
+                GameEvents.PlayerWonSignal(Info.ActivePlayer);
 
                 if (Info.GameSettings.GameOverAfterFirstWinner)
                 {
@@ -81,19 +82,20 @@ namespace TicTacToe3D
             Info.ActivePlayerMadeSteps = last.PlayerMadeSteps - 1;
             Info.ActivePlayer = Info.Players.First(x => x.Name == last.PlayerName);
         }
+        
+        private void OnPlayerLost(Player loser)
+        {
+            if (Info.Players.Count(player => player.State == PlayerStates.Plays) >= 2)
+            {
+                NextActivePlayer();
+            }
+        }
 
         private void NextActivePlayer()
         {
-            Assert.That(Info.Players.Count(player => player.State == PlayerStates.Plays) >= 2, "To get new active player you need two and more players with state \"PlayerStates.Plays\"");
-
             if (Info.ActivePlayer == null)
             {
                 Info.ActivePlayer = Info.Players.First();
-                return;
-            }
-
-            if (Info.ActivePlayerMadeSteps < Info.StepSize)
-            {
                 return;
             }
 
