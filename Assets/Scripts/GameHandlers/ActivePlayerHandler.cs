@@ -36,7 +36,7 @@ namespace TicTacToe3D
             GameEvents.BadgeSpawned -= OnBadgeSpawned;
             GameEvents.StepConfirmed -= OnStepConfirmed;
             GameEvents.UndoSignal -= OnUndo;
-            GameEvents.PlayerLostSignal += OnPlayerLost;
+            GameEvents.PlayerLostSignal -= OnPlayerLost;
         }
 
         private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
@@ -53,7 +53,7 @@ namespace TicTacToe3D
         {
             if (_playerCanWin)
             {
-                GameEvents.PlayerWonSignal(Info.ActivePlayer);
+                GameEvents.PlayerWonSignal();
 
                 if (Info.GameSettings.GameOverAfterFirstWinner)
                 {
@@ -83,7 +83,7 @@ namespace TicTacToe3D
             Info.ActivePlayer = Info.Players.First(x => x.Name == last.PlayerName);
         }
         
-        private void OnPlayerLost(Player loser)
+        private void OnPlayerLost()
         {
             if (Info.Players.Count(player => player.State == PlayerStates.Plays) >= 2)
             {

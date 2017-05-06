@@ -16,7 +16,6 @@ namespace TicTacToe3D
     public class TimerHandler : ITickable, IDisposable
     {
         private bool _tick;
-        private Player _activePlayer;
         
         private GameInfo Info { get; set; }
         private GameEvents GameEvents { get; set; }
@@ -46,15 +45,20 @@ namespace TicTacToe3D
                 case TimerTypes.None:
                     break;
                 case TimerTypes.FixedTimePerStep:
-                    UpdateFixedTimePerStep();
+                    UpdateFixedTimeTimer();
                     break;
+                case TimerTypes.FixedTimePerRound:
+                    UpdateFixedTimeTimer();
+                    break;
+                case TimerTypes.DynamicTime:
+                    throw new NotImplementedException("Dynamic timer is not implemented yet.");
             }
         }
 
-        private void UpdateFixedTimePerStep()
+        private void UpdateFixedTimeTimer()
         {
-            _activePlayer.TimeLeft -= Time.deltaTime;
-            if (_activePlayer.TimeLeft <= 0)
+            Info.ActivePlayer.TimeLeft -= Time.deltaTime;
+            if (Info.ActivePlayer.TimeLeft <= 0)
             {
                 GameEvents.TimePassed();
             }
@@ -71,11 +75,6 @@ namespace TicTacToe3D
             }
         }
 
-        private void OnActivePlayerChanged(Player activePlayer)
-        {
-            _activePlayer = activePlayer;
-        }
-
         private void OnGameStateChanged(GameStates state)
         {
             _tick = state == GameStates.Started;
@@ -86,10 +85,6 @@ namespace TicTacToe3D
             if (e.PropertyName == "GameState")
             {
                 OnGameStateChanged(Info.GameState);
-            }
-            if (e.PropertyName == "ActivePlayer")
-            {
-                OnActivePlayerChanged(Info.ActivePlayer);
             }
             if (e.PropertyName == "GlobalStep")
             {

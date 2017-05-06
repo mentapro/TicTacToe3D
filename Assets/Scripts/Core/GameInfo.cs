@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using JetBrains.Annotations;
 
 namespace TicTacToe3D
 {
@@ -20,6 +21,7 @@ namespace TicTacToe3D
         private int _globalStep;
         private Player _activePlayer;
         private GameStates _gameState;
+        private float _timerTime;
 
         public GameInfo(GameSettings gameSettings)
         {
@@ -32,9 +34,16 @@ namespace TicTacToe3D
         public GameSettings GameSettings { get; private set; }
         public List<Player> Players { get; set; }
 
-
-
-        public float TimerTime { get; set; }
+        public float TimerTime
+        {
+            get { return _timerTime; }
+            set
+            {
+                if (value.Equals(_timerTime)) return;
+                _timerTime = value;
+                NotifyPropertyChanged("TimerTime");
+            }
+        }
 
         public int ActivePlayerMadeSteps
         {
@@ -117,11 +126,12 @@ namespace TicTacToe3D
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void NotifyPropertyChanged(string propertyName = "")
+        [NotifyPropertyChangedInvocator]
+        protected virtual void NotifyPropertyChanged(string propertyName)
         {
             if (PropertyChanged != null)
             {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
 

@@ -38,26 +38,26 @@ namespace TicTacToe3D
         private void OnTimePassed()
         {
             Info.ActivePlayer.State = PlayerStates.Loser;
-            GameEvents.PlayerLostSignal(Info.ActivePlayer);
+            GameEvents.PlayerLostSignal();
         }
 
-        private void OnPlayerLost(Player loser)
+        private void OnPlayerLost()
         {
-            throw new NotImplementedException("Потрібно перевірити кількість залишившихся гравців. " +
-                "Якщо такий один - він виграв, закінчити гру правильно(!) (victoryLine не буде, тому що перемога по причині таймера) " +
-                "Якщо декілька - грати далі.");
+            if (Info.Players.Count(player => player.State == PlayerStates.Plays) == 1)
+            {
+                var winner = Info.Players.First(player => player.State == PlayerStates.Plays);
+                winner.State = PlayerStates.Winner;
+                GameOver();
+            }
         }
 
-        private void OnPlayerWon(Player winner)
+        private void OnPlayerWon()
         {
             Info.ActivePlayer.State = PlayerStates.Winner;
 
             var victoryLine = FindVictoryLine();
-            if (victoryLine != null)
-            {
-                _winnersCatalog.Add(Info.ActivePlayer, victoryLine);
-            }
-            
+            _winnersCatalog.Add(Info.ActivePlayer, victoryLine);
+
             if (Info.GameSettings.GameOverAfterFirstWinner)
             {
                 GameOver();

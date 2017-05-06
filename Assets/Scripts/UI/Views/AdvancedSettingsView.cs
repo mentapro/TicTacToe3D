@@ -29,6 +29,15 @@ namespace TicTacToe3D
         [SerializeField]
         private Text _stepSizeAmountText = null;
 
+        [SerializeField]
+        private Dropdown _timerTypeDropdown = null;
+        [SerializeField]
+        private InputField _timerTimeInputField = null;
+        [SerializeField]
+        private Toggle _firstWinnerToggle = null;
+        [SerializeField]
+        private Toggle _stepConfirmationToggle = null;
+
         public Button GameInformationButton
         {
             get { return _gameInformationButton; }
@@ -62,6 +71,26 @@ namespace TicTacToe3D
         public Text StepSizeAmountText
         {
             get { return _stepSizeAmountText; }
+        }
+
+        public Dropdown TimerTypeDropdown
+        {
+            get { return _timerTypeDropdown; }
+        }
+
+        public InputField TimerTimeInputField
+        {
+            get { return _timerTimeInputField; }
+        }
+
+        public Toggle FirstWinnerToggle
+        {
+            get { return _firstWinnerToggle; }
+        }
+
+        public Toggle StepConfirmationToggle
+        {
+            get { return _stepConfirmationToggle; }
         }
     }
 }

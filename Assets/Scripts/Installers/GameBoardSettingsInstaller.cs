@@ -1,4 +1,7 @@
 ﻿using System;
+using System.ComponentModel;
+using JetBrains.Annotations;
+using UnityEngine;
 using Zenject;
 
 namespace TicTacToe3D
@@ -24,10 +27,57 @@ namespace TicTacToe3D
     }
 
     [Serializable]
-    public class GameSettings
+    public class GameSettings : INotifyPropertyChanged
     {
-        public bool GameOverAfterFirstWinner;
-        public bool ConfirmStep;
-        public TimerTypes TimerType;
+        [SerializeField]
+        private bool _gameOverAfterFirstWinner;
+        [SerializeField]
+        private bool _confirmStep;
+        [SerializeField]
+        private TimerTypes _timerType;
+
+        public bool GameOverAfterFirstWinner
+        {
+            get { return _gameOverAfterFirstWinner; }
+            set
+            {
+                if (value == _gameOverAfterFirstWinner) return;
+                _gameOverAfterFirstWinner = value;
+                OnPropertyChanged("GameOverAfterFirstWinner");
+            }
+        }
+
+        public bool ConfirmStep
+        {
+            get { return _confirmStep; }
+            set
+            {
+                if (value == _confirmStep) return;
+                _confirmStep = value;
+                OnPropertyChanged("ConfirmStep");
+            }
+        }
+
+        public TimerTypes TimerType
+        {
+            get { return _timerType; }
+            set
+            {
+                if (value == _timerType) return;
+                _timerType = value;
+                OnPropertyChanged("TimerType");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
     }
 }

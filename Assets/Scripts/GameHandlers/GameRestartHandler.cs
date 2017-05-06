@@ -1,4 +1,5 @@
-﻿using Zenject;
+﻿using System;
+using Zenject;
 
 namespace TicTacToe3D
 {
@@ -13,6 +14,10 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
+            if (Info.GameSettings.TimerType == TimerTypes.DynamicTime)
+            {
+                throw new NotImplementedException("Dynamic timer is not implemented yet.");
+            }
             foreach (var player in Info.Players)
             {
                 player.State = PlayerStates.Plays;

@@ -21,6 +21,12 @@ namespace TicTacToe3D
         private Text _badgesToWinAmountText = null;
         [SerializeField]
         private Text _stepSizeAmountText = null;
+        [SerializeField]
+        private Text _timerTypeText = null;
+        [SerializeField]
+        private Text _gameOverAfterFirstWinnerText = null;
+        [SerializeField]
+        private Text _stepConfirmationText = null;
 
         public Button AdvancedSettingsButton
         {
@@ -40,6 +46,21 @@ namespace TicTacToe3D
         public Text StepSizeAmountText
         {
             get { return _stepSizeAmountText; }
+        }
+
+        public Text TimerTypeText
+        {
+            get { return _timerTypeText; }
+        }
+
+        public Text GameOverAfterFirstWinnerText
+        {
+            get { return _gameOverAfterFirstWinnerText; }
+        }
+
+        public Text StepConfirmationText
+        {
+            get { return _stepConfirmationText; }
         }
     }
 }
