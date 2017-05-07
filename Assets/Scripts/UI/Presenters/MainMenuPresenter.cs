@@ -6,15 +6,8 @@ using Zenject;
 
 namespace TicTacToe3D
 {
-    public interface IMenuPresenter
+    public class MainMenuPresenter : MenuPresenter<MainMenuView>, IInitializable, IDisposable
     {
-        void Open();
-        void Close();
-    }
-
-    public class MainMenuPresenter : IMenuPresenter, IInitializable, IDisposable
-    {
-        private MainMenuView View { get; set; }
         private MenuManager MenuManager { get; set; }
 
         public MainMenuPresenter(MenuManager menuManager)
@@ -24,11 +17,6 @@ namespace TicTacToe3D
             MenuManager.SetMenu(this);
         }
 
-        public void SetView(MainMenuView view)
-        {
-            View = view;
-        }
-
         public void Initialize()
         {
             View.NewGameButton.onClick.AddListener(OnNewGameButtonClicked);
@@ -36,16 +24,6 @@ namespace TicTacToe3D
             View.ExitButton.onClick.AddListener(OnExitButtonClicked);
 
             MenuManager.OpenMenu(Menus.MainMenu);
-        }
-
-        public void Open()
-        {
-            View.IsOpen = true;
-        }
-
-        public void Close()
-        {
-            View.IsOpen = false;
         }
 
         public void Dispose()

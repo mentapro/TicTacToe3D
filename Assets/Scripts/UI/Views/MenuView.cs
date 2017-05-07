@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TicTacToe3D
 {
-    public class MenuView : MonoBehaviour
+    public abstract class MenuView : MonoBehaviour
     {
         protected Animator Animator { get; private set; }
         protected event Action MenuOpened;

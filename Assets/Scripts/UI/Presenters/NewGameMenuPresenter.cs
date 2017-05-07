@@ -4,9 +4,8 @@ using Zenject;
 
 namespace TicTacToe3D
 {
-    public class NewGameMenuPresenter : IMenuPresenter, IInitializable, IDisposable
+    public class NewGameMenuPresenter : MenuPresenter<NewGameMenuView>, IInitializable, IDisposable
     {
-        private NewGameMenuView View { get; set; }
         private MenuManager MenuManager { get; set; }
         private Settings _Settings { get; set; }
         private PlayerRowFacade.Factory PlayerRowFactory { get; set; }
@@ -30,11 +29,6 @@ namespace TicTacToe3D
             MenuManager.SetMenu(this);
         }
 
-        public void SetView(NewGameMenuView view)
-        {
-            View = view;
-        }
-
         public void Initialize()
         {
             for (var i = 0; i < _Settings.PlayersMax; i++)
@@ -52,16 +46,6 @@ namespace TicTacToe3D
         {
             View.StartButton.onClick.RemoveAllListeners();
             View.CancelButton.onClick.RemoveAllListeners();
-        }
-
-        public void Open()
-        {
-            View.IsOpen = true;
-        }
-
-        public void Close()
-        {
-            View.IsOpen = false;
         }
 
         private void OnStartButtonClicked()

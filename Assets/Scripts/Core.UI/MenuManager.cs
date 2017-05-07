@@ -9,7 +9,8 @@
         AdvancedSettingsMenu,
 
         // GameBoard Scene
-        ConfirmStepWindow
+        ConfirmStepWindow,
+        PlayAgainWindow
     }
 
     public class MenuManager
@@ -24,6 +25,7 @@
 
         // GameBoard Scene
         private ConfirmStepWindowPresenter ConfirmStepWindow { get; set; }
+        private PlayAgainWindowPresenter PlayAgainWindow { get; set; }
 
         private void OpenMenu(IMenuPresenter menu)
         {
@@ -54,6 +56,9 @@
                 case Menus.ConfirmStepWindow:
                     ConfirmStepWindow.Open();
                     break;
+                case Menus.PlayAgainWindow:
+                    PlayAgainWindow.Open();
+                    break;
             }
         }
 
@@ -77,6 +82,9 @@
                     break;
                 case Menus.ConfirmStepWindow:
                     ConfirmStepWindow.Close();
+                    break;
+                case Menus.PlayAgainWindow:
+                    PlayAgainWindow.Close();
                     break;
             }
         }
@@ -104,6 +112,11 @@
         public void SetMenu(ConfirmStepWindowPresenter confirmStepWindow)
         {
             ConfirmStepWindow = confirmStepWindow;
+        }
+
+        public void SetMenu(PlayAgainWindowPresenter playAgainWindow)
+        {
+            PlayAgainWindow = playAgainWindow;
         }
     }
 }

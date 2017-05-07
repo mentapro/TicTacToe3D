@@ -6,9 +6,8 @@ using Zenject;
 
 namespace TicTacToe3D
 {
-    public class AdvancedSettingsPresenter : IMenuPresenter, IInitializable, IDisposable
+    public class AdvancedSettingsPresenter : MenuPresenter<AdvancedSettingsView>, IInitializable, IDisposable
     {
-        private AdvancedSettingsView View { get; set; }
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
         private Settings _Settings { get; set; }
@@ -20,11 +19,6 @@ namespace TicTacToe3D
             _Settings = settings;
 
             MenuManager.SetMenu(this);
-        }
-
-        public void SetView(AdvancedSettingsView view)
-        {
-            View = view;
         }
 
         public void Initialize()
@@ -66,8 +60,6 @@ namespace TicTacToe3D
             View.FirstWinnerToggle.isOn = Info.GameSettings.GameOverAfterFirstWinner;
             View.StepConfirmationToggle.isOn = Info.GameSettings.ConfirmStep;
         }
-        
-
 
         public void Dispose()
         {
@@ -81,16 +73,6 @@ namespace TicTacToe3D
             View.TimerTimeInputField.onValidateInput -= OnTimerTimeInputFieldValidateInput;
             View.FirstWinnerToggle.onValueChanged.RemoveAllListeners();
             View.StepConfirmationToggle.onValueChanged.RemoveAllListeners();
-        }
-
-        public void Open()
-        {
-            View.IsOpen = true;
-        }
-
-        public void Close()
-        {
-            View.IsOpen = false;
         }
 
         private void OnDimensionSliderChanged(float value)

@@ -5,9 +5,8 @@ using Zenject;
 
 namespace TicTacToe3D
 {
-    public class ConfirmStepWindowPresenter : IMenuPresenter, IInitializable, IDisposable
+    public class ConfirmStepWindowPresenter : MenuPresenter<ConfirmStepWindowView>, IInitializable, IDisposable
     {
-        private ConfirmStepWindowView View { get; set; }
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
         private BadgeModel.Registry BadgeRegistry { get; set; }
@@ -29,11 +28,6 @@ namespace TicTacToe3D
             menuManager.SetMenu(this);
         }
 
-        public void SetView(ConfirmStepWindowView view)
-        {
-            View = view;
-        }
-
         public void Initialize()
         {
             View.ConfirmStepButton.onClick.AddListener(OnConfirmStepClicked);
@@ -50,16 +44,6 @@ namespace TicTacToe3D
 
             GameEvents.BadgeSpawned -= OnBadgeSpawned;
             GameEvents.TimePassed += OnTimePassed;
-        }
-
-        public void Open()
-        {
-            View.IsOpen = true;
-        }
-
-        public void Close()
-        {
-            View.IsOpen = false;
         }
 
         private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)

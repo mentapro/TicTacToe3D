@@ -54,6 +54,7 @@ namespace TicTacToe3D
         private void InstallPresenters()
         {
             Container.BindInterfacesAndSelfTo<ConfirmStepWindowPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PlayAgainWindowPresenter>().AsSingle();
         }
 
         [Serializable]

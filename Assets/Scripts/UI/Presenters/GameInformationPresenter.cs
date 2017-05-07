@@ -5,9 +5,8 @@ using Zenject;
 
 namespace TicTacToe3D
 {
-    public class GameInformationPresenter : IMenuPresenter, IInitializable, IDisposable
+    public class GameInformationPresenter : MenuPresenter<GameInformationView>, IInitializable, IDisposable
     {
-        private GameInformationView View { get; set; }
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
 
@@ -17,11 +16,6 @@ namespace TicTacToe3D
             Info = info;
 
             MenuManager.SetMenu(this);
-        }
-
-        public void SetView(GameInformationView view)
-        {
-            View = view;
         }
 
         public void Initialize()
@@ -80,16 +74,6 @@ namespace TicTacToe3D
 
             Info.PropertyChanged -= OnGameInfoPropertyChanged;
             Info.GameSettings.PropertyChanged -= OnGameSettingsPropertyChanged;
-        }
-
-        public void Open()
-        {
-            View.IsOpen = true;
-        }
-
-        public void Close()
-        {
-            View.IsOpen = false;
         }
 
         private void OnDimensionChanged()
