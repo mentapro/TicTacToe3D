@@ -8,15 +8,15 @@ namespace TicTacToe3D
     {
         private MenuManager MenuManager { get; set; }
         private Settings _Settings { get; set; }
-        private PlayerRowFacade.Factory PlayerRowFactory { get; set; }
-        private PlayerRowModel.Registry RowRegistry { get; set; }
+        private PlayerRowMenuFacade.Factory PlayerRowFactory { get; set; }
+        private PlayerRowMenuModel.Registry RowRegistry { get; set; }
         private GameInfo Info { get; set; }
         private ZenjectSceneLoader SceneLoader { get; set; }
 
         public NewGameMenuPresenter(MenuManager menuManager,
             Settings settings,
-            PlayerRowFacade.Factory playerRowFactory,
-            PlayerRowModel.Registry rowRegistry,
+            PlayerRowMenuFacade.Factory playerRowFactory,
+            PlayerRowMenuModel.Registry rowRegistry,
             GameInfo info, ZenjectSceneLoader sceneLoader)
         {
             MenuManager = menuManager;
@@ -34,7 +34,7 @@ namespace TicTacToe3D
             for (var i = 0; i < _Settings.PlayersMax; i++)
             {
                 var playerRow = PlayerRowFactory.Create();
-                playerRow.transform.SetParent(View.PlayerRows, false);
+                playerRow.transform.SetParent(View.PlayersRows, false);
             }
 
             View.StartButton.onClick.AddListener(OnStartButtonClicked);

@@ -23,6 +23,8 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
+            Info.Players.ForEach(player => player.State = PlayerStates.Plays);
+
             GameEvents.PlayerWonSignal += OnPlayerWon;
             GameEvents.PlayerLostSignal += OnPlayerLost;
             GameEvents.TimePassed += OnTimePassed;

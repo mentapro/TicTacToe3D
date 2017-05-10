@@ -16,13 +16,18 @@ namespace TicTacToe3D
             if (_info == null)
                 Container.Bind<GameInfo>().AsSingle();
             else
+            {
+                _info.Reset();
                 Container.BindInstance(_info).AsSingle();
+            }
 
             Container.Bind<BadgeModel>().AsTransient();
             Container.Bind<BadgeSpawner>().AsSingle();
             Container.Bind<MenuManager>().AsSingle();
             Container.Bind<GameEvents>().AsSingle();
+            Container.Bind<PlayerRowGameModel>().AsTransient();
 
+            Container.BindInterfacesAndSelfTo<PlayerRowGameModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeSpawnPoint.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<History>().AsSingle();
@@ -49,12 +54,15 @@ namespace TicTacToe3D
                 .FromComponentInNewPrefab(_settings.StickPartitionPrefab);
             Container.BindFactory<BadgeFacade, BadgeFacade.Factory>()
                 .FromComponentInNewPrefab(_settings.BadgePrefab);
+            Container.BindFactory<PlayerRowGameFacade, PlayerRowGameFacade.Factory>()
+                .FromComponentInNewPrefab(_settings.PlayerRowGameFacadePrefab);
         }
 
         private void InstallPresenters()
         {
             Container.BindInterfacesAndSelfTo<ConfirmStepWindowPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<PlayAgainWindowPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PlayersTableWindowPresenter>().AsSingle();
         }
 
         [Serializable]
@@ -64,6 +72,7 @@ namespace TicTacToe3D
             public GameObject StickPrefab;
             public GameObject StickPartitionPrefab;
             public GameObject BadgePrefab;
+            public GameObject PlayerRowGameFacadePrefab;
         }
     }
 }

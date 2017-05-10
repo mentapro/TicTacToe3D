@@ -43,7 +43,7 @@ namespace TicTacToe3D
         {
             _playerCanWin = isVictorious;
 
-            if (Info.GameSettings.ConfirmStep == false && Info.ActivePlayerMadeSteps >= Info.StepSize)
+            if (Info.GameSettings.ConfirmStep == false)
             {
                 GameEvents.StepConfirmed();
             }
@@ -61,7 +61,7 @@ namespace TicTacToe3D
                 }
             }
 
-            if (Info.Players.Count(player => player.State == PlayerStates.Plays) >= 2)
+            if (Info.Players.Count(x => x.State == PlayerStates.Plays) >= 2 && Info.ActivePlayerMadeSteps >= Info.StepSize)
             {
                 NextActivePlayer();
             }
@@ -93,13 +93,13 @@ namespace TicTacToe3D
 
         private void NextActivePlayer()
         {
+            Info.ActivePlayerMadeSteps = 0;
             if (Info.ActivePlayer == null)
             {
                 Info.ActivePlayer = Info.Players.First();
                 return;
             }
 
-            Info.ActivePlayerMadeSteps = 0;
             var playerIndex = Info.Players.IndexOf(Info.ActivePlayer);
             var nextPlayerIndex = playerIndex + 1;
             while (true)

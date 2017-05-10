@@ -13,7 +13,7 @@ namespace TicTacToe3D
         DynamicTime
     }
 
-    public class TimerHandler : ITickable, IDisposable
+    public class TimerHandler : IInitializable, ITickable, IDisposable
     {
         private bool _tick;
         
@@ -26,6 +26,22 @@ namespace TicTacToe3D
             GameEvents = gameEvents;
 
             Info.PropertyChanged += OnGameInfoPropertyChanged;
+        }
+
+        public void Initialize()
+        {
+            if (Info.GameSettings.TimerType == TimerTypes.DynamicTime)
+            {
+                throw new NotImplementedException("Dynamic timer is not implemented yet.");
+            }
+            Info.Players.ForEach(player =>
+            {
+                if (Info.GameSettings.TimerType == TimerTypes.FixedTimePerRound ||
+                    Info.GameSettings.TimerType == TimerTypes.FixedTimePerStep)
+                {
+                    player.TimeLeft = Info.TimerTime;
+                }
+            });
         }
 
         public void Dispose()
@@ -68,10 +84,7 @@ namespace TicTacToe3D
         {
             if (Info.GameSettings.TimerType == TimerTypes.FixedTimePerStep)
             {
-                foreach (var player in Info.Players)
-                {
-                    player.TimeLeft = Info.TimerTime;
-                }
+                Info.Players.ForEach(player => player.TimeLeft = Info.TimerTime);
             }
         }
 

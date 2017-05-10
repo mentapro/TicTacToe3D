@@ -4,16 +4,16 @@ using Zenject;
 
 namespace TicTacToe3D
 {
-    public class PlayerRowFacade : MonoBehaviour
+    public class PlayerRowMenuFacade : MonoBehaviour
     {
         [Inject]
-        public void Construct(PlayerRowModel model)
+        public void Construct(PlayerRowMenuModel model)
         {
             Model = model;
             model.SetFacade(this);
         }
 
-        private PlayerRowModel Model { get; set; }
+        private PlayerRowMenuModel Model { get; set; }
 
         [SerializeField]
         private Dropdown _playerTypeDropdown = null;
@@ -42,7 +42,7 @@ namespace TicTacToe3D
             Model.Dispose();
         }
 
-        public class Factory : Factory<PlayerRowFacade>
+        public class Factory : Factory<PlayerRowMenuFacade>
         { }
     }
 }

@@ -6,14 +6,14 @@ using UnityEngine.UI;
 
 namespace TicTacToe3D
 {
-    public partial class PlayerRowModel
+    public partial class PlayerRowMenuModel
     {
         private int _currentColorIndex = -1;
-        private PlayerRowFacade Facade { get; set; }
+        private PlayerRowMenuFacade Facade { get; set; }
         private Registry _Registry { get; set; }
         private Settings _Settings { get; set; }
 
-        public PlayerRowModel(Registry registry, Settings settings)
+        public PlayerRowMenuModel(Registry registry, Settings settings)
         {
             _Registry = registry;
             _Settings = settings;
@@ -21,7 +21,7 @@ namespace TicTacToe3D
             registry.AddRow(this);
         }
 
-        public void SetFacade(PlayerRowFacade facade)
+        public void SetFacade(PlayerRowMenuFacade facade)
         {
             Facade = facade;
             Initialize();

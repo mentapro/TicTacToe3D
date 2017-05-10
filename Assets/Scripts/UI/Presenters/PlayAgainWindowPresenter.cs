@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace TicTacToe3D
@@ -8,13 +9,15 @@ namespace TicTacToe3D
     {
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
+        private ZenjectSceneLoader SceneLoader { get; set; }
 
         public PlayAgainWindowPresenter(MenuManager menuManager,
-            GameEvents gameEvents,
-            GameInfo info)
+            GameInfo info,
+            ZenjectSceneLoader sceneLoader)
         {
             MenuManager = menuManager;
             Info = info;
+            SceneLoader = sceneLoader;
 
             menuManager.SetMenu(this);
         }
@@ -53,12 +56,15 @@ namespace TicTacToe3D
 
         private void OnYesButtonClicked()
         {
-
+            SceneLoader.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single, container =>
+            {
+                container.BindInstance(Info).WhenInjectedInto<GameBoardInstaller>();
+            });
         }
 
         private void OnNoButtonClicked()
         {
-
+            SceneManager.LoadScene("MainMenu");
         }
     }
 }

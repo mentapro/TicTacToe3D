@@ -14,11 +14,11 @@ namespace TicTacToe3D
             Container.Bind<MenuManager>().AsSingle();
 
             Container.Bind<GameInfo>().AsSingle();
-            Container.Bind<PlayerRowModel.Registry>().AsSingle();
+            Container.Bind<PlayerRowMenuModel.Registry>().AsSingle();
 
-            Container.Bind<PlayerRowModel>().AsTransient();
-            Container.BindFactory<PlayerRowFacade, PlayerRowFacade.Factory>()
-                .FromComponentInNewPrefab(_settings.PlayerRowFacadePrefab);
+            Container.Bind<PlayerRowMenuModel>().AsTransient();
+            Container.BindFactory<PlayerRowMenuFacade, PlayerRowMenuFacade.Factory>()
+                .FromComponentInNewPrefab(_settings.PlayerRowMenuFacadePrefab);
 
             Container.BindInterfacesAndSelfTo<ModalDialog>().AsSingle();
 
@@ -36,7 +36,7 @@ namespace TicTacToe3D
         [Serializable]
         public class Settings
         {
-            public GameObject PlayerRowFacadePrefab;
+            public GameObject PlayerRowMenuFacadePrefab;
         }
     }
 }

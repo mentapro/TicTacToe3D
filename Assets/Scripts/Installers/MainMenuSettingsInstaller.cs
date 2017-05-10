@@ -6,7 +6,7 @@ namespace TicTacToe3D
     {
         public AdvancedSettingsPresenter.Settings AdvancedSettingsPresenterSettings;
         public NewGameMenuPresenter.Settings NewGameMenuSettings;
-        public PlayerRowModel.Settings PlayerRowSettings;
+        public PlayerRowMenuModel.Settings PlayerRowSettings;
         public MainMenuInstaller.Settings MainMenuInstallerSettings;
 
         public override void InstallBindings()

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace TicTacToe3D
@@ -13,17 +15,42 @@ namespace TicTacToe3D
     {
         Plays,
         Winner,
-        Loser,
-        Disconnected
+        Loser
     }
 
-    public class Player : IEquatable<Player>
+    public class Player : IEquatable<Player>, INotifyPropertyChanged
     {
+        private PlayerStates _state;
+        private int _score;
+
         public PlayerTypes Type { get; private set; }
         public string Name { get; private set; }
         public Color Color { get; private set; }
-        public PlayerStates State { get; set; }
         public float TimeLeft { get; set; }
+
+        public PlayerStates State
+        {
+            get { return _state; }
+            set
+            {
+                if (value == _state) return;
+                _state = value;
+                OnPropertyChanged("State");
+            }
+        }
+
+        public int Score
+        {
+            get { return _score; }
+            set
+            {
+                if (value == _score) return;
+                _score = value;
+                OnPropertyChanged("Score");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Player(PlayerTypes type, string name, Color color)
         {
@@ -61,6 +88,15 @@ namespace TicTacToe3D
         public static bool operator !=(Player left, Player right)
         {
             return !(left == right);
+        }
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 }

@@ -18,7 +18,7 @@ namespace TicTacToe3D
         private Button _cancelButton = null;
 
         [SerializeField]
-        private Transform _playerRows = null;
+        private Transform _playersRows = null;
 
         public Button StartButton
         {
@@ -30,9 +30,9 @@ namespace TicTacToe3D
             get { return _cancelButton; }
         }
         
-        public Transform PlayerRows
+        public Transform PlayersRows
         {
-            get { return _playerRows; }
+            get { return _playersRows; }
         }
     }
 }

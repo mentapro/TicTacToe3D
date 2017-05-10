@@ -2,13 +2,13 @@
 
 namespace TicTacToe3D
 {
-    public partial class PlayerRowModel
+    public partial class PlayerRowMenuModel
     {
         public class Registry
         {
-            private readonly List<PlayerRowModel> _playerRows = new List<PlayerRowModel>();
+            private readonly List<PlayerRowMenuModel> _playerRows = new List<PlayerRowMenuModel>();
 
-            public IEnumerable<PlayerRowModel> Rows
+            public IEnumerable<PlayerRowMenuModel> Rows
             {
                 get { return _playerRows; }
             }
@@ -18,7 +18,7 @@ namespace TicTacToe3D
                 get { return _playerRows.Count; }
             }
 
-            public void AddRow(PlayerRowModel row)
+            public void AddRow(PlayerRowMenuModel row)
             {
                 _playerRows.Add(row);
             }
