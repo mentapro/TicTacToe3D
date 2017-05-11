@@ -145,7 +145,7 @@ namespace TicTacToe3D
             {
                 new Player(PlayerTypes.Human, "Player 1", UnityEngine.Color.red),
                 new Player(PlayerTypes.Human, "Player 2", UnityEngine.Color.blue),
-                //new Player(PlayerTypes.Human, "Player 3", UnityEngine.Color.green)
+                new Player(PlayerTypes.Human, "Player 3", UnityEngine.Color.green)
             };
         }
 

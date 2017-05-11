@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Zenject;
 
 namespace TicTacToe3D
@@ -9,21 +7,18 @@ namespace TicTacToe3D
     {
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
-        private BadgeModel.Registry BadgeRegistry { get; set; }
+        private BadgeEraser BadgeEraser { get; set; }
         private GameEvents GameEvents { get; set; }
-        private History History { get; set; }
 
         public ConfirmStepWindowPresenter(MenuManager menuManager,
             GameInfo info,
-            BadgeModel.Registry badgeRegistry,
-            GameEvents gameEvents,
-            History history)
+            BadgeEraser badgeEraser,
+            GameEvents gameEvents)
         {
             MenuManager = menuManager;
             Info = info;
-            BadgeRegistry = badgeRegistry;
+            BadgeEraser = badgeEraser;
             GameEvents = gameEvents;
-            History = history;
 
             menuManager.SetMenu(this);
         }
@@ -43,7 +38,7 @@ namespace TicTacToe3D
             View.UndoStepButton.onClick.RemoveAllListeners();
 
             GameEvents.BadgeSpawned -= OnBadgeSpawned;
-            GameEvents.TimePassed += OnTimePassed;
+            GameEvents.TimePassed -= OnTimePassed;
         }
 
         private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
@@ -67,25 +62,8 @@ namespace TicTacToe3D
 
         private void OnUndoClicked()
         {
-            UndoUnconfirmedBadges();
+            BadgeEraser.UndoUnconfirmedBadges();
             MenuManager.CloseMenu(Menus.ConfirmStepWindow);
-        }
-
-        private void UndoUnconfirmedBadges()
-        {
-            var unconfirmedBadges = BadgeRegistry.Badges.Where(x => x.IsConfirmed == false).ToList();
-            if (unconfirmedBadges.Count == 0)
-            {
-                return;
-            }
-
-            var canceledSteps = new List<HistoryItem>();
-            for (var i = unconfirmedBadges.Count - 1; i >= 0; i--)
-            {
-                canceledSteps.Add(History.Pop());
-                unconfirmedBadges[i].Destroy();
-            }
-            GameEvents.UndoSignal(canceledSteps);
         }
     }
 }

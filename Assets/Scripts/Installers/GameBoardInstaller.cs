@@ -31,6 +31,7 @@ namespace TicTacToe3D
             Container.BindInterfacesAndSelfTo<BadgeModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeSpawnPoint.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<History>().AsSingle();
+            Container.BindInterfacesAndSelfTo<BadgeEraser>().AsSingle();
 
             Container.BindInterfacesTo<CameraHandler>().AsSingle();
             Container.BindInterfacesTo<PlayerInputHandler>().AsSingle();
