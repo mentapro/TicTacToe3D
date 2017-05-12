@@ -36,18 +36,18 @@ namespace TicTacToe3D
             View.DialogMessageText.text = details.DialogMessage;
 
             View.Button1.onClick.RemoveAllListeners();
+            View.Button1.onClick.AddListener(CloseDialog);
             if (details.Button1.Handler != null)
                 View.Button1.onClick.AddListener(() => details.Button1.Handler());
-            View.Button1.onClick.AddListener(CloseDialog);
             View.Button1Text.text = details.Button1.Title;
             View.Button1.gameObject.SetActive(true);
 
             if (details.Button2 != null)
             {
                 View.Button2.onClick.RemoveAllListeners();
+                View.Button2.onClick.AddListener(CloseDialog);
                 if (details.Button2.Handler != null)
                     View.Button2.onClick.AddListener(() => details.Button2.Handler());
-                View.Button2.onClick.AddListener(CloseDialog);
                 View.Button2Text.text = details.Button2.Title;
                 View.Button2.gameObject.SetActive(true);
             }
@@ -55,9 +55,9 @@ namespace TicTacToe3D
             if (details.Button3 != null)
             {
                 View.Button3.onClick.RemoveAllListeners();
+                View.Button3.onClick.AddListener(CloseDialog);
                 if (details.Button3.Handler != null)
                     View.Button3.onClick.AddListener(() => details.Button3.Handler());
-                View.Button3.onClick.AddListener(CloseDialog);
                 View.Button3Text.text = details.Button3.Title;
                 View.Button3.gameObject.SetActive(true);
             }

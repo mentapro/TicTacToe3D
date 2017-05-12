@@ -24,6 +24,7 @@ namespace TicTacToe3D
         public void Initialize()
         {
             Info.Players.ForEach(player => player.State = PlayerStates.Plays);
+            StartGame();
 
             GameEvents.PlayerWonSignal += OnPlayerWon;
             GameEvents.PlayerLostSignal += OnPlayerLost;
@@ -118,6 +119,24 @@ namespace TicTacToe3D
             {
                 badge.Glowing.Emit(7);
             }
+        }
+
+        private void StartGame()
+        {
+            var details = new ModalDialogDetails
+            {
+                DialogMessage = "Board is ready. Press \"OK\" to continue.",
+                Button1 = new ModalDialogButtonDetails
+                {
+                    Title = "OK",
+                    Handler = () =>
+                    {
+                        Info.GameState = GameStates.Started;
+                        ActivePlayerHandler.ShowNotification(Info);
+                    }
+                }
+            };
+            ModalDialog.Show(details);
         }
     }
 }

@@ -64,6 +64,7 @@ namespace TicTacToe3D
             if (Info.Players.Count(x => x.State == PlayerStates.Plays) >= 2 && (Info.ActivePlayerMadeSteps >= Info.StepSize || _playerCanWin))
             {
                 NextActivePlayer();
+                ShowNotification(Info);
             }
         }
 
@@ -88,6 +89,7 @@ namespace TicTacToe3D
             if (Info.Players.Count(player => player.State == PlayerStates.Plays) >= 2)
             {
                 NextActivePlayer();
+                ShowNotification(Info);
             }
         }
 
@@ -118,6 +120,21 @@ namespace TicTacToe3D
 
                 nextPlayerIndex++;
             }
+        }
+        
+        public static void ShowNotification(GameInfo info)
+        {
+            info.GameState = GameStates.Paused;
+            var details = new ModalDialogDetails
+            {
+                DialogMessage = "Next player: " + info.ActivePlayer.Name,
+                Button1 = new ModalDialogButtonDetails
+                {
+                    Title = "OK",
+                    Handler = () => info.GameState = GameStates.Started
+                }
+            };
+            ModalDialog.Show(details);
         }
     }
 }
