@@ -86,9 +86,9 @@ namespace TicTacToe3D
 
         public static Point operator -(Point point1, Point point2)
         {
-            point1.X += point2.X;
-            point1.Y += point2.Y;
-            point1.Z += point2.Z;
+            point1.X -= point2.X;
+            point1.Y -= point2.Y;
+            point1.Z -= point2.Z;
             return point1;
         }
 

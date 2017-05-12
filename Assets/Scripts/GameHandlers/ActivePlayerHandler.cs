@@ -61,7 +61,7 @@ namespace TicTacToe3D
                 }
             }
 
-            if (Info.Players.Count(x => x.State == PlayerStates.Plays) >= 2 && Info.ActivePlayerMadeSteps >= Info.StepSize)
+            if (Info.Players.Count(x => x.State == PlayerStates.Plays) >= 2 && (Info.ActivePlayerMadeSteps >= Info.StepSize || _playerCanWin))
             {
                 NextActivePlayer();
             }

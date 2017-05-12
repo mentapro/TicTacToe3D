@@ -64,6 +64,7 @@ namespace TicTacToe3D
             Container.BindInterfacesAndSelfTo<ConfirmStepWindowPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<PlayAgainWindowPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<PlayersTableWindowPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<InformationPanelPresenter>().AsSingle();
         }
 
         [Serializable]

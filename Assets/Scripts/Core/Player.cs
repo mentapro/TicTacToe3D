@@ -22,11 +22,22 @@ namespace TicTacToe3D
     {
         private PlayerStates _state;
         private int _score;
+        private float _timeLeft;
 
         public PlayerTypes Type { get; private set; }
         public string Name { get; private set; }
         public Color Color { get; private set; }
-        public float TimeLeft { get; set; }
+
+        public float TimeLeft
+        {
+            get { return _timeLeft; }
+            set
+            {
+                if (value.Equals(_timeLeft)) return;
+                _timeLeft = value;
+                OnPropertyChanged("TimeLeft");
+            }
+        }
 
         public PlayerStates State
         {
