@@ -17,11 +17,13 @@
 
         public void Open()
         {
+            View.transform.SetAsLastSibling();
             View.IsOpen = true;
         }
 
         public void Close()
         {
+            View.transform.SetAsFirstSibling();
             View.IsOpen = false;
         }
     }

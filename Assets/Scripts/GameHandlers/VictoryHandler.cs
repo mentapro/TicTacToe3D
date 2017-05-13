@@ -29,6 +29,7 @@ namespace TicTacToe3D
             GameEvents.PlayerWonSignal += OnPlayerWon;
             GameEvents.PlayerLostSignal += OnPlayerLost;
             GameEvents.TimePassed += OnTimePassed;
+            GameEvents.StepConfirmed += OnStepConfirmed;
         }
 
         public void Dispose()
@@ -36,6 +37,15 @@ namespace TicTacToe3D
             GameEvents.PlayerWonSignal -= OnPlayerWon;
             GameEvents.PlayerLostSignal -= OnPlayerLost;
             GameEvents.TimePassed -= OnTimePassed;
+            GameEvents.StepConfirmed -= OnStepConfirmed;
+        }
+
+        private void OnStepConfirmed()
+        {
+            if (BadgeRegistry.BadgesCount >= Info.Dimension * Info.Dimension * Info.Dimension)
+            {
+                GameOver();
+            }
         }
 
         private void OnTimePassed()

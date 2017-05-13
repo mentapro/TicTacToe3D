@@ -10,7 +10,8 @@
 
         // GameBoard Scene
         ConfirmStepWindow,
-        PlayAgainWindow
+        PlayAgainWindow,
+        PauseWindow
     }
 
     public class MenuManager
@@ -26,6 +27,7 @@
         // GameBoard Scene
         private ConfirmStepWindowPresenter ConfirmStepWindow { get; set; }
         private PlayAgainWindowPresenter PlayAgainWindow { get; set; }
+        private PauseWindowPresenter PauseWindow { get; set; }
 
         private void OpenMenu(IMenuPresenter menu)
         {
@@ -59,6 +61,9 @@
                 case Menus.PlayAgainWindow:
                     PlayAgainWindow.Open();
                     break;
+                case Menus.PauseWindow:
+                    OpenMenu(PauseWindow);
+                    break;
             }
         }
 
@@ -85,6 +90,10 @@
                     break;
                 case Menus.PlayAgainWindow:
                     PlayAgainWindow.Close();
+                    break;
+                case Menus.PauseWindow:
+                    PauseWindow.Close();
+                    CurrentMenu = null;
                     break;
             }
         }
@@ -117,6 +126,11 @@
         public void SetMenu(PlayAgainWindowPresenter playAgainWindow)
         {
             PlayAgainWindow = playAgainWindow;
+        }
+
+        public void SetMenu(PauseWindowPresenter pauseWindow)
+        {
+            PauseWindow = pauseWindow;
         }
     }
 }

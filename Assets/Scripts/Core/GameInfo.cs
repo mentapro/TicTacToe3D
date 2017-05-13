@@ -28,6 +28,7 @@ namespace TicTacToe3D
             GameSettings = gameSettings;
             GameGeometry = new GameGeometryService();
             SetDefaults();
+            Reset();
         }
 
         public GameGeometryService GameGeometry { get; private set; }
@@ -86,7 +87,6 @@ namespace TicTacToe3D
                 if (value == _dimension) return;
                 _dimension = value;
                 NotifyPropertyChanged("Dimension");
-                GameGeometry.Update(_dimension, _badgesToWin);
             }
         }
 
@@ -98,7 +98,6 @@ namespace TicTacToe3D
                 if (value == _badgesToWin) return;
                 _badgesToWin = value;
                 NotifyPropertyChanged("BadgesToWin");
-                GameGeometry.Update(_dimension, _badgesToWin);
             }
         }
 
@@ -153,6 +152,7 @@ namespace TicTacToe3D
         {
             GameState = GameStates.Preload;
             ActivePlayer = null;
+            GameGeometry.Update(_dimension, _badgesToWin);
         }
     }
 }
