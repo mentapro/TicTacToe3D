@@ -63,6 +63,7 @@ namespace TicTacToe3D
             Container.BindInterfacesAndSelfTo<PlayersTableWindowPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<InformationPanelPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<PauseWindowPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<SaveGameWindowPresenter>().AsSingle();
 
             Container.BindInterfacesAndSelfTo<ModalDialog>().AsSingle();
         }

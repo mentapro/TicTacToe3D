@@ -8,7 +8,8 @@ namespace TicTacToe3D
     public class PauseWindowPresenter : MenuPresenter<PauseWindowView>, IInitializable, ITickable, IDisposable
     {
         private bool _tick;
-        private bool _isOpen;
+        private bool _isPauseOpen;
+        private GameStates _previousState;
 
         private GameInfo Info { get; set; }
         private MenuManager MenuManager { get; set; }
@@ -25,11 +26,17 @@ namespace TicTacToe3D
         public void Initialize()
         {
             Info.PropertyChanged += OnGameInfoPropertyChanged;
+
+            View.ResumeButton.onClick.AddListener(OnResumeButtonClicked);
+            View.SaveGameButton.onClick.AddListener(OnSaveGameButtonClicked);
         }
 
         public void Dispose()
         {
             Info.PropertyChanged -= OnGameInfoPropertyChanged;
+
+            View.ResumeButton.onClick.RemoveAllListeners();
+            View.SaveGameButton.onClick.RemoveAllListeners();
         }
 
         public void Tick()
@@ -39,18 +46,12 @@ namespace TicTacToe3D
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape) && _isPauseOpen == false)
             {
-                if (_isOpen)
-                {
-                    MenuManager.CloseMenu(Menus.PauseWindow);
-                    _isOpen = false;
-                }
-                else
-                {
-                    MenuManager.OpenMenu(Menus.PauseWindow);
-                    _isOpen = true;
-                }
+                _previousState = Info.GameState;
+                _isPauseOpen = true;
+                Info.GameState = GameStates.Paused;
+                MenuManager.OpenMenu(Menus.PauseWindow);
             }
         }
 
@@ -65,6 +66,41 @@ namespace TicTacToe3D
         private void OnGameStateChanged(GameStates state)
         {
             _tick = state == GameStates.Started || state == GameStates.Paused;
+        }
+
+        private void OnResumeButtonClicked()
+        {
+            MenuManager.CloseMenu(Menus.PauseWindow);
+            _isPauseOpen = false;
+            if (_previousState == GameStates.Started)
+            {
+                Info.GameState = GameStates.Started;
+            }
+        }
+
+        private void OnSaveGameButtonClicked()
+        {
+            MenuManager.OpenMenu(Menus.SaveGameWindow);
+        }
+
+        private void OnLoadGameButtonClicked()
+        {
+
+        }
+
+        private void OnSettingsButtonClicked()
+        {
+
+        }
+
+        private void OnExitToMenuButtonClicked()
+        {
+
+        }
+
+        private void OnExitGameButtonClicked()
+        {
+
         }
     }
 }

@@ -1,30 +1,18 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TicTacToe3D
 {
     public abstract class MenuView : MonoBehaviour
     {
         protected Animator Animator { get; private set; }
-        protected event Action MenuOpened;
 
         public bool IsOpen
         {
-            get
-            {
-                return Animator.GetBool("IsOpen");
-            }
-            set
-            {
-                Animator.SetBool("IsOpen", value);
-                if (value && MenuOpened != null)
-                {
-                    MenuOpened();
-                }
-            }
+            get { return Animator.GetBool("IsOpen"); }
+            set { Animator.SetBool("IsOpen", value); }
         }
 
-        protected virtual void Awake()
+        protected void Awake()
         {
             Animator = GetComponent<Animator>();
         }
