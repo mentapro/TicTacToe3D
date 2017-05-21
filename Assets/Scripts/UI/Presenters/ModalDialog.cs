@@ -1,10 +1,11 @@
 ﻿using System;
 using ModestTree;
 using UnityEngine;
+using Zenject;
 
 namespace TicTacToe3D
 {
-    public class ModalDialog : IDisposable
+    public class ModalDialog : ITickable,IDisposable
     {
         private static ModalDialogView View { get; set; }
 
@@ -19,6 +20,14 @@ namespace TicTacToe3D
             View.Button1.onClick.RemoveAllListeners();
             View.Button2.onClick.RemoveAllListeners();
             View.Button3.onClick.RemoveAllListeners();
+        }
+
+        public void Tick()
+        {
+            if (View.gameObject.activeSelf && Input.GetKeyDown(KeyCode.Return))
+            {
+                View.Button1.onClick.Invoke();
+            }
         }
 
         public static void Show(ModalDialogDetails details)

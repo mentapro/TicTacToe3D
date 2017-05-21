@@ -26,6 +26,7 @@ namespace TicTacToe3D
             Container.Bind<MenuManager>().AsSingle();
             Container.Bind<GameEvents>().AsSingle();
             Container.Bind<PlayerRowGameModel>().AsTransient();
+            Container.Bind<IArtificialIntelligence>().To<RulesArtificialIntelligence>().AsSingle();
 
             Container.BindInterfacesAndSelfTo<PlayerRowGameModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeModel.Registry>().AsSingle();

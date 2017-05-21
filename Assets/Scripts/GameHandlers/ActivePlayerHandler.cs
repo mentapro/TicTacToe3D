@@ -43,7 +43,7 @@ namespace TicTacToe3D
         {
             _playerCanWin = isVictorious;
 
-            if (Info.GameSettings.ConfirmStep == false)
+            if (Info.GameSettings.ConfirmStep == false || Info.ActivePlayer.Type == PlayerTypes.AI)
             {
                 GameEvents.StepConfirmed();
             }

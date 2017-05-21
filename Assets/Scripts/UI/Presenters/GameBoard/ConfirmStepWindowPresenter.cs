@@ -79,7 +79,7 @@ namespace TicTacToe3D
 
         private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
         {
-            if (Info.GameSettings.ConfirmStep)
+            if (Info.GameSettings.ConfirmStep && badge.Owner.Type != PlayerTypes.AI)
             {
                 MenuManager.OpenMenu(Menus.ConfirmStepWindow);
                 _isOpen = true;

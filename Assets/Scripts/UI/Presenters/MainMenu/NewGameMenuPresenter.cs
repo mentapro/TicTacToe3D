@@ -51,7 +51,7 @@ namespace TicTacToe3D
         private void OnStartButtonClicked()
         {
             var players = RowRegistry.GetValidatedPlayers();
-            if (players.Count < 2)
+            if (players == null || players.Count < 2)
             {
                 ModalDialog.Show("<color=red>Error!</color>\nNot all values are filled.");
                 return;

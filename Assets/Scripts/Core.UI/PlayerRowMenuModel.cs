@@ -66,7 +66,7 @@ namespace TicTacToe3D
                 var texture = new Texture2D(1, 1);
                 texture.SetPixel(0, 0, color);
                 texture.Apply();
-                var item = new Dropdown.OptionData(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0, 0)));
+                var item = new Dropdown.OptionData(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero));
                 Facade.PlayerColorDropdown.options.Add(item);
             }
             Facade.PlayerColorDropdown.value = _Registry.RowsCount - 1;
@@ -84,6 +84,9 @@ namespace TicTacToe3D
                 case 1:
                     OnHumanPlayerSelected();
                     break;
+                case 2:
+                    OnComputerPlayerSelected();
+                    break;
             }
         }
 
@@ -94,27 +97,48 @@ namespace TicTacToe3D
 
             Facade.PlayerNameInputField.gameObject.SetActive(false);
             Facade.PlayerColorDropdown.gameObject.SetActive(false);
+            UpdateComputerNames();
         }
-        
+
         private void OnHumanPlayerSelected()
         {
-            var activeCount = _Registry.Rows.Count(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf);
-            if (activeCount == 0)
+            if (Facade.PlayerNameInputField.gameObject.activeSelf == false)
             {
-                Facade.PlayerColorDropdown.value = 0;
+                var activeCount = _Registry.Rows.Count(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf);
+                if (activeCount == 0)
+                {
+                    Facade.PlayerColorDropdown.value = 0;
+                }
+                else
+                {
+                    var activeColors = _Registry.Rows.Where(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf)
+                        .Select(activeRow => activeRow.Facade.PlayerColorDropdown.captionImage.sprite.texture.GetPixel(0, 0)).ToArray();
+                    var neededColor = _Settings.PlayerColors.Except(activeColors).First();
+                    Facade.PlayerColorDropdown.value = Facade.PlayerColorDropdown.options
+                        .IndexOf(Facade.PlayerColorDropdown.options.First(x => x.image.texture.GetPixel(0, 0) == neededColor));
+                }
+                _currentColorIndex = Facade.PlayerColorDropdown.value;
             }
-            else
-            {
-                var activeColors = _Registry.Rows.Where(row => row.Facade.PlayerColorDropdown.gameObject.activeSelf)
-                    .Select(activeRow => activeRow.Facade.PlayerColorDropdown.captionImage.sprite.texture.GetPixel(0, 0)).ToArray();
-                var neededColor = _Settings.PlayerColors.Except(activeColors).First();
-                Facade.PlayerColorDropdown.value = Facade.PlayerColorDropdown.options
-                    .IndexOf(Facade.PlayerColorDropdown.options.First(x => x.image.texture.GetPixel(0, 0) == neededColor));
-            }
-            _currentColorIndex = Facade.PlayerColorDropdown.value;
 
+            Facade.PlayerNameInputField.interactable = true;
             Facade.PlayerNameInputField.gameObject.SetActive(true);
             Facade.PlayerColorDropdown.gameObject.SetActive(true);
+            UpdateComputerNames();
+        }
+
+        private void OnComputerPlayerSelected()
+        {
+            OnHumanPlayerSelected();
+            Facade.PlayerNameInputField.interactable = false;
+        }
+
+        private void UpdateComputerNames()
+        {
+            var computers = _Registry.Rows.Where(row => row.Facade.PlayerTypeDropdown.value == 2).ToList();
+            for (var i = 0; i < computers.Count; i++)
+            {
+                computers[i].Facade.PlayerNameInputField.text = "Computer " + (i + 1);
+            }
         }
 
         private void OnPlayerColorDropdownChanged(int index)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
@@ -9,21 +10,28 @@ namespace TicTacToe3D
     public class PlayerInputHandler : ITickable, IDisposable
     {
         private bool _tick;
+        private bool _aiMadeStep;
 
         private GameInfo Info { get; set; }
         private BadgeSpawnPoint.Registry SpawnRegistry { get; set; }
+        private BadgeModel.Registry BadgeRegistry { get; set; }
         private BadgeSpawner BadgeSpawner { get; set; }
         private GameEvents GameEvents { get; set; }
+        private IArtificialIntelligence Ai { get; set; }
 
         public PlayerInputHandler(GameInfo info,
             BadgeSpawnPoint.Registry spawnRegistry,
+            BadgeModel.Registry badgeRegistry,
             BadgeSpawner badgeSpawner,
-            GameEvents gameEvents)
+            GameEvents gameEvents,
+            IArtificialIntelligence ai)
         {
             Info = info;
             SpawnRegistry = spawnRegistry;
+            BadgeRegistry = badgeRegistry;
             BadgeSpawner = badgeSpawner;
             GameEvents = gameEvents;
+            Ai = ai;
 
             Info.PropertyChanged += OnGameInfoPropertyChanged;
             GameEvents.BadgeSpawned += OnBadgeSpawned;
@@ -31,6 +39,12 @@ namespace TicTacToe3D
 
         public void Tick()
         {
+            if (Info.ActivePlayer.Type == PlayerTypes.AI && _aiMadeStep == false && Info.GameState == GameStates.Started)
+            {
+                _aiMadeStep = true;
+                SpawnRegistry.Spawns.First().StartCoroutine(AiWaitAndMakeStep());
+                return;
+            }
             if (_tick == false)
             {
                 return;
@@ -68,6 +82,13 @@ namespace TicTacToe3D
         {
             Info.PropertyChanged -= OnGameInfoPropertyChanged;
             GameEvents.BadgeSpawned -= OnBadgeSpawned;
+        }
+
+        private IEnumerator AiWaitAndMakeStep()
+        {
+            yield return new WaitForSeconds(1f);
+            BadgeSpawner.MakeStep(Ai.FindBestPoint(BadgeRegistry, Info.ActivePlayer, Info));
+            _aiMadeStep = false;
         }
 
         private void OnGameInfoPropertyChanged(object sender, PropertyChangedEventArgs e)
