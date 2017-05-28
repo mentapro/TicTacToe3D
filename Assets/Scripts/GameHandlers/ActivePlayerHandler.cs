@@ -7,8 +7,6 @@ namespace TicTacToe3D
 {
     public class ActivePlayerHandler : IInitializable, IDisposable
     {
-        private bool _playerCanWin;
-
         private GameInfo Info { get; set; }
         private GameEvents GameEvents { get; set; }
         private History History { get; set; }
@@ -22,8 +20,11 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
-            Info.GlobalStep = 1;
-            NextActivePlayer();
+            if (Info.HistoryItems == null) // if game is not loading
+            {
+                Info.GlobalStep = 1;
+                NextActivePlayer();
+            }
 
             GameEvents.BadgeSpawned += OnBadgeSpawned;
             GameEvents.StepConfirmed += OnStepConfirmed;
@@ -41,7 +42,7 @@ namespace TicTacToe3D
 
         private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
         {
-            _playerCanWin = isVictorious;
+            Info.PlayerCanWin = isVictorious;
 
             if (Info.GameSettings.ConfirmStep == false || Info.ActivePlayer.Type == PlayerTypes.AI)
             {
@@ -51,7 +52,7 @@ namespace TicTacToe3D
 
         private void OnStepConfirmed()
         {
-            if (_playerCanWin)
+            if (Info.PlayerCanWin)
             {
                 GameEvents.PlayerWonSignal();
 
@@ -61,7 +62,7 @@ namespace TicTacToe3D
                 }
             }
 
-            if (Info.Players.Count(x => x.State == PlayerStates.Plays) >= 2 && (Info.ActivePlayerMadeSteps >= Info.StepSize || _playerCanWin))
+            if (Info.Players.Count(x => x.State == PlayerStates.Plays) >= 2 && (Info.ActivePlayerMadeSteps >= Info.StepSize || Info.PlayerCanWin))
             {
                 NextActivePlayer();
                 ShowNotification(Info);

@@ -35,6 +35,11 @@
             Facade.StateText.text = state;
         }
 
+        public void SetScore(string score)
+        {
+            Facade.ScoreAmountText.text = score;
+        }
+
         private void Initialize()
         {
 

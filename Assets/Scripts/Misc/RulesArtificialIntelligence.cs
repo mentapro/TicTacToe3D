@@ -7,24 +7,30 @@ namespace TicTacToe3D
 {
     public interface IArtificialIntelligence
     {
-        Point FindBestPoint(BadgeModel.Registry badges, Player playerFor, GameInfo info);
+        Point FindBestPoint(Player playerFor);
     }
 
     public class RulesArtificialIntelligence : IArtificialIntelligence
     {
         private GameInfo Info { get; set; }
+        private BadgeModel.Registry BadgeRegistry { get; set; }
         private Player PlayerFor { get; set; }
         private IList<Player> Opponents { get; set; }
         private Dictionary<Point, Player> BadgesField { get; set; }
 
-        public Point FindBestPoint(BadgeModel.Registry badges, Player playerFor, GameInfo info)
+        public RulesArtificialIntelligence(GameInfo info, BadgeModel.Registry badgeRegistry)
         {
             Info = info;
+            BadgeRegistry = badgeRegistry;
+        }
+        
+        public Point FindBestPoint(Player playerFor)
+        {
             PlayerFor = playerFor;
-            Opponents = info.Players.Except(new[] { playerFor }).ToList();
+            Opponents = Info.Players.Except(new[] { playerFor }).ToList();
             BadgesField = new Dictionary<Point, Player>();
 
-            MapBadgesField(badges.Badges);
+            MapBadgesField(BadgeRegistry.Badges);
 
             if (Info.Dimension % 2 == 1)
             {

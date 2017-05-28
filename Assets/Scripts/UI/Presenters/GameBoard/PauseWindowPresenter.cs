@@ -1,6 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Zenject;
 
 namespace TicTacToe3D
@@ -29,6 +33,9 @@ namespace TicTacToe3D
 
             View.ResumeButton.onClick.AddListener(OnResumeButtonClicked);
             View.SaveGameButton.onClick.AddListener(OnSaveGameButtonClicked);
+            View.LoadGameButton.onClick.AddListener(OnLoadGameButtonClicked);
+            View.ExitToMenuButton.onClick.AddListener(OnExitToMenuButtonClicked);
+            View.ExitGameButton.onClick.AddListener(OnExitGameButtonClicked);
         }
 
         public void Dispose()
@@ -37,6 +44,9 @@ namespace TicTacToe3D
 
             View.ResumeButton.onClick.RemoveAllListeners();
             View.SaveGameButton.onClick.RemoveAllListeners();
+            View.LoadGameButton.onClick.RemoveAllListeners();
+            View.ExitToMenuButton.onClick.RemoveAllListeners();
+            View.ExitGameButton.onClick.RemoveAllListeners();
         }
 
         public void Tick()
@@ -85,7 +95,7 @@ namespace TicTacToe3D
 
         private void OnLoadGameButtonClicked()
         {
-
+            MenuManager.OpenMenu(Menus.LoadGameWindow);
         }
 
         private void OnSettingsButtonClicked()
@@ -95,12 +105,16 @@ namespace TicTacToe3D
 
         private void OnExitToMenuButtonClicked()
         {
-
+            SceneManager.LoadScene("MainMenu");
         }
 
         private void OnExitGameButtonClicked()
         {
-
+#if UNITY_EDITOR
+            EditorApplication.isPlaying = false;
+#else
+            UnityEngine.Application.Quit();
+#endif
         }
     }
 }

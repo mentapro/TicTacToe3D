@@ -14,21 +14,18 @@ namespace TicTacToe3D
 
         private GameInfo Info { get; set; }
         private BadgeSpawnPoint.Registry SpawnRegistry { get; set; }
-        private BadgeModel.Registry BadgeRegistry { get; set; }
         private BadgeSpawner BadgeSpawner { get; set; }
         private GameEvents GameEvents { get; set; }
         private IArtificialIntelligence Ai { get; set; }
 
         public PlayerInputHandler(GameInfo info,
             BadgeSpawnPoint.Registry spawnRegistry,
-            BadgeModel.Registry badgeRegistry,
             BadgeSpawner badgeSpawner,
             GameEvents gameEvents,
             IArtificialIntelligence ai)
         {
             Info = info;
             SpawnRegistry = spawnRegistry;
-            BadgeRegistry = badgeRegistry;
             BadgeSpawner = badgeSpawner;
             GameEvents = gameEvents;
             Ai = ai;
@@ -87,7 +84,10 @@ namespace TicTacToe3D
         private IEnumerator AiWaitAndMakeStep()
         {
             yield return new WaitForSeconds(1f);
-            BadgeSpawner.MakeStep(Ai.FindBestPoint(BadgeRegistry, Info.ActivePlayer, Info));
+            if (Info.GameState == GameStates.Started)
+            {
+                BadgeSpawner.MakeStep(Ai.FindBestPoint(Info.ActivePlayer));
+            }
             _aiMadeStep = false;
         }
 

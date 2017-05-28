@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 using UnityEngine;
 using Zenject;
 
@@ -47,6 +48,7 @@ namespace TicTacToe3D
             }
         }
 
+        [JsonIgnore]
         public bool ConfirmStep
         {
             get { return _confirmStep; }

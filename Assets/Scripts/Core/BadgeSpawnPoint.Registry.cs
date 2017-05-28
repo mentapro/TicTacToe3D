@@ -27,9 +27,9 @@ namespace TicTacToe3D
                 get { return _spawnPoints.Count; }
             }
             
-            public void AddSpawn(BadgeSpawnPoint row)
+            public void AddSpawn(BadgeSpawnPoint spawn)
             {
-                _spawnPoints.Add(row);
+                _spawnPoints.Add(spawn);
             }
 
             public void Initialize()

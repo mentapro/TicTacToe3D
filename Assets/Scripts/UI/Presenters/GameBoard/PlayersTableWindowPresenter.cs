@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Zenject;
@@ -12,14 +13,20 @@ namespace TicTacToe3D
         private GameInfo Info { get; set; }
         private PlayerRowGameFacade.Factory PlayerRowFactory { get; set; }
         private PlayerRowGameModel.Registry PlayerRowRegistry { get; set; }
+        private ScoreCalculationService ScoreCalculator { get; set; }
+        private GameEvents GameEvents { get; set; }
 
         public PlayersTableWindowPresenter(GameInfo info,
             PlayerRowGameFacade.Factory playerRowFactory,
-            PlayerRowGameModel.Registry playerRowRegistry)
+            PlayerRowGameModel.Registry playerRowRegistry,
+            ScoreCalculationService scoreCalculator,
+            GameEvents gameEvents)
         {
             Info = info;
             PlayerRowFactory = playerRowFactory;
             PlayerRowRegistry = playerRowRegistry;
+            ScoreCalculator = scoreCalculator;
+            GameEvents = gameEvents;
         }
 
         public void Initialize()
@@ -31,19 +38,44 @@ namespace TicTacToe3D
                 playerRow.ColorImage.color = player.Color;
                 playerRow.NameText.text = player.Name;
                 playerRow.StateText.text = player.State.ToString();
+                playerRow.ScoreAmountText.text = player.Score.ToString();
                 playerRow.Owner = player;
                 player.PropertyChanged += OnPlayerPropertyChanged;
             }
+            //PlayerRowRegistry.Rows.First(row => ReferenceEquals(row.Owner, Info.ActivePlayer)).TurnOnBackground();
             PlayerRowRegistry.Rows.First(row => ReferenceEquals(row.Owner, Info.ActivePlayer)).TurnOnBackground();
             _previousPlayer = Info.ActivePlayer;
 
             Info.PropertyChanged += OnGameInfoPropertyChanged;
+            GameEvents.StepConfirmed += OnStepConfirmed;
+            GameEvents.UndoSignal += OnUndo;
         }
 
         public void Dispose()
         {
             Info.Players.ForEach(player => player.PropertyChanged -= OnPlayerPropertyChanged);
             Info.PropertyChanged -= OnGameInfoPropertyChanged;
+            GameEvents.StepConfirmed -= OnStepConfirmed;
+            GameEvents.UndoSignal -= OnUndo;
+        }
+
+        private void OnStepConfirmed()
+        {
+            UpdateScores();
+        }
+
+        private void OnUndo(List<HistoryItem> canceledbadges)
+        {
+            UpdateScores();
+        }
+
+        private void UpdateScores()
+        {
+            var scores = ScoreCalculator.CalculateScores();
+            foreach (var playerScore in scores)
+            {
+                playerScore.Key.Score = playerScore.Value;
+            }
         }
 
         private void OnPlayerPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -52,6 +84,9 @@ namespace TicTacToe3D
             {
                 case "State":
                     OnPlayerStateChanged(sender as Player);
+                    break;
+                case "Score":
+                    OnPlayerScoreChanged(sender as Player);
                     break;
             }
         }
@@ -64,6 +99,11 @@ namespace TicTacToe3D
                     OnActivePlayerChanged(Info.ActivePlayer);
                     break;
             }
+        }
+
+        private void OnPlayerScoreChanged(Player player)
+        {
+            PlayerRowRegistry.Rows.First(row => ReferenceEquals(row.Owner, player)).SetScore(player.Score.ToString());
         }
 
         private void OnPlayerStateChanged(Player player)

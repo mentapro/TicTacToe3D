@@ -23,7 +23,14 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
-            Info.Players.ForEach(player => player.State = PlayerStates.Plays);
+            if (Info.HistoryItems == null) // if game is not loading
+            {
+                Info.Players.ForEach(player => player.State = PlayerStates.Plays);
+            }
+            else
+            {
+                FillWinnersCatalogAfterLoading();
+            }
             StartGame();
 
             GameEvents.PlayerWonSignal += OnPlayerWon;
@@ -100,6 +107,20 @@ namespace TicTacToe3D
             return null;
         }
 
+        private void FillWinnersCatalogAfterLoading()
+        {
+            foreach (var player in Info.Players)
+            {
+                foreach (var line in Info.GameGeometry.Lines)
+                {
+                    if (line.All(point => BadgeRegistry.Badges.Any(x => x.Coordinates == point && x.Owner == player && x.IsConfirmed)))
+                    {
+                        _winnersCatalog.Add(player, BadgeRegistry.Badges.Where(badge => line.Contains(badge.Coordinates)).ToList());
+                    }
+                }
+            }
+        }
+
         private void GameOver()
         {
             foreach (var player in Info.Players.Where(x => x.State == PlayerStates.Plays))
@@ -141,6 +162,7 @@ namespace TicTacToe3D
                     Title = "OK",
                     Handler = () =>
                     {
+                        Info.HistoryItems = null;
                         Info.GameState = GameStates.Started;
                         ActivePlayerHandler.ShowNotification(Info);
                     }

@@ -15,13 +15,13 @@
             View = view;
         }
 
-        public void Open()
+        public virtual void Open()
         {
             View.transform.SetAsLastSibling();
             View.IsOpen = true;
         }
 
-        public void Close()
+        public virtual void Close()
         {
             View.transform.SetAsFirstSibling();
             View.IsOpen = false;

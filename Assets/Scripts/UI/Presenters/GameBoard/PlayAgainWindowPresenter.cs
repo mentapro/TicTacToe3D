@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using UnityEngine.SceneManagement;
 using Zenject;
 
@@ -56,6 +58,7 @@ namespace TicTacToe3D
 
         private void OnYesButtonClicked()
         {
+            Info.Players.Sort(new PlayerScoreComparer());
             SceneLoader.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single, container =>
             {
                 container.BindInstance(Info).WhenInjectedInto<GameBoardInstaller>();
@@ -65,6 +68,16 @@ namespace TicTacToe3D
         private void OnNoButtonClicked()
         {
             SceneManager.LoadScene("MainMenu");
+        }
+    }
+
+    internal class PlayerScoreComparer : IComparer<Player>
+    {
+        public int Compare(Player x, Player y)
+        {
+            if (x.Score > y.Score) return -1;
+            if (x.Score < y.Score) return 1;
+            return 0;
         }
     }
 }

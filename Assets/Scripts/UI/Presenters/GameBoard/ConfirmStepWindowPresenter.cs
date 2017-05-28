@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using UnityEngine;
 using Zenject;
 
@@ -14,22 +15,30 @@ namespace TicTacToe3D
         private GameInfo Info { get; set; }
         private BadgeEraser BadgeEraser { get; set; }
         private GameEvents GameEvents { get; set; }
+        private BadgeModel.Registry BadgeRegistry { get; set; }
 
         public ConfirmStepWindowPresenter(MenuManager menuManager,
             GameInfo info,
             BadgeEraser badgeEraser,
-            GameEvents gameEvents)
+            GameEvents gameEvents,
+            BadgeModel.Registry badgeRegistry)
         {
             MenuManager = menuManager;
             Info = info;
             BadgeEraser = badgeEraser;
             GameEvents = gameEvents;
+            BadgeRegistry = badgeRegistry;
 
             menuManager.SetMenu(this);
         }
 
         public void Initialize()
         {
+            if (Info.HistoryItems != null && BadgeRegistry.Badges.Count(badge => badge.IsConfirmed == false) > 0)
+            {
+                MenuManager.OpenMenu(Menus.ConfirmStepWindow);
+                _isOpen = true;
+            }
             View.ConfirmStepButton.onClick.AddListener(OnConfirmStepClicked);
             View.UndoStepButton.onClick.AddListener(OnUndoClicked);
 

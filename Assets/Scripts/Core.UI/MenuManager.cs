@@ -12,7 +12,8 @@
         ConfirmStepWindow,
         PlayAgainWindow,
         PauseWindow,
-        SaveGameWindow
+        SaveGameWindow,
+        LoadGameWindow
     }
 
     public class MenuManager
@@ -30,6 +31,7 @@
         private PlayAgainWindowPresenter PlayAgainWindow { get; set; }
         private PauseWindowPresenter PauseWindow { get; set; }
         private SaveGameWindowPresenter SaveGameWindow { get; set; }
+        private LoadGameWindowPresenter LoadGameWindow { get; set; }
 
         private void OpenMenu(IMenuPresenter menu)
         {
@@ -69,6 +71,9 @@
                 case Menus.SaveGameWindow:
                     OpenMenu(SaveGameWindow);
                     break;
+                case Menus.LoadGameWindow:
+                    OpenMenu(LoadGameWindow);
+                    break;
             }
         }
 
@@ -102,6 +107,10 @@
                     break;
                 case Menus.SaveGameWindow:
                     SaveGameWindow.Close();
+                    CurrentMenu = null;
+                    break;
+                case Menus.LoadGameWindow:
+                    LoadGameWindow.Close();
                     CurrentMenu = null;
                     break;
             }
@@ -145,6 +154,11 @@
         public void SetMenu(SaveGameWindowPresenter saveGameWindow)
         {
             SaveGameWindow = saveGameWindow;
+        }
+
+        public void SetMenu(LoadGameWindowPresenter loadGameWindow)
+        {
+            LoadGameWindow = loadGameWindow;
         }
     }
 }

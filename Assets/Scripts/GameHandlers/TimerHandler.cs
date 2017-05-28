@@ -30,18 +30,21 @@ namespace TicTacToe3D
 
         public void Initialize()
         {
-            if (Info.GameSettings.TimerType == TimerTypes.DynamicTime)
+            if (Info.HistoryItems == null)
             {
-                throw new NotImplementedException("Dynamic timer is not implemented yet.");
-            }
-            Info.Players.ForEach(player =>
-            {
-                if (Info.GameSettings.TimerType == TimerTypes.FixedTimePerRound ||
-                    Info.GameSettings.TimerType == TimerTypes.FixedTimePerStep)
+                if (Info.GameSettings.TimerType == TimerTypes.DynamicTime)
                 {
-                    player.TimeLeft = Info.TimerTime;
+                    throw new NotImplementedException("Dynamic timer is not implemented yet.");
                 }
-            });
+                Info.Players.ForEach(player =>
+                {
+                    if (Info.GameSettings.TimerType == TimerTypes.FixedTimePerRound ||
+                        Info.GameSettings.TimerType == TimerTypes.FixedTimePerStep)
+                    {
+                        player.TimeLeft = Info.TimerTime;
+                    }
+                });
+            }
         }
 
         public void Dispose()

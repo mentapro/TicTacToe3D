@@ -38,7 +38,7 @@ namespace TicTacToe3D
             
             badge.Owner = Info.ActivePlayer;
             badge.Coordinates = coordinates;
-            badge.SetColor(Info.ActivePlayer.Color);
+            badge.Color = Info.ActivePlayer.Color;
             Info.ActivePlayerMadeSteps++;
 
             GameEvents.BadgeSpawned(badge.Model, CheckBadgeForVictory(badge.Model));

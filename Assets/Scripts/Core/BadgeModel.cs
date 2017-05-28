@@ -10,8 +10,8 @@ namespace TicTacToe3D
         private Registry _Registry { get; set; }
 
         public bool IsConfirmed { get; set; }
-        public Point Coordinates { get; private set; }
-        public Player Owner { get; private set; }
+        public Point Coordinates { get; set; }
+        public Player Owner { get; set; }
         public ParticleSystem Glowing
         {
             get { return Facade.Glowing; }
@@ -35,16 +35,6 @@ namespace TicTacToe3D
 
             _Registry.RemoveBadge(this);
             Object.Destroy(Facade.gameObject);
-        }
-
-        public void SetCoordinates(Point coordinates)
-        {
-            Coordinates = coordinates;
-        }
-
-        public void SetOwner(Player owner)
-        {
-            Owner = owner;
         }
 
         public void SetBadgeColor(Color color)

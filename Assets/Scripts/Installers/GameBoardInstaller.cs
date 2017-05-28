@@ -26,13 +26,23 @@ namespace TicTacToe3D
             Container.Bind<MenuManager>().AsSingle();
             Container.Bind<GameEvents>().AsSingle();
             Container.Bind<PlayerRowGameModel>().AsTransient();
+            Container.Bind<SaveItemModel>().AsTransient();
             Container.Bind<IArtificialIntelligence>().To<RulesArtificialIntelligence>().AsSingle();
+            Container.Bind<IFetchService<History>>().To<HistoryFetchService>().AsSingle();
+            Container.Bind<ScoreCalculationService>().AsSingle();
 
             Container.BindInterfacesAndSelfTo<PlayerRowGameModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeSpawnPoint.Registry>().AsSingle();
+            Container.BindInterfacesAndSelfTo<SaveItemModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<History>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeEraser>().AsSingle();
+            Container.BindInterfacesAndSelfTo<GameManager>().AsSingle();
+
+            Container.BindInitializableExecutionOrder<BadgeModel.Registry>(2);
+            Container.BindInitializableExecutionOrder<GameManager>(10);
+            Container.BindInitializableExecutionOrder<ConfirmStepWindowPresenter>(11);
+            Container.BindInitializableExecutionOrder<VictoryHandler>(12);
 
             Container.BindInterfacesTo<CameraHandler>().AsSingle();
             Container.BindInterfacesTo<PlayerInputHandler>().AsSingle();
@@ -55,6 +65,8 @@ namespace TicTacToe3D
                 .FromComponentInNewPrefab(_settings.BadgePrefab);
             Container.BindFactory<PlayerRowGameFacade, PlayerRowGameFacade.Factory>()
                 .FromComponentInNewPrefab(_settings.PlayerRowGameFacadePrefab);
+            Container.BindFactory<SaveItemFacade, SaveItemFacade.Factory>()
+                .FromComponentInNewPrefab(_settings.SaveItemTogglePrefab);
         }
 
         private void InstallPresenters()
@@ -65,6 +77,7 @@ namespace TicTacToe3D
             Container.BindInterfacesAndSelfTo<InformationPanelPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<PauseWindowPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<SaveGameWindowPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<LoadGameWindowPresenter>().AsSingle();
 
             Container.BindInterfacesAndSelfTo<ModalDialog>().AsSingle();
         }
@@ -77,6 +90,7 @@ namespace TicTacToe3D
             public GameObject StickPartitionPrefab;
             public GameObject BadgePrefab;
             public GameObject PlayerRowGameFacadePrefab;
+            public GameObject SaveItemTogglePrefab;
         }
     }
 }

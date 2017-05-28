@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace TicTacToe3D
 {
@@ -31,6 +32,7 @@ namespace TicTacToe3D
             Reset();
         }
 
+        [JsonIgnore]
         public GameGeometryService GameGeometry { get; private set; }
         public GameSettings GameSettings { get; private set; }
         public List<Player> Players { get; set; }
@@ -123,6 +125,11 @@ namespace TicTacToe3D
             }
         }
 
+        public bool PlayerCanWin { get; set; }
+
+        [JsonIgnore]
+        public List<HistoryItem> HistoryItems { get; set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]
@@ -143,7 +150,7 @@ namespace TicTacToe3D
             Players = new List<Player>
             {
                 new Player(PlayerTypes.Human, "Player 1", UnityEngine.Color.red),
-                new Player(PlayerTypes.Human, "Player 2", UnityEngine.Color.blue),
+                new Player(PlayerTypes.AI, "Player 2", UnityEngine.Color.blue),
                 new Player(PlayerTypes.Human, "Player 3", UnityEngine.Color.green)
             };
         }
@@ -151,7 +158,10 @@ namespace TicTacToe3D
         public void Reset()
         {
             GameState = GameStates.Preload;
-            ActivePlayer = null;
+            if (HistoryItems == null) // if game is not loading
+            {
+                ActivePlayer = null;
+            }
             GameGeometry.Update(_dimension, _badgesToWin);
         }
     }

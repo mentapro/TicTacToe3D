@@ -19,7 +19,7 @@ namespace TicTacToe3D
         private Settings _Settings { get; set; }
 
         public Point Coordinates { get; set; }
-        public BadgeModel Badge { get; private set; }
+        public BadgeModel Badge { get; set; }
 
         public void OnMouseExit()
         {

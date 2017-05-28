@@ -22,17 +22,23 @@ namespace TicTacToe3D
 
         public Player Owner
         {
-            set { Model.SetOwner(value); }
+            get { return Model.Owner; }
+            set { Model.Owner = value; }
         }
         
         public Point Coordinates
         {
-            set { Model.SetCoordinates(value); }
+            set { Model.Coordinates = value; }
         }
 
-        public void SetColor(Color color)
+        public Color Color
         {
-            Model.SetBadgeColor(color);
+            set { Model.SetBadgeColor(value); }
+        }
+
+        public bool IsConfirmed
+        {
+            set { Model.IsConfirmed = value; }
         }
 
         [Serializable]
