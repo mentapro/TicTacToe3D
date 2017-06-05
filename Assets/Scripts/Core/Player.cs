@@ -23,6 +23,7 @@ namespace TicTacToe3D
         private PlayerStates _state;
         private int _score;
         private float _timeLeft;
+        private int _wonRounds;
 
         public PlayerTypes Type { get; private set; }
         public string Name { get; private set; }
@@ -58,6 +59,17 @@ namespace TicTacToe3D
                 if (value == _score) return;
                 _score = value;
                 OnPropertyChanged("Score");
+            }
+        }
+
+        public int WonRounds
+        {
+            get { return _wonRounds; }
+            set
+            {
+                if (value == _wonRounds) return;
+                _wonRounds = value;
+                OnPropertyChanged("WonRounds");
             }
         }
 

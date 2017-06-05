@@ -29,6 +29,7 @@ namespace TicTacToe3D
             Container.Bind<SaveItemModel>().AsTransient();
             Container.Bind<IArtificialIntelligence>().To<RulesArtificialIntelligence>().AsSingle();
             Container.Bind<IFetchService<History>>().To<HistoryFetchService>().AsSingle();
+            Container.Bind<IFetchService<Stats>>().To<StatsFetchService>().AsSingle();
             Container.Bind<ScoreCalculationService>().AsSingle();
 
             Container.BindInterfacesAndSelfTo<PlayerRowGameModel.Registry>().AsSingle();
@@ -36,10 +37,12 @@ namespace TicTacToe3D
             Container.BindInterfacesAndSelfTo<BadgeSpawnPoint.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<SaveItemModel.Registry>().AsSingle();
             Container.BindInterfacesAndSelfTo<History>().AsSingle();
+            Container.BindInterfacesAndSelfTo<Stats>().AsSingle();
             Container.BindInterfacesAndSelfTo<BadgeEraser>().AsSingle();
             Container.BindInterfacesAndSelfTo<GameManager>().AsSingle();
 
             Container.BindInitializableExecutionOrder<BadgeModel.Registry>(2);
+            Container.BindInitializableExecutionOrder<Stats>(9);
             Container.BindInitializableExecutionOrder<GameManager>(10);
             Container.BindInitializableExecutionOrder<ConfirmStepWindowPresenter>(11);
             Container.BindInitializableExecutionOrder<VictoryHandler>(12);

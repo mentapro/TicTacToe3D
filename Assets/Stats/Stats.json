@@ -1,0 +1,19 @@
+{
+  "StatsItems": [
+    {
+      "PlayerName": "Player 1",
+      "TotalScore": 904,
+      "WonRounds": 2
+    },
+    {
+      "PlayerName": "Player 2",
+      "TotalScore": 189,
+      "WonRounds": 0
+    },
+    {
+      "PlayerName": "Player 3",
+      "TotalScore": 40,
+      "WonRounds": 2
+    }
+  ]
+}

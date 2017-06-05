@@ -31,10 +31,10 @@ namespace TicTacToe3D
             _facade = facade;
         }
 
-        public void Destroy()
+        private void Destroy()
         {
             _facade.SaveItemToggle.onValueChanged.RemoveAllListeners();
-            _registry.RemoveBadge(this);
+            _registry.RemoveRow(this);
             Object.Destroy(_facade.gameObject);
         }
     }

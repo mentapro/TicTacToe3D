@@ -16,12 +16,12 @@ namespace TicTacToe3D
         private Button _newGameButton = null;
         [SerializeField]
         private Button _loadGameButton = null;
-        //[SerializeField]
-        //private Button _multiplayerButton = null;
-        //[SerializeField]
-        //private Button _highscoresButton = null;
-        //[SerializeField]
-        //private Button _settingsButton = null;
+        [SerializeField]
+        private Button _multiplayerButton = null;
+        [SerializeField]
+        private Button _highscoresButton = null;
+        [SerializeField]
+        private Button _settingsButton = null;
         [SerializeField]
         private Button _exitButton = null;
 
@@ -33,6 +33,21 @@ namespace TicTacToe3D
         public Button LoadGameButton
         {
             get { return _loadGameButton; }
+        }
+
+        public Button MultiplayerButton
+        {
+            get { return _multiplayerButton; }
+        }
+
+        public Button HighscoresButton
+        {
+            get { return _highscoresButton; }
+        }
+
+        public Button SettingsButton
+        {
+            get { return _settingsButton; }
         }
 
         public Button ExitButton

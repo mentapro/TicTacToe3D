@@ -23,7 +23,7 @@ namespace TicTacToe3D
                 _saveItems.Add(saveItem);
             }
 
-            public void RemoveBadge(SaveItemModel saveItem)
+            public void RemoveRow(SaveItemModel saveItem)
             {
                 _saveItems.Remove(saveItem);
             }

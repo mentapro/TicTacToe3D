@@ -40,6 +40,11 @@
             Facade.ScoreAmountText.text = score;
         }
 
+        public void SetWonRounds(string wonRounds)
+        {
+            Facade.WonAmountText.text = wonRounds;
+        }
+
         private void Initialize()
         {
 

@@ -37,12 +37,6 @@ namespace TicTacToe3D
                 serializer.Serialize(writer, instance);
             }
         }
-
-        public FileInfo[] GetFilesInFolder(string folderName)
-        {
-            var dir = new DirectoryInfo(Application.dataPath + "/" + folderName + "/");
-            return dir.GetFiles("*.json");
-        }
     }
     
     public class HistoryFetchService : FetchServiceBase<History>
@@ -60,6 +54,24 @@ namespace TicTacToe3D
                 dir.Create();
             }
             base.Save(instance, "Saves/" + fileName + ".json");
+        }
+    }
+    
+    public class StatsFetchService : FetchServiceBase<Stats>
+    {
+        public override Stats Load(string fileName)
+        {
+            return base.Load("Stats/" + fileName + ".json");
+        }
+
+        public override void Save(Stats instance, string fileName)
+        {
+            var dir = new DirectoryInfo(Application.dataPath + "/Stats/");
+            if (dir.Exists == false)
+            {
+                dir.Create();
+            }
+            base.Save(instance, "Stats/" + fileName + ".json");
         }
     }
 }

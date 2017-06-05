@@ -43,7 +43,7 @@ namespace TicTacToe3D
                     }
                     scores += line.Count(point => BadgesField[point] == player) * 2;
                 }
-                scores += CanForceVictoryAndFork(player) ? 50 : 0;
+                scores += CanForceVictoryAndFork(player) ? 35 : 0;
                 scores += CountForks(player) * 25;
                 scores += CountVictories(player) * 200;
                 playersScores[player] = scores;

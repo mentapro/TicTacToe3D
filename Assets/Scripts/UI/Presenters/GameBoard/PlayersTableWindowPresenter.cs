@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using ModestTree;
 using Zenject;
 
 namespace TicTacToe3D
@@ -39,10 +40,11 @@ namespace TicTacToe3D
                 playerRow.NameText.text = player.Name;
                 playerRow.StateText.text = player.State.ToString();
                 playerRow.ScoreAmountText.text = player.Score.ToString();
+                playerRow.WonAmountText.text = player.WonRounds.ToString();
                 playerRow.Owner = player;
                 player.PropertyChanged += OnPlayerPropertyChanged;
             }
-            //PlayerRowRegistry.Rows.First(row => ReferenceEquals(row.Owner, Info.ActivePlayer)).TurnOnBackground();
+            UpdateScores();
             PlayerRowRegistry.Rows.First(row => ReferenceEquals(row.Owner, Info.ActivePlayer)).TurnOnBackground();
             _previousPlayer = Info.ActivePlayer;
 
@@ -88,6 +90,9 @@ namespace TicTacToe3D
                 case "Score":
                     OnPlayerScoreChanged(sender as Player);
                     break;
+                case "WonRounds":
+                    OnPlayerWonRoundsChanged(sender as Player);
+                    break;
             }
         }
 
@@ -98,7 +103,23 @@ namespace TicTacToe3D
                 case "ActivePlayer":
                     OnActivePlayerChanged(Info.ActivePlayer);
                     break;
+                case "GameState":
+                    OnGameStateChanged(Info.GameState);
+                    break;
             }
+        }
+
+        private void OnGameStateChanged(GameStates state)
+        {
+            if (state == GameStates.GameEnded)
+            {
+                Info.Players.Where(player => player.State == PlayerStates.Winner).ForEach(x => x.WonRounds++);
+            }
+        }
+
+        private void OnPlayerWonRoundsChanged(Player player)
+        {
+            PlayerRowRegistry.Rows.First(row => ReferenceEquals(row.Owner, player)).SetWonRounds(player.WonRounds.ToString());
         }
 
         private void OnPlayerScoreChanged(Player player)
