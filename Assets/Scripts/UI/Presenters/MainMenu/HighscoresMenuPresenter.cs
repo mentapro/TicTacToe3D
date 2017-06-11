@@ -15,7 +15,7 @@ namespace TicTacToe3D
         public HighscoresMenuPresenter(MenuManager menuManager,
             IFetchService<Stats> statsFetchService,
             HighscoreItemModel.Registry highscoresRegistry,
-            HighscoreItemFacade.Factory highscoreItemFactory)
+            HighscoreItemFacade.Factory highscoreItemFactory, AudioController audioController) : base(audioController)
         {
             _menuManager = menuManager;
             _statsFetchService = statsFetchService;

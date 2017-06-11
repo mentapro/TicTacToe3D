@@ -16,9 +16,9 @@ namespace TicTacToe3D
         public int CompareTo(StatsItem other)
         {
             if (this.TotalScore > other.TotalScore)
-                return 1;
-            if (this.TotalScore < other.TotalScore)
                 return -1;
+            if (this.TotalScore < other.TotalScore)
+                return 1;
             return 0;
         }
     }

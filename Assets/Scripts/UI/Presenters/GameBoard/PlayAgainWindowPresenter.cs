@@ -11,14 +11,17 @@ namespace TicTacToe3D
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
         private ZenjectSceneLoader SceneLoader { get; set; }
+        private AudioController AudioController { get; set; }
 
         public PlayAgainWindowPresenter(MenuManager menuManager,
             GameInfo info,
-            ZenjectSceneLoader sceneLoader)
+            ZenjectSceneLoader sceneLoader,
+            AudioController audioController) : base(audioController)
         {
             MenuManager = menuManager;
             Info = info;
             SceneLoader = sceneLoader;
+            AudioController = audioController;
 
             menuManager.SetMenu(this);
         }
@@ -58,6 +61,7 @@ namespace TicTacToe3D
         private void OnYesButtonClicked()
         {
             Info.Players.Sort(new PlayerScoreComparer());
+            AudioController.Source.Stop();
             SceneLoader.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single, container =>
             {
                 container.BindInstance(Info).WhenInjectedInto<GameBoardInstaller>();
@@ -66,6 +70,8 @@ namespace TicTacToe3D
 
         private void OnNoButtonClicked()
         {
+            AudioController.Source.Stop();
+            AudioController.SourceBackground.Stop();
             SceneManager.LoadScene("MainMenu");
         }
     }

@@ -9,7 +9,7 @@ namespace TicTacToe3D
     {
         private GameInfo Info { get; set; }
 
-        public InformationPanelPresenter(GameInfo info)
+        public InformationPanelPresenter(GameInfo info, AudioController audioController) : base(audioController)
         {
             Info = info;
         }

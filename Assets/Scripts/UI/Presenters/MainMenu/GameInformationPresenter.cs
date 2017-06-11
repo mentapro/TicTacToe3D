@@ -10,7 +10,7 @@ namespace TicTacToe3D
         private MenuManager MenuManager { get; set; }
         private GameInfo Info { get; set; }
 
-        public GameInformationPresenter(MenuManager menuManager, GameInfo info)
+        public GameInformationPresenter(MenuManager menuManager, GameInfo info, AudioController audioController) : base(audioController)
         {
             MenuManager = menuManager;
             Info = info;

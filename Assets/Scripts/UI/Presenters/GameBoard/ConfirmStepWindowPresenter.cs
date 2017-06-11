@@ -16,18 +16,21 @@ namespace TicTacToe3D
         private BadgeEraser BadgeEraser { get; set; }
         private GameEvents GameEvents { get; set; }
         private BadgeModel.Registry BadgeRegistry { get; set; }
+        private AudioController AudioController { get; set; }
 
         public ConfirmStepWindowPresenter(MenuManager menuManager,
             GameInfo info,
             BadgeEraser badgeEraser,
             GameEvents gameEvents,
-            BadgeModel.Registry badgeRegistry)
+            BadgeModel.Registry badgeRegistry,
+            AudioController audioController) : base(audioController)
         {
             MenuManager = menuManager;
             Info = info;
             BadgeEraser = badgeEraser;
             GameEvents = gameEvents;
             BadgeRegistry = badgeRegistry;
+            AudioController = audioController;
 
             menuManager.SetMenu(this);
         }
@@ -97,6 +100,7 @@ namespace TicTacToe3D
 
         private void OnConfirmStepClicked()
         {
+            AudioController.Source.PlayOneShot(AudioController.AudioSettings.ConfirmStepClip);
             GameEvents.StepConfirmed();
             MenuManager.CloseMenu(Menus.ConfirmStepWindow);
             _isOpen = false;
@@ -111,6 +115,7 @@ namespace TicTacToe3D
         private void OnUndoClicked()
         {
             BadgeEraser.UndoUnconfirmedBadges();
+            AudioController.Source.PlayOneShot(AudioController.AudioSettings.UndoBadgesClip);
             MenuManager.CloseMenu(Menus.ConfirmStepWindow);
             _isOpen = false;
         }

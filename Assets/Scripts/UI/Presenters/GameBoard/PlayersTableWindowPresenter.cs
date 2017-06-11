@@ -21,7 +21,7 @@ namespace TicTacToe3D
             PlayerRowGameFacade.Factory playerRowFactory,
             PlayerRowGameModel.Registry playerRowRegistry,
             ScoreCalculationService scoreCalculator,
-            GameEvents gameEvents)
+            GameEvents gameEvents, AudioController audioController) : base(audioController)
         {
             Info = info;
             PlayerRowFactory = playerRowFactory;

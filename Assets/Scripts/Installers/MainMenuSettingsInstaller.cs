@@ -8,6 +8,7 @@ namespace TicTacToe3D
         public NewGameMenuPresenter.Settings NewGameMenuSettings;
         public PlayerRowMenuModel.Settings PlayerRowSettings;
         public MainMenuInstaller.Settings MainMenuInstallerSettings;
+        public AudioController.Settings AudioSettings;
 
         public override void InstallBindings()
         {
@@ -15,6 +16,7 @@ namespace TicTacToe3D
             Container.BindInstance(NewGameMenuSettings);
             Container.BindInstance(PlayerRowSettings);
             Container.BindInstance(MainMenuInstallerSettings);
+            Container.BindInstance(AudioSettings);
         }
     }
 }

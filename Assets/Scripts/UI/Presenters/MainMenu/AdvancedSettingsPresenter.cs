@@ -12,7 +12,7 @@ namespace TicTacToe3D
         private GameInfo Info { get; set; }
         private Settings _Settings { get; set; }
 
-        public AdvancedSettingsPresenter(MenuManager menuManager, GameInfo info, Settings settings)
+        public AdvancedSettingsPresenter(MenuManager menuManager, GameInfo info, Settings settings, AudioController audioController) : base(audioController)
         {
             MenuManager = menuManager;
             Info = info;

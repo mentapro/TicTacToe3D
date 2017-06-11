@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Zenject;
 
 namespace TicTacToe3D
@@ -11,14 +13,17 @@ namespace TicTacToe3D
         private GameInfo Info { get; set; }
         private GameEvents GameEvents { get; set; }
         private BadgeModel.Registry BadgeRegistry { get; set; }
+        private AudioController AudioController { get; set; }
 
         public VictoryHandler(GameInfo info,
             GameEvents gameEvents,
-            BadgeModel.Registry badgeRegistry)
+            BadgeModel.Registry badgeRegistry,
+            AudioController audioController)
         {
             Info = info;
             GameEvents = gameEvents;
             BadgeRegistry = badgeRegistry;
+            AudioController = audioController;
         }
 
         public void Initialize()
@@ -71,9 +76,20 @@ namespace TicTacToe3D
             }
         }
 
+        private IEnumerator Coroutine(Action action, float waitTime)
+        {
+            yield return new WaitForSeconds(waitTime);
+            action.Invoke();
+        }
+
         private void OnPlayerWon()
         {
             Info.ActivePlayer.State = PlayerStates.Winner;
+            AudioController.StartCoroutine(Coroutine(() =>
+            {
+                if (Info.GameState == GameStates.GameEnded) return;
+                AudioController.Source.PlayOneShot(AudioController.AudioSettings.OnPlayerWon);
+            }, 0.2f));
 
             var victoryLine = FindVictoryLine();
             _winnersCatalog.Add(Info.ActivePlayer, victoryLine);
@@ -86,7 +102,7 @@ namespace TicTacToe3D
             {
                 if (Info.Players.Count(player => player.State == PlayerStates.Plays) == 1)
                 {
-                    GameOver();
+                    AudioController.StartCoroutine(Coroutine(GameOver, 0.1f)); 
                 }
                 else
                 {
@@ -128,6 +144,7 @@ namespace TicTacToe3D
                 player.State = PlayerStates.Loser;
             }
             Info.GameState = GameStates.GameEnded;
+            AudioController.Source.PlayOneShot(AudioController.AudioSettings.Victory);
 
             GlowWinnersBadges();
         }

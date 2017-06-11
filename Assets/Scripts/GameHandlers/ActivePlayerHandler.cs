@@ -10,12 +10,14 @@ namespace TicTacToe3D
         private GameInfo Info { get; set; }
         private GameEvents GameEvents { get; set; }
         private History History { get; set; }
+        private AudioController AudioController { get; set; }
 
-        public ActivePlayerHandler(GameInfo info, GameEvents gameEvents, History history)
+        public ActivePlayerHandler(GameInfo info, GameEvents gameEvents, History history, AudioController audioController)
         {
             Info = info;
             GameEvents = gameEvents;
             History = history;
+            AudioController = audioController;
         }
 
         public void Initialize()

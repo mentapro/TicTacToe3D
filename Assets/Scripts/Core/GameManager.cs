@@ -17,10 +17,10 @@ namespace TicTacToe3D
         private readonly GameSettings _gameSettings;
 
         public GameManager(GameInfo info,
-            History history,
-            BadgeFacade.Factory badgeFactory,
-            BadgeFacade.Settings badgeSettings,
-            BadgeSpawnPoint.Registry spawnRegistry,
+            [InjectOptional] History history,
+            [InjectOptional] BadgeFacade.Factory badgeFactory,
+            [InjectOptional] BadgeFacade.Settings badgeSettings,
+            [InjectOptional] BadgeSpawnPoint.Registry spawnRegistry,
             IFetchService<History> historyFetchService,
             ZenjectSceneLoader sceneLoader,
             GameSettings gameSettings)
@@ -51,22 +51,27 @@ namespace TicTacToe3D
         public void LoadGame(string fileName)
         {
             var history = _historyFetchService.Load(fileName);
-            var info = new GameInfo(_gameSettings);
-            info.Dimension = history.Info.Dimension;
-            info.StepSize = history.Info.StepSize;
-            info.BadgesToWin = history.Info.BadgesToWin;
-            info.GlobalStep = history.Info.GlobalStep;
-            info.GameState = history.Info.GameState;
-            info.ActivePlayerMadeSteps = history.Info.ActivePlayerMadeSteps;
-            info.TimerTime = history.Info.TimerTime;
-            info.GameSettings.GameOverAfterFirstWinner = history.Info.GameSettings.GameOverAfterFirstWinner;
-            info.GameSettings.TimerType = history.Info.GameSettings.TimerType;
-            info.PlayerCanWin = history.Info.PlayerCanWin;
-            info.HistoryItems = history.HistoryItems;
-            info.Players = history.Info.Players;
-            info.ActivePlayer = history.Info.Players.First(x => x == history.Info.ActivePlayer);
+            var info = new GameInfo(_gameSettings)
+            {
+                Dimension = history.Info.Dimension,
+                StepSize = history.Info.StepSize,
+                BadgesToWin = history.Info.BadgesToWin,
+                GlobalStep = history.Info.GlobalStep,
+                GameState = history.Info.GameState,
+                ActivePlayerMadeSteps = history.Info.ActivePlayerMadeSteps,
+                TimerTime = history.Info.TimerTime,
+                GameSettings =
+                {
+                    GameOverAfterFirstWinner = history.Info.GameSettings.GameOverAfterFirstWinner,
+                    TimerType = history.Info.GameSettings.TimerType
+                },
+                PlayerCanWin = history.Info.PlayerCanWin,
+                HistoryItems = history.HistoryItems,
+                Players = history.Info.Players,
+                ActivePlayer = history.Info.Players.First(x => x == history.Info.ActivePlayer)
+            };
 
-            _sceneLoader.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single, container =>
+            _sceneLoader.LoadScene("GameBoard", LoadSceneMode.Single, container =>
             {
                 container.BindInstance(info).WhenInjectedInto<GameBoardInstaller>();
             });

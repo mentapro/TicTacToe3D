@@ -18,7 +18,7 @@ namespace TicTacToe3D
             GameManager gameManager,
             SaveItemModel.Registry saveItemsRegistry,
             SaveItemFacade.Factory saveItemFactory,
-            IFetchService<History> fetchService)
+            IFetchService<History> fetchService, AudioController audioController) : base(audioController)
         {
             _menuManager = menuManager;
             _gameManager = gameManager;

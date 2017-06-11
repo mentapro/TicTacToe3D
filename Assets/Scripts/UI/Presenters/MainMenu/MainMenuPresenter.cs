@@ -10,7 +10,7 @@ namespace TicTacToe3D
     {
         private MenuManager MenuManager { get; set; }
 
-        public MainMenuPresenter(MenuManager menuManager)
+        public MainMenuPresenter(MenuManager menuManager, AudioController audioController) : base(audioController)
         {
             MenuManager = menuManager;
 
@@ -42,7 +42,7 @@ namespace TicTacToe3D
 
         private void OnLoadGameButtonClicked()
         {
-
+            MenuManager.OpenMenu(Menus.LoadGameMenu);
         }
 
         private void OnHighscoresButtonClicked()

@@ -13,11 +13,13 @@ namespace TicTacToe3D
             private readonly List<BadgeModel> _badges = new List<BadgeModel>();
             private GameInfo Info { get; set; }
             private GameEvents GameEvents { get; set; }
+            private AudioController AudioController { get; set; }
 
-            public Registry(GameInfo info, GameEvents gameEvents)
+            public Registry(GameInfo info, GameEvents gameEvents, AudioController audioController)
             {
                 Info = info;
                 GameEvents = gameEvents;
+                AudioController = audioController;
             }
 
             public IEnumerable<BadgeModel> Badges
@@ -56,6 +58,8 @@ namespace TicTacToe3D
 
             private void OnBadgeSpawned(BadgeModel badge, bool isVictorious)
             {
+                AudioController.Source.PlayOneShot(AudioController.AudioSettings.BadgeSpawnedClip);
+
                 _badges.ForEach(x => x.Glowing.Stop());
                 if (Info.ActivePlayerMadeSteps == 0)
                 {

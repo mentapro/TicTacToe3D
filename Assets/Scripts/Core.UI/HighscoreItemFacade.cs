@@ -9,11 +9,9 @@ namespace TicTacToe3D
         [Inject]
         public void Construct(HighscoreItemModel model)
         {
-            _model = model;
             model.SetFacade(this);
         }
 
-        private HighscoreItemModel _model;
         [SerializeField]
         private Text _playerNameText = null;
         [SerializeField]

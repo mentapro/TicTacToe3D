@@ -17,12 +17,15 @@ namespace TicTacToe3D
 
         private GameInfo Info { get; set; }
         private MenuManager MenuManager { get; set; }
+        private AudioController AudioController { get; set; }
 
         public PauseWindowPresenter(GameInfo info,
-            MenuManager menuManager)
+            MenuManager menuManager,
+            AudioController audioController) : base(audioController)
         {
             Info = info;
             MenuManager = menuManager;
+            AudioController = audioController;
 
             menuManager.SetMenu(this);
         }
@@ -105,6 +108,7 @@ namespace TicTacToe3D
 
         private void OnExitToMenuButtonClicked()
         {
+            AudioController.SourceBackground.Stop();
             SceneManager.LoadScene("MainMenu");
         }
 

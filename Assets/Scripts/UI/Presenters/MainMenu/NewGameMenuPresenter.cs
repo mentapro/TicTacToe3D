@@ -17,7 +17,7 @@ namespace TicTacToe3D
             Settings settings,
             PlayerRowMenuFacade.Factory playerRowFactory,
             PlayerRowMenuModel.Registry rowRegistry,
-            GameInfo info, ZenjectSceneLoader sceneLoader)
+            GameInfo info, ZenjectSceneLoader sceneLoader, AudioController audioController) : base(audioController)
         {
             MenuManager = menuManager;
             _Settings = settings;

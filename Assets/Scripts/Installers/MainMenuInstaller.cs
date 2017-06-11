@@ -16,9 +16,14 @@ namespace TicTacToe3D
             Container.Bind<PlayerRowMenuModel.Registry>().AsSingle();
             Container.Bind<HighscoreItemModel.Registry>().AsSingle();
             Container.Bind<IFetchService<Stats>>().To<StatsFetchService>().AsSingle();
+            Container.Bind<IFetchService<History>>().To<HistoryFetchService>().AsSingle();
 
             Container.Bind<PlayerRowMenuModel>().AsTransient();
             Container.Bind<HighscoreItemModel>().AsTransient();
+            Container.Bind<SaveItemModel>().AsTransient();
+
+            Container.BindInterfacesAndSelfTo<SaveItemModel.Registry>().AsSingle();
+            Container.BindInterfacesAndSelfTo<GameManager>().AsSingle();
 
             InstallPresenters();
             InstallFactories();
@@ -31,6 +36,7 @@ namespace TicTacToe3D
             Container.BindInterfacesAndSelfTo<GameInformationPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<AdvancedSettingsPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<HighscoresMenuPresenter>().AsSingle();
+            Container.BindInterfacesAndSelfTo<LoadGameMenuPresenter>().AsSingle();
             Container.BindInterfacesAndSelfTo<ModalDialog>().AsSingle();
         }
 
@@ -40,13 +46,17 @@ namespace TicTacToe3D
                 .FromComponentInNewPrefab(_settings.PlayerRowMenuFacadePrefab);
             Container.BindFactory<HighscoreItemFacade, HighscoreItemFacade.Factory>()
                 .FromComponentInNewPrefab(_settings.HighscoresItemPrefab);
+            Container.BindFactory<SaveItemFacade, SaveItemFacade.Factory>()
+                .FromComponentInNewPrefab(_settings.SaveItemTogglePrefab);
         }
 
         [Serializable]
         public class Settings
         {
+            public AudioController AudioController;
             public GameObject PlayerRowMenuFacadePrefab;
             public GameObject HighscoresItemPrefab;
+            public GameObject SaveItemTogglePrefab;
         }
     }
 }

@@ -19,32 +19,29 @@ namespace TicTacToe3D
         
         private GameInfo Info { get; set; }
         private GameEvents GameEvents { get; set; }
+        private AudioController AudioController { get; set; }
 
-        public TimerHandler(GameInfo info, GameEvents gameEvents)
+        public TimerHandler(GameInfo info, GameEvents gameEvents, AudioController audioController)
         {
             Info = info;
             GameEvents = gameEvents;
+            AudioController = audioController;
 
             Info.PropertyChanged += OnGameInfoPropertyChanged;
         }
 
         public void Initialize()
         {
-            if (Info.HistoryItems == null)
+            if (Info.HistoryItems != null) return; // game is loading now. So return from here.
+            if (Info.GameSettings.TimerType == TimerTypes.DynamicTime) return;
+            Info.Players.ForEach(player =>
             {
-                if (Info.GameSettings.TimerType == TimerTypes.DynamicTime)
+                if (Info.GameSettings.TimerType == TimerTypes.FixedTimePerRound ||
+                    Info.GameSettings.TimerType == TimerTypes.FixedTimePerStep)
                 {
-                    throw new NotImplementedException("Dynamic timer is not implemented yet.");
+                    player.TimeLeft = Info.TimerTime;
                 }
-                Info.Players.ForEach(player =>
-                {
-                    if (Info.GameSettings.TimerType == TimerTypes.FixedTimePerRound ||
-                        Info.GameSettings.TimerType == TimerTypes.FixedTimePerStep)
-                    {
-                        player.TimeLeft = Info.TimerTime;
-                    }
-                });
-            }
+            });
         }
 
         public void Dispose()
@@ -77,9 +74,24 @@ namespace TicTacToe3D
         private void UpdateFixedTimeTimer()
         {
             Info.ActivePlayer.TimeLeft -= Time.deltaTime;
+            PlayTimerTickSound();
             if (Info.ActivePlayer.TimeLeft <= 0)
             {
                 GameEvents.TimePassed();
+            }
+        }
+
+        private void PlayTimerTickSound()
+        {
+            if (AudioController.Source.isPlaying) return;
+            var timeDelta = Info.ActivePlayer.TimeLeft - Mathf.Floor(Info.ActivePlayer.TimeLeft);
+            /*
+             * 0.001f - delta which claimed that current time is near 0 (zero)
+             * 0.02f - preventing from playing sound one more time when time is out
+             */
+            if (timeDelta - Time.deltaTime < 0.001f && Info.ActivePlayer.TimeLeft > 0.02f)
+            {
+                AudioController.Source.PlayOneShot(AudioController.AudioSettings.TimerTickClip);
             }
         }
 

@@ -8,6 +8,7 @@
         GameInfoMenu,
         AdvancedSettingsMenu,
         HighscoresMenu,
+        LoadGameMenu,
 
         // GameBoard Scene
         ConfirmStepWindow,
@@ -27,6 +28,7 @@
         private GameInformationPresenter GameInfoMenu { get; set; }
         private AdvancedSettingsPresenter AdvancedSettingsMenu { get; set; }
         private HighscoresMenuPresenter HighscoresMenu { get; set; }
+        private LoadGameMenuPresenter LoadGameMenu { get; set; }
 
         // GameBoard Scene
         private ConfirmStepWindowPresenter ConfirmStepWindow { get; set; }
@@ -63,6 +65,9 @@
                     break;
                 case Menus.HighscoresMenu:
                     OpenMenu(HighscoresMenu);
+                    break;
+                case Menus.LoadGameMenu:
+                    OpenMenu(LoadGameMenu);
                     break;
                 case Menus.ConfirmStepWindow:
                     ConfirmStepWindow.Open();
@@ -102,6 +107,10 @@
                     break;
                 case Menus.HighscoresMenu:
                     HighscoresMenu.Close();
+                    CurrentMenu = null;
+                    break;
+                case Menus.LoadGameMenu:
+                    LoadGameMenu.Close();
                     CurrentMenu = null;
                     break;
                 case Menus.ConfirmStepWindow:
@@ -148,6 +157,11 @@
         public void SetMenu(HighscoresMenuPresenter highscoresMenu)
         {
             HighscoresMenu = highscoresMenu;
+        }
+
+        public void SetMenu(LoadGameMenuPresenter loadGameMenu)
+        {
+            LoadGameMenu = loadGameMenu;
         }
 
         public void SetMenu(ConfirmStepWindowPresenter confirmStepWindow)
