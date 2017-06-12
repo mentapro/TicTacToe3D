@@ -28,7 +28,7 @@ I made this game with Unity3D. Extra libraries: [Zenject for Unity3D](https://gi
 - All dependencies are injected with Zenject.
 - No Unity3D's `Update`, `Start`, `Awake` abuse.
   - And in general, the use of `UnityEngine` library is minimal.
-- Implemented **event-driven architecture**.
+- Implemented **service-oriented architecture**, **event-driven architecture**.
 - Basic **state-driven design**.
 - Сode is re-used.
 - There is an opportunity to expand the project easily.
