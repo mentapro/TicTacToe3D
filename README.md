@@ -1,4 +1,8 @@
 # Amazing 3D TicTacToe
+## Installation
+You can install Amazing TicTacToe3D from [Releases Page](https://github.com/mentapro/TicTacToe3D/releases).
+ - **TicTacToe3D_alpha.zip** - unzip it and launch *TicTacToe3D.exe*.
+
 ## About game
 I made this game with Unity3D. Extra libraries: [Zenject for Unity3D](https://github.com/modesttree/Zenject),
 [Newtonsoft JSON](http://www.newtonsoft.com/json).
