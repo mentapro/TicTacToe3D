@@ -62,4 +62,4 @@ Put your badge, wait for other players and go on!
 
 ## My Contacts
 - [Facebook - Stanislav Herasymiuk](https://www.facebook.com/stanislav.herasymiuk)
-- [LinkedIn - Stanislav Herasymiuk](www.linkedin.com/in/mentapro)
+- [LinkedIn - Stanislav Herasymiuk](https://www.linkedin.com/in/mentapro/)
